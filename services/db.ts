@@ -1,0 +1,567 @@
+import * as SQLite from 'expo-sqlite';
+
+export interface Material {
+  id?: number;
+  nombre: string;
+  precioCosto: number;
+  unidad: string; // 'metro', 'unidad', 'hora', etc.
+  stock: number;
+}
+
+export interface ComponenteProducto {
+  id?: number;
+  productoId: number;
+  materialId: number;
+  cantidad: number;
+}
+
+export interface Producto {
+  id?: number;
+  nombre: string;
+  precioCosto: number;
+  precioVenta: number;
+  stock: number;
+  componentes?: ComponenteProducto[];
+  variantes?: VarianteProducto[];
+}
+
+export interface VarianteProducto {
+  id?: number;
+  productoId: number;
+  nombre: string;
+  stock: number;
+}
+
+export interface Venta {
+  id?: number;
+  fecha: string;
+  totalProductos: number;
+  precioTotal: number;
+  ganancia: number;
+  productos: {
+    productoId: number;
+    cantidad: number;
+    precioUnitario: number;
+    ganancia: number;
+    varianteId?: number;
+  }[];
+}
+
+export let db: SQLite.SQLiteDatabase;
+
+export const setupProductosDB = async () => {
+  console.log('=== INICIALIZANDO BASE DE DATOS ===');
+  try {
+    // Abrir la base de datos
+    db = await SQLite.openDatabaseAsync('productos.db');
+    console.log('✅ Base de datos abierta correctamente');
+
+    // Crear la tabla de materiales
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS materiales (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        precioCosto REAL NOT NULL,
+        unidad TEXT NOT NULL,
+        stock REAL NOT NULL
+      );
+    `);
+    console.log('✅ Tabla materiales creada correctamente');
+
+    // Crear la tabla de productos
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS productos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        precioCosto REAL NOT NULL,
+        precioVenta REAL NOT NULL,
+        stock INTEGER NOT NULL
+      );
+    `);
+    console.log('✅ Tabla productos creada correctamente');
+
+    // Crear la tabla de variantes de productos
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS variantes_producto (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        productoId INTEGER NOT NULL,
+        nombre TEXT NOT NULL,
+        stock INTEGER NOT NULL,
+        FOREIGN KEY (productoId) REFERENCES productos (id) ON DELETE CASCADE
+      );
+    `);
+    console.log('✅ Tabla variantes_producto creada correctamente');
+
+    // Crear la tabla de componentes de productos
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS componentes_producto (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        productoId INTEGER NOT NULL,
+        materialId INTEGER NOT NULL,
+        cantidad REAL NOT NULL,
+        FOREIGN KEY (productoId) REFERENCES productos (id) ON DELETE CASCADE,
+        FOREIGN KEY (materialId) REFERENCES materiales (id) ON DELETE CASCADE
+      );
+    `);
+    console.log('✅ Tabla componentes_producto creada correctamente');
+
+    // Crear la tabla de ventas
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS ventas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fecha TEXT NOT NULL,
+        totalProductos INTEGER NOT NULL,
+        precioTotal REAL NOT NULL,
+        ganancia REAL NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS ventas_detalle (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ventaId INTEGER NOT NULL,
+        productoId INTEGER NOT NULL,
+        cantidad INTEGER NOT NULL,
+        precioUnitario REAL NOT NULL,
+        ganancia REAL NOT NULL,
+        FOREIGN KEY (ventaId) REFERENCES ventas (id),
+        FOREIGN KEY (productoId) REFERENCES productos (id)
+      );
+    `);
+    console.log('✅ Tablas de ventas creadas correctamente');
+
+    // Verificar la estructura de las tablas
+    const tableInfo = await db.getAllAsync("PRAGMA table_info(productos);");
+    console.log('📋 Estructura de la tabla productos:', tableInfo);
+
+    const ventasTableInfo = await db.getAllAsync("PRAGMA table_info(ventas);");
+    console.log('📋 Estructura de la tabla ventas:', ventasTableInfo);
+
+    const ventasDetalleTableInfo = await db.getAllAsync("PRAGMA table_info(ventas_detalle);");
+    console.log('📋 Estructura de la tabla ventas_detalle:', ventasDetalleTableInfo);
+
+    // Verificar si hay datos en la tabla
+    const countResult = await db.getFirstAsync("SELECT COUNT(*) as count FROM productos;");
+    console.log('📊 Cantidad de productos en la base de datos:', countResult);
+
+    console.log('=== BASE DE DATOS INICIALIZADA CORRECTAMENTE ===');
+  } catch (error) {
+    console.error('❌ Error al inicializar la base de datos:', error);
+    throw error;
+  }
+};
+
+// Función para mostrar todo el contenido de la base de datos
+export const mostrarContenidoDB = async () => {
+  console.log('=== CONTENIDO DE LA BASE DE DATOS ===');
+  try {
+    // Mostrar todas las tablas
+    const tablesQuery = "SELECT name FROM sqlite_master WHERE type='table';";
+    const tables = await db.execAsync(tablesQuery);
+    console.log('📚 Tablas en la base de datos:', tables);
+
+    // Para cada tabla, mostrar su contenido
+    const tablesStr = JSON.stringify(tables);
+    const parsedTables = JSON.parse(tablesStr);
+    
+    for (const table of parsedTables) {
+      const tableName = table.name;
+      console.log(`\n=== Contenido de la tabla: ${tableName} ===`);
+      const contentQuery = `SELECT * FROM ${tableName};`;
+      const content = await db.execAsync(contentQuery);
+      console.log('📝 Contenido:', content);
+    }
+  } catch (error) {
+    console.error('❌ Error al mostrar contenido de la DB:', error);
+  }
+  console.log('=== FIN DEL CONTENIDO ===');
+};
+
+export const insertarProducto = async (producto: Producto, callback?: () => void) => {
+  const { nombre, precioCosto, precioVenta, stock } = producto;
+  console.log('📥 Insertando producto en DB:', producto);
+  try {
+    const result = await db.runAsync(
+      'INSERT INTO productos (nombre, precioCosto, precioVenta, stock) VALUES (?, ?, ?, ?)',
+      [nombre, precioCosto, precioVenta, stock]
+    );
+    console.log('✅ Producto insertado en DB exitosamente. ID:', result.lastInsertRowId);
+    callback?.();
+  } catch (error) {
+    console.error('❌ Error al insertar producto en DB:', error);
+    throw error;
+  }
+};
+
+export const obtenerProductos = async (callback: (productos: Producto[]) => void) => {
+  console.log('📋 Obteniendo productos de DB...');
+  try {
+    const productos = await db.getAllAsync('SELECT * FROM productos;');
+    
+    // Obtener variantes para cada producto
+    for (const producto of productos) {
+      const variantes = await db.getAllAsync(
+        'SELECT * FROM variantes_producto WHERE productoId = ?',
+        [producto.id]
+      );
+      producto.variantes = variantes;
+      
+      // Calcular stock total (producto base + variantes)
+      const stockVariantes = variantes.reduce((total, v) => total + v.stock, 0);
+      producto.stock = producto.stock + stockVariantes;
+    }
+    
+    console.log("📦 Productos obtenidos:", JSON.stringify(productos, null, 2));
+    callback(productos);
+  } catch (error) {
+    console.error('❌ Error al obtener productos de DB:', error);
+    callback([]);
+  }
+};
+
+export const eliminarProducto = async (id: number, callback?: () => void) => {
+  console.log('🗑️ Eliminando producto de DB:', id);
+  try {
+    const result = await db.runAsync('DELETE FROM productos WHERE id = ?', [id]);
+    console.log('✅ Producto eliminado en DB exitosamente. Filas afectadas:', result.changes);
+    callback?.();
+  } catch (error) {
+    console.error('❌ Error al eliminar producto de DB:', error);
+    throw error;
+  }
+};
+
+export const actualizarProducto = async (producto: Producto, callback?: () => void) => {
+  const { id, nombre, precioCosto, precioVenta, stock } = producto;
+  console.log('📝 Actualizando producto en DB:', producto);
+  try {
+    const result = await db.runAsync(
+      'UPDATE productos SET nombre = ?, precioCosto = ?, precioVenta = ?, stock = ? WHERE id = ?',
+      [nombre, precioCosto, precioVenta, stock, id]
+    );
+    console.log('✅ Producto actualizado en DB exitosamente. Filas afectadas:', result.changes);
+    callback?.();
+  } catch (error) {
+    console.error('❌ Error al actualizar producto de DB:', error);
+    throw error;
+  }
+};
+
+export const registrarVenta = async (venta: Venta, callback?: () => void) => {
+  console.log('📥 Registrando venta en DB:', venta);
+  try {
+    // Iniciar transacción
+    await db.execAsync('BEGIN TRANSACTION;');
+
+    // Insertar la venta
+    const ventaResult = await db.runAsync(
+      'INSERT INTO ventas (fecha, totalProductos, precioTotal, ganancia) VALUES (?, ?, ?, ?)',
+      [venta.fecha, venta.totalProductos, venta.precioTotal, venta.ganancia]
+    );
+    const ventaId = ventaResult.lastInsertRowId;
+
+    // Insertar detalles de la venta y actualizar stock
+    for (const detalle of venta.productos) {
+      // Insertar detalle de venta
+      await db.runAsync(
+        'INSERT INTO ventas_detalle (ventaId, productoId, cantidad, precioUnitario, ganancia) VALUES (?, ?, ?, ?, ?)',
+        [ventaId, detalle.productoId, detalle.cantidad, detalle.precioUnitario, detalle.ganancia]
+      );
+
+      // Actualizar stock del producto o variante
+      if (detalle.varianteId) {
+        await db.runAsync(
+          'UPDATE variantes_producto SET stock = stock - ? WHERE id = ?',
+          [detalle.cantidad, detalle.varianteId]
+        );
+      } else {
+        await db.runAsync(
+          'UPDATE productos SET stock = stock - ? WHERE id = ?',
+          [detalle.cantidad, detalle.productoId]
+        );
+      }
+    }
+
+    // Confirmar transacción
+    await db.execAsync('COMMIT;');
+    console.log('✅ Venta registrada exitosamente');
+    callback?.();
+  } catch (error) {
+    // Revertir transacción en caso de error
+    await db.execAsync('ROLLBACK;');
+    console.error('❌ Error al registrar venta:', error);
+    throw error;
+  }
+};
+
+export const obtenerVentas = async (callback: (ventas: Venta[]) => void) => {
+  console.log('📋 Obteniendo ventas de DB...');
+  try {
+    const ventas = await db.getAllAsync(`
+      SELECT v.*, 
+             GROUP_CONCAT(vd.productoId || ',' || vd.cantidad || ',' || vd.precioUnitario || ',' || vd.ganancia) as detalles
+      FROM ventas v
+      LEFT JOIN ventas_detalle vd ON v.id = vd.ventaId
+      GROUP BY v.id
+      ORDER BY v.fecha DESC;
+    `);
+
+    // Procesar los resultados para construir el objeto Venta
+    const ventasProcesadas = ventas.map(venta => {
+      const detalles = venta.detalles ? venta.detalles.split(',').map((detalle: string) => {
+        const [productoId, cantidad, precioUnitario, ganancia] = detalle.split(',');
+        return {
+          productoId: parseInt(productoId),
+          cantidad: parseInt(cantidad),
+          precioUnitario: parseFloat(precioUnitario),
+          ganancia: parseFloat(ganancia)
+        };
+      }) : [];
+
+      return {
+        id: venta.id,
+        fecha: venta.fecha,
+        totalProductos: venta.totalProductos,
+        precioTotal: venta.precioTotal,
+        ganancia: venta.ganancia,
+        productos: detalles
+      };
+    });
+
+    console.log('💰 Ventas obtenidas:', ventasProcesadas);
+    callback(ventasProcesadas);
+  } catch (error) {
+    console.error('❌ Error al obtener ventas de DB:', error);
+    callback([]);
+  }
+};
+
+export const obtenerEstadisticas = async (callback: (stats: {
+  ventasTotales: number;
+  gananciaNeta: number;
+  productosVendidos: number;
+  ventasRealizadas: number;
+  promedioVenta: number;
+  ventasHoy: number;
+}) => void) => {
+  console.log('📊 Obteniendo estadísticas...');
+  try {
+    const hoy = new Date().toISOString().split('T')[0];
+    
+    const stats = await db.getFirstAsync(`
+      SELECT 
+        SUM(precioTotal) as ventasTotales,
+        SUM(ganancia) as gananciaNeta,
+        SUM(totalProductos) as productosVendidos,
+        COUNT(*) as ventasRealizadas,
+        AVG(precioTotal) as promedioVenta,
+        (SELECT COUNT(*) FROM ventas WHERE fecha = ?) as ventasHoy
+      FROM ventas;
+    `, [hoy]);
+
+    callback({
+      ventasTotales: stats.ventasTotales || 0,
+      gananciaNeta: stats.gananciaNeta || 0,
+      productosVendidos: stats.productosVendidos || 0,
+      ventasRealizadas: stats.ventasRealizadas || 0,
+      promedioVenta: stats.promedioVenta || 0,
+      ventasHoy: stats.ventasHoy || 0
+    });
+  } catch (error) {
+    console.error('❌ Error al obtener estadísticas:', error);
+    callback({
+      ventasTotales: 0,
+      gananciaNeta: 0,
+      productosVendidos: 0,
+      ventasRealizadas: 0,
+      promedioVenta: 0,
+      ventasHoy: 0
+    });
+  }
+};
+
+// Funciones para manejar materiales
+export const insertarMaterial = async (material: Material, callback?: () => void) => {
+  const { nombre, precioCosto, unidad, stock } = material;
+  try {
+    const result = await db.runAsync(
+      'INSERT INTO materiales (nombre, precioCosto, unidad, stock) VALUES (?, ?, ?, ?)',
+      [nombre, precioCosto, unidad, stock]
+    );
+    console.log('✅ Material insertado en DB exitosamente. ID:', result.lastInsertRowId);
+    callback?.();
+  } catch (error) {
+    console.error('❌ Error al insertar material en DB:', error);
+    throw error;
+  }
+};
+
+export const obtenerMateriales = async (callback: (materiales: Material[]) => void) => {
+  try {
+    const materiales = await db.getAllAsync('SELECT * FROM materiales;');
+    console.log('📦 Materiales obtenidos:', materiales);
+    callback(materiales);
+  } catch (error) {
+    console.error('❌ Error al obtener materiales de DB:', error);
+    callback([]);
+  }
+};
+
+export const actualizarMaterial = async (material: Material, callback?: () => void) => {
+  const { id, nombre, precioCosto, unidad, stock } = material;
+  try {
+    const result = await db.runAsync(
+      'UPDATE materiales SET nombre = ?, precioCosto = ?, unidad = ?, stock = ? WHERE id = ?',
+      [nombre, precioCosto, unidad, stock, id]
+    );
+    console.log('✅ Material actualizado en DB exitosamente. Filas afectadas:', result.changes);
+    
+    // Actualizar el costo de todos los productos que usan este material
+    await actualizarCostosProductos();
+    
+    callback?.();
+  } catch (error) {
+    console.error('❌ Error al actualizar material de DB:', error);
+    throw error;
+  }
+};
+
+// Funciones para manejar componentes de productos
+export const insertarComponenteProducto = async (componente: ComponenteProducto, callback?: () => void) => {
+  const { productoId, materialId, cantidad } = componente;
+  try {
+    const result = await db.runAsync(
+      'INSERT INTO componentes_producto (productoId, materialId, cantidad) VALUES (?, ?, ?)',
+      [productoId, materialId, cantidad]
+    );
+    console.log('✅ Componente insertado en DB exitosamente. ID:', result.lastInsertRowId);
+    
+    // Actualizar el costo del producto
+    await actualizarCostoProducto(productoId);
+    
+    callback?.();
+  } catch (error) {
+    console.error('❌ Error al insertar componente en DB:', error);
+    throw error;
+  }
+};
+
+export const obtenerComponentesProducto = async (productoId: number, callback: (componentes: ComponenteProducto[]) => void) => {
+  try {
+    const componentes = await db.getAllAsync(
+      'SELECT * FROM componentes_producto WHERE productoId = ?',
+      [productoId]
+    );
+    console.log('📦 Componentes obtenidos:', componentes);
+    callback(componentes);
+  } catch (error) {
+    console.error('❌ Error al obtener componentes de DB:', error);
+    callback([]);
+  }
+};
+
+// Función para actualizar el costo de un producto basado en sus componentes
+const actualizarCostoProducto = async (productoId: number) => {
+  try {
+    const costoTotal = await db.getFirstAsync(`
+      SELECT SUM(cp.cantidad * m.precioCosto) as costoTotal
+      FROM componentes_producto cp
+      JOIN materiales m ON cp.materialId = m.id
+      WHERE cp.productoId = ?
+    `, [productoId]);
+
+    await db.runAsync(
+      'UPDATE productos SET precioCosto = ? WHERE id = ?',
+      [costoTotal.costoTotal || 0, productoId]
+    );
+  } catch (error) {
+    console.error('❌ Error al actualizar costo del producto:', error);
+    throw error;
+  }
+};
+
+// Función para actualizar los costos de todos los productos
+const actualizarCostosProductos = async () => {
+  try {
+    const productos = await db.getAllAsync('SELECT id FROM productos');
+    for (const producto of productos) {
+      await actualizarCostoProducto(producto.id);
+    }
+  } catch (error) {
+    console.error('❌ Error al actualizar costos de productos:', error);
+    throw error;
+  }
+};
+
+export const insertarVariante = async (variante: VarianteProducto, callback?: () => void) => {
+  const { productoId, nombre, stock } = variante;
+  try {
+    const result = await db.runAsync(
+      'INSERT INTO variantes_producto (productoId, nombre, stock) VALUES (?, ?, ?)',
+      [productoId, nombre, stock]
+    );
+    console.log('✅ Variante insertada en DB exitosamente. ID:', result.lastInsertRowId);
+    callback?.();
+  } catch (error) {
+    console.error('❌ Error al insertar variante en DB:', error);
+    throw error;
+  }
+};
+
+export const actualizarVariante = async (variante: VarianteProducto, callback?: () => void) => {
+  const { id, nombre, stock } = variante;
+  try {
+    await db.runAsync(
+      'UPDATE variantes_producto SET nombre = ?, stock = ? WHERE id = ?',
+      [nombre, stock, id]
+    );
+    console.log('✅ Variante actualizada en DB exitosamente');
+    callback?.();
+  } catch (error) {
+    console.error('❌ Error al actualizar variante en DB:', error);
+    throw error;
+  }
+};
+
+export const eliminarVariante = async (id: number, callback?: () => void) => {
+  try {
+    await db.runAsync('DELETE FROM variantes_producto WHERE id = ?', [id]);
+    console.log('✅ Variante eliminada de DB exitosamente');
+    callback?.();
+  } catch (error) {
+    console.error('❌ Error al eliminar variante de DB:', error);
+    throw error;
+  }
+};
+
+export const eliminarComponenteProducto = async (componenteId: number, callback?: () => void): Promise<void> => {
+  console.log('🗑️ Eliminando componente de producto:', componenteId);
+  try {
+    // Paso 1: obtener el productoId del componente
+    const result = await db.getFirstAsync(
+      'SELECT productoId FROM componentes_producto WHERE id = ?',
+      [componenteId]
+    );
+
+    if (!result || !result.productoId) {
+      console.warn('⚠️ No se encontró el componente con ID:', componenteId);
+      return;
+    }
+
+    const productoId = result.productoId;
+
+    // Paso 2: eliminar el componente
+    const deleteResult = await db.runAsync(
+      'DELETE FROM componentes_producto WHERE id = ?',
+      [componenteId]
+    );
+    console.log('✅ Componente eliminado. Filas afectadas:', deleteResult.changes);
+
+    // Paso 3: actualizar el costo del producto
+    await actualizarCostoProducto(productoId);
+
+    callback?.();
+  } catch (error) {
+    console.error('❌ Error al eliminar componente de DB:', error);
+    throw error;
+  }
+};
+
