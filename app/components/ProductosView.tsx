@@ -949,10 +949,9 @@ import { borderRadius, colors, commonStyles, shadows, spacing, typography } from
 
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
-      <Animated.View style={[commonStyles.container, { opacity: fadeAnim }]}>
-      <View style={styles.header}>
-        
-  <Text style={styles.headerTitle}>📦 Productos</Text>
+        <Animated.View style={[commonStyles.container, { opacity: fadeAnim }]}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>📦 Productos</Text>
   <TouchableOpacity
     style={styles.addButton}
     onPress={() => {

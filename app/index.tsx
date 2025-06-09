@@ -9,6 +9,7 @@ import InicioView from './components/InicioView';
 import MaterialesView from './components/MaterialesView';
 import NuevaVentaView from './components/NuevaVentaView';
 import ProductosView from './components/ProductosView';
+
 const { width } = Dimensions.get('window');
 
 export default function Dashboard() {
@@ -209,7 +210,7 @@ useEffect(() => {
             size={24} 
             color={currentView === 'estadisticas' ? '#2563eb' : '#64748b'} 
           />
-          <Text style={[styles.navLabel, currentView === 'estadisticas' && styles.navLabelActive]}>Estadísticas</Text>
+          <Text style={[styles.navLabel, currentView === 'estadisticas' && styles.navLabelActive]}>Métricas</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -341,4 +342,5 @@ navLabelActive: {
     color: '#64748b',
     marginTop: 4,
   },
+  
 });

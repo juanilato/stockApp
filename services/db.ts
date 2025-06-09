@@ -334,49 +334,110 @@ export const obtenerVentas = async (callback: (ventas: Venta[]) => void) => {
   }
 };
 
-export const obtenerEstadisticas = async (callback: (stats: {
+export const obtenerEstadisticas = async (): Promise<{
   ventasTotales: number;
-  gananciaNeta: number;
+  gananciaTotal: number;
   productosVendidos: number;
-  ventasRealizadas: number;
-  promedioVenta: number;
-  ventasHoy: number;
-}) => void) => {
-  console.log('📊 Obteniendo estadísticas...');
+  productosMasVendidos: { nombre: string; cantidad: number }[];
+  stockTotal: number;
+  productosStockCritico: number;
+  gananciaMesActual: number;
+  productoMasRentable: { nombre: string; rentabilidad: number } | null;
+}> => {
   try {
+
     const hoy = new Date().toISOString().split('T')[0];
-    
-    const stats = await db.getFirstAsync(`
+    const mesActual = hoy.slice(0, 7); // YYYY-MM
+    const anioActual = hoy.slice(0, 4); // YYYY
+
+    const [ganDia, ganMes, ganAnio] = await Promise.all([
+      db.getFirstAsync(`SELECT SUM(ganancia) as total FROM ventas WHERE fecha = ?`, [hoy]),
+      db.getFirstAsync(`SELECT SUM(ganancia) as total FROM ventas WHERE substr(fecha, 1, 7) = ?`, [mesActual]),
+      db.getFirstAsync(`SELECT SUM(ganancia) as total FROM ventas WHERE substr(fecha, 1, 4) = ?`, [anioActual]),
+    ]);
+    // Ventas y ganancias
+    const res1 = await db.getFirstAsync(`
       SELECT 
         SUM(precioTotal) as ventasTotales,
-        SUM(ganancia) as gananciaNeta,
-        SUM(totalProductos) as productosVendidos,
-        COUNT(*) as ventasRealizadas,
-        AVG(precioTotal) as promedioVenta,
-        (SELECT COUNT(*) FROM ventas WHERE fecha = ?) as ventasHoy
+        SUM(ganancia) as gananciaTotal,
+        SUM(totalProductos) as productosVendidos
       FROM ventas;
-    `, [hoy]);
+    `);
 
-    callback({
-      ventasTotales: stats.ventasTotales || 0,
-      gananciaNeta: stats.gananciaNeta || 0,
-      productosVendidos: stats.productosVendidos || 0,
-      ventasRealizadas: stats.ventasRealizadas || 0,
-      promedioVenta: stats.promedioVenta || 0,
-      ventasHoy: stats.ventasHoy || 0
-    });
+    // Productos más vendidos (top 5)
+    const masVendidos = await db.getAllAsync(`
+      SELECT p.nombre, SUM(vd.cantidad) as cantidad
+      FROM ventas_detalle vd
+      JOIN productos p ON p.id = vd.productoId
+      GROUP BY vd.productoId
+      ORDER BY cantidad DESC
+      LIMIT 5;
+    `);
+
+    // Stock total
+    const stockData = await db.getFirstAsync(`SELECT SUM(stock) as stockTotal FROM productos;`);
+
+    // Productos con stock crítico
+    const stockCriticoData = await db.getFirstAsync(`SELECT COUNT(*) as productosStockCritico FROM productos WHERE stock <= 5;`);
+
+    // Ganancia del mes actual
+    const gananciaMes = await db.getFirstAsync(`
+      SELECT SUM(ganancia) as gananciaMesActual
+      FROM ventas
+      WHERE substr(fecha, 1, 7) = ?;
+    `, [mesActual]);
+
+    // Producto más rentable (ganancia acumulada / cantidad)
+    const rentable = await db.getFirstAsync(`
+      SELECT p.nombre, SUM(vd.ganancia)*1.0 / SUM(vd.cantidad) as rentabilidad
+      FROM ventas_detalle vd
+      JOIN productos p ON p.id = vd.productoId
+      GROUP BY vd.productoId
+      ORDER BY rentabilidad DESC
+      LIMIT 1;
+    `);
+
+    return {
+      ventasTotales: res1.ventasTotales || 0,
+      gananciaTotal: res1.gananciaTotal || 0,
+      productosVendidos: res1.productosVendidos || 0,
+      productosMasVendidos: masVendidos || [],
+      stockTotal: stockData.stockTotal || 0,
+      productosStockCritico: stockCriticoData.productosStockCritico || 0,
+      gananciaMesActual: gananciaMes.gananciaMesActual || 0,
+      productoMasRentable: rentable?.nombre
+        ? { nombre: rentable.nombre, rentabilidad: rentable.rentabilidad }
+        : null,
+       ganancias: {
+      dia: ganDia.total || 0,
+      mes: ganMes.total || 0,
+      anio: ganAnio.total || 0,
+    },
+    };
   } catch (error) {
-    console.error('❌ Error al obtener estadísticas:', error);
-    callback({
-      ventasTotales: 0,
-      gananciaNeta: 0,
-      productosVendidos: 0,
-      ventasRealizadas: 0,
-      promedioVenta: 0,
-      ventasHoy: 0
-    });
+    console.error('❌ Error al obtener estadísticas extendidas:', error);
+    throw error;
   }
 };
+export const obtenerVentasPorMes = async (): Promise<{ mes: string; total: number }[]> => {
+  try {
+    const resultados = await db.getAllAsync(`
+      SELECT substr(fecha, 1, 7) as mes, SUM(precioTotal) as total
+      FROM ventas
+      GROUP BY mes
+      ORDER BY mes ASC
+    `);
+
+    return resultados.map((r: any) => ({
+      mes: r.mes, // "2025-01"
+      total: r.total || 0,
+    }));
+  } catch (error) {
+    console.error('❌ Error al obtener ventas por mes:', error);
+    return [];
+  }
+};
+
 
 // Funciones para manejar materiales
 export const insertarMaterial = async (material: Material, callback?: () => void) => {
