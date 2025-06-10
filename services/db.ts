@@ -47,17 +47,18 @@ export interface Venta {
   }[];
 }
 
-export let db: SQLite.SQLiteDatabase;
+let _db: SQLite.SQLiteDatabase | null = null;
 
 export const setupProductosDB = async () => {
   console.log('=== INICIALIZANDO BASE DE DATOS ===');
   try {
-    // Abrir la base de datos
-    db = await SQLite.openDatabaseAsync('productos.db');
-    console.log('✅ Base de datos abierta correctamente');
-
+    if (_db === null) {
+      _db = await SQLite.openDatabaseAsync('productos.db');
+      console.log('✅ Base de datos abierta correctamente');
+    }
+    
     // Crear la tabla de materiales
-    await db.execAsync(`
+    await _db.execAsync(`
       CREATE TABLE IF NOT EXISTS materiales (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
@@ -69,7 +70,7 @@ export const setupProductosDB = async () => {
     console.log('✅ Tabla materiales creada correctamente');
 
     // Crear la tabla de productos
-    await db.execAsync(`
+    await _db.execAsync(`
       CREATE TABLE IF NOT EXISTS productos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
@@ -81,7 +82,7 @@ export const setupProductosDB = async () => {
     console.log('✅ Tabla productos creada correctamente');
 
     // Crear la tabla de variantes de productos
-    await db.execAsync(`
+    await _db.execAsync(`
       CREATE TABLE IF NOT EXISTS variantes_producto (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         productoId INTEGER NOT NULL,
@@ -93,7 +94,7 @@ export const setupProductosDB = async () => {
     console.log('✅ Tabla variantes_producto creada correctamente');
 
     // Crear la tabla de componentes de productos
-    await db.execAsync(`
+    await _db.execAsync(`
       CREATE TABLE IF NOT EXISTS componentes_producto (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         productoId INTEGER NOT NULL,
@@ -106,7 +107,7 @@ export const setupProductosDB = async () => {
     console.log('✅ Tabla componentes_producto creada correctamente');
 
     // Crear la tabla de ventas
-    await db.execAsync(`
+    await _db.execAsync(`
       CREATE TABLE IF NOT EXISTS ventas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         fecha TEXT NOT NULL,
@@ -129,17 +130,17 @@ export const setupProductosDB = async () => {
     console.log('✅ Tablas de ventas creadas correctamente');
 
     // Verificar la estructura de las tablas
-    const tableInfo = await db.getAllAsync("PRAGMA table_info(productos);");
+    const tableInfo = await _db.getAllAsync("PRAGMA table_info(productos);");
     console.log('📋 Estructura de la tabla productos:', tableInfo);
 
-    const ventasTableInfo = await db.getAllAsync("PRAGMA table_info(ventas);");
+    const ventasTableInfo = await _db.getAllAsync("PRAGMA table_info(ventas);");
     console.log('📋 Estructura de la tabla ventas:', ventasTableInfo);
 
-    const ventasDetalleTableInfo = await db.getAllAsync("PRAGMA table_info(ventas_detalle);");
+    const ventasDetalleTableInfo = await _db.getAllAsync("PRAGMA table_info(ventas_detalle);");
     console.log('📋 Estructura de la tabla ventas_detalle:', ventasDetalleTableInfo);
 
     // Verificar si hay datos en la tabla
-    const countResult = await db.getFirstAsync("SELECT COUNT(*) as count FROM productos;");
+    const countResult = await _db.getFirstAsync("SELECT COUNT(*) as count FROM productos;");
     console.log('📊 Cantidad de productos en la base de datos:', countResult);
 
     console.log('=== BASE DE DATOS INICIALIZADA CORRECTAMENTE ===');
@@ -149,13 +150,21 @@ export const setupProductosDB = async () => {
   }
 };
 
+const getDb = (): SQLite.SQLiteDatabase => {
+  if (_db === null) {
+    throw new Error('Database not initialized. Call setupProductosDB first.');
+  }
+  return _db;
+};
+
 // Función para mostrar todo el contenido de la base de datos
 export const mostrarContenidoDB = async () => {
   console.log('=== CONTENIDO DE LA BASE DE DATOS ===');
   try {
+    const dbInstance = getDb();
     // Mostrar todas las tablas
     const tablesQuery = "SELECT name FROM sqlite_master WHERE type='table';";
-    const tables = await db.execAsync(tablesQuery);
+    const tables = await dbInstance.execAsync(tablesQuery);
     console.log('📚 Tablas en la base de datos:', tables);
 
     // Para cada tabla, mostrar su contenido
@@ -166,7 +175,7 @@ export const mostrarContenidoDB = async () => {
       const tableName = table.name;
       console.log(`\n=== Contenido de la tabla: ${tableName} ===`);
       const contentQuery = `SELECT * FROM ${tableName};`;
-      const content = await db.execAsync(contentQuery);
+      const content = await dbInstance.execAsync(contentQuery);
       console.log('📝 Contenido:', content);
     }
   } catch (error) {
@@ -179,7 +188,8 @@ export const insertarProducto = async (producto: Producto, callback?: () => void
   const { nombre, precioCosto, precioVenta, stock } = producto;
   console.log('📥 Insertando producto en DB:', producto);
   try {
-    const result = await db.runAsync(
+    const dbInstance = getDb();
+    const result = await dbInstance.runAsync(
       'INSERT INTO productos (nombre, precioCosto, precioVenta, stock) VALUES (?, ?, ?, ?)',
       [nombre, precioCosto, precioVenta, stock]
     );
@@ -194,13 +204,14 @@ export const insertarProducto = async (producto: Producto, callback?: () => void
 export const obtenerProductos = async (callback: (productos: Producto[]) => void) => {
   console.log('📋 Obteniendo productos de DB...');
   try {
-    const productos = await db.getAllAsync('SELECT * FROM productos;');
+    const dbInstance = getDb();
+    const productos = await dbInstance.getAllAsync<Producto>('SELECT * FROM productos;');
     
     // Obtener variantes para cada producto
     for (const producto of productos) {
-      const variantes = await db.getAllAsync(
+      const variantes = await dbInstance.getAllAsync<VarianteProducto>(
         'SELECT * FROM variantes_producto WHERE productoId = ?',
-        [producto.id]
+        [producto.id!]
       );
       producto.variantes = variantes;
       
@@ -220,7 +231,8 @@ export const obtenerProductos = async (callback: (productos: Producto[]) => void
 export const eliminarProducto = async (id: number, callback?: () => void) => {
   console.log('🗑️ Eliminando producto de DB:', id);
   try {
-    const result = await db.runAsync('DELETE FROM productos WHERE id = ?', [id]);
+    const dbInstance = getDb();
+    const result = await dbInstance.runAsync('DELETE FROM productos WHERE id = ?', [id]);
     console.log('✅ Producto eliminado en DB exitosamente. Filas afectadas:', result.changes);
     callback?.();
   } catch (error) {
@@ -233,7 +245,12 @@ export const actualizarProducto = async (producto: Producto, callback?: () => vo
   const { id, nombre, precioCosto, precioVenta, stock } = producto;
   console.log('📝 Actualizando producto en DB:', producto);
   try {
-    const result = await db.runAsync(
+    const dbInstance = getDb();
+    if (id === undefined || id === null) {
+      console.error('❌ Error: El ID del producto es indefinido o nulo al intentar actualizar.');
+      throw new Error('ID del producto no puede ser nulo para actualizar.');
+    }
+    const result = await dbInstance.runAsync(
       'UPDATE productos SET nombre = ?, precioCosto = ?, precioVenta = ?, stock = ? WHERE id = ?',
       [nombre, precioCosto, precioVenta, stock, id]
     );
@@ -248,11 +265,12 @@ export const actualizarProducto = async (producto: Producto, callback?: () => vo
 export const registrarVenta = async (venta: Venta, callback?: () => void) => {
   console.log('📥 Registrando venta en DB:', venta);
   try {
+    const dbInstance = getDb();
     // Iniciar transacción
-    await db.execAsync('BEGIN TRANSACTION;');
+    await dbInstance.execAsync('BEGIN TRANSACTION;');
 
     // Insertar la venta
-    const ventaResult = await db.runAsync(
+    const ventaResult = await dbInstance.runAsync(
       'INSERT INTO ventas (fecha, totalProductos, precioTotal, ganancia) VALUES (?, ?, ?, ?)',
       [venta.fecha, venta.totalProductos, venta.precioTotal, venta.ganancia]
     );
@@ -261,19 +279,19 @@ export const registrarVenta = async (venta: Venta, callback?: () => void) => {
     // Insertar detalles de la venta y actualizar stock
     for (const detalle of venta.productos) {
       // Insertar detalle de venta
-      await db.runAsync(
+      await dbInstance.runAsync(
         'INSERT INTO ventas_detalle (ventaId, productoId, cantidad, precioUnitario, ganancia) VALUES (?, ?, ?, ?, ?)',
         [ventaId, detalle.productoId, detalle.cantidad, detalle.precioUnitario, detalle.ganancia]
       );
 
       // Actualizar stock del producto o variante
       if (detalle.varianteId) {
-        await db.runAsync(
+        await dbInstance.runAsync(
           'UPDATE variantes_producto SET stock = stock - ? WHERE id = ?',
           [detalle.cantidad, detalle.varianteId]
         );
       } else {
-        await db.runAsync(
+        await dbInstance.runAsync(
           'UPDATE productos SET stock = stock - ? WHERE id = ?',
           [detalle.cantidad, detalle.productoId]
         );
@@ -281,12 +299,12 @@ export const registrarVenta = async (venta: Venta, callback?: () => void) => {
     }
 
     // Confirmar transacción
-    await db.execAsync('COMMIT;');
+    await dbInstance.execAsync('COMMIT;');
     console.log('✅ Venta registrada exitosamente');
     callback?.();
   } catch (error) {
     // Revertir transacción en caso de error
-    await db.execAsync('ROLLBACK;');
+    await getDb().execAsync('ROLLBACK;'); // Use getDb() here as well
     console.error('❌ Error al registrar venta:', error);
     throw error;
   }
@@ -295,24 +313,25 @@ export const registrarVenta = async (venta: Venta, callback?: () => void) => {
 export const obtenerVentas = async (callback: (ventas: Venta[]) => void) => {
   console.log('📋 Obteniendo ventas de DB...');
   try {
-    const ventas = await db.getAllAsync(`
-      SELECT v.*, 
+    const dbInstance = getDb();
+    const ventas = await dbInstance.getAllAsync<Venta & { detalles: string }>(
+      `SELECT v.*, 
              GROUP_CONCAT(vd.productoId || ',' || vd.cantidad || ',' || vd.precioUnitario || ',' || vd.ganancia) as detalles
       FROM ventas v
       LEFT JOIN ventas_detalle vd ON v.id = vd.ventaId
       GROUP BY v.id
-      ORDER BY v.fecha DESC;
-    `);
+      ORDER BY v.fecha DESC;`
+    );
 
     // Procesar los resultados para construir el objeto Venta
-    const ventasProcesadas = ventas.map(venta => {
+    const ventasProcesadas: Venta[] = ventas.map(venta => {
       const detalles = venta.detalles ? venta.detalles.split(',').map((detalle: string) => {
-        const [productoId, cantidad, precioUnitario, ganancia] = detalle.split(',');
+        const [productoIdStr, cantidadStr, precioUnitarioStr, gananciaStr] = detalle.split(',');
         return {
-          productoId: parseInt(productoId),
-          cantidad: parseInt(cantidad),
-          precioUnitario: parseFloat(precioUnitario),
-          ganancia: parseFloat(ganancia)
+          productoId: parseInt(productoIdStr),
+          cantidad: parseInt(cantidadStr),
+          precioUnitario: parseFloat(precioUnitarioStr),
+          ganancia: parseFloat(gananciaStr),
         };
       }) : [];
 
@@ -343,20 +362,29 @@ export const obtenerEstadisticas = async (): Promise<{
   productosStockCritico: number;
   gananciaMesActual: number;
   productoMasRentable: { nombre: string; rentabilidad: number } | null;
+  ganancias: {
+    dia: number;
+    mes: number;
+    anio: number;
+  };
 }> => {
   try {
-
+    const dbInstance = getDb();
     const hoy = new Date().toISOString().split('T')[0];
     const mesActual = hoy.slice(0, 7); // YYYY-MM
     const anioActual = hoy.slice(0, 4); // YYYY
 
     const [ganDia, ganMes, ganAnio] = await Promise.all([
-      db.getFirstAsync(`SELECT SUM(ganancia) as total FROM ventas WHERE fecha = ?`, [hoy]),
-      db.getFirstAsync(`SELECT SUM(ganancia) as total FROM ventas WHERE substr(fecha, 1, 7) = ?`, [mesActual]),
-      db.getFirstAsync(`SELECT SUM(ganancia) as total FROM ventas WHERE substr(fecha, 1, 4) = ?`, [anioActual]),
+      dbInstance.getFirstAsync<{ total: number }>(`SELECT SUM(ganancia) as total FROM ventas WHERE fecha = ?`, [hoy]),
+      dbInstance.getFirstAsync<{ total: number }>(`SELECT SUM(ganancia) as total FROM ventas WHERE substr(fecha, 1, 7) = ?`, [mesActual]),
+      dbInstance.getFirstAsync<{ total: number }>(`SELECT SUM(ganancia) as total FROM ventas WHERE substr(fecha, 1, 4) = ?`, [anioActual]),
     ]);
     // Ventas y ganancias
-    const res1 = await db.getFirstAsync(`
+    const res1 = await dbInstance.getFirstAsync<{
+      ventasTotales: number;
+      gananciaTotal: number;
+      productosVendidos: number;
+    }>(`
       SELECT 
         SUM(precioTotal) as ventasTotales,
         SUM(ganancia) as gananciaTotal,
@@ -365,7 +393,7 @@ export const obtenerEstadisticas = async (): Promise<{
     `);
 
     // Productos más vendidos (top 5)
-    const masVendidos = await db.getAllAsync(`
+    const masVendidos = await dbInstance.getAllAsync<{ nombre: string; cantidad: number }>(`
       SELECT p.nombre, SUM(vd.cantidad) as cantidad
       FROM ventas_detalle vd
       JOIN productos p ON p.id = vd.productoId
@@ -375,20 +403,20 @@ export const obtenerEstadisticas = async (): Promise<{
     `);
 
     // Stock total
-    const stockData = await db.getFirstAsync(`SELECT SUM(stock) as stockTotal FROM productos;`);
+    const stockData = await dbInstance.getFirstAsync<{ stockTotal: number }>(`SELECT SUM(stock) as stockTotal FROM productos;`);
 
     // Productos con stock crítico
-    const stockCriticoData = await db.getFirstAsync(`SELECT COUNT(*) as productosStockCritico FROM productos WHERE stock <= 5;`);
+    const stockCriticoData = await dbInstance.getFirstAsync<{ productosStockCritico: number }>(`SELECT COUNT(*) as productosStockCritico FROM productos WHERE stock <= 5;`);
 
     // Ganancia del mes actual
-    const gananciaMes = await db.getFirstAsync(`
+    const gananciaMes = await dbInstance.getFirstAsync<{ gananciaMesActual: number }>(`
       SELECT SUM(ganancia) as gananciaMesActual
       FROM ventas
       WHERE substr(fecha, 1, 7) = ?;
     `, [mesActual]);
 
     // Producto más rentable (ganancia acumulada / cantidad)
-    const rentable = await db.getFirstAsync(`
+    const rentable = await dbInstance.getFirstAsync<{ nombre: string; rentabilidad: number }>(`
       SELECT p.nombre, SUM(vd.ganancia)*1.0 / SUM(vd.cantidad) as rentabilidad
       FROM ventas_detalle vd
       JOIN productos p ON p.id = vd.productoId
@@ -398,20 +426,20 @@ export const obtenerEstadisticas = async (): Promise<{
     `);
 
     return {
-      ventasTotales: res1.ventasTotales || 0,
-      gananciaTotal: res1.gananciaTotal || 0,
-      productosVendidos: res1.productosVendidos || 0,
+      ventasTotales: res1?.ventasTotales || 0,
+      gananciaTotal: res1?.gananciaTotal || 0,
+      productosVendidos: res1?.productosVendidos || 0,
       productosMasVendidos: masVendidos || [],
-      stockTotal: stockData.stockTotal || 0,
-      productosStockCritico: stockCriticoData.productosStockCritico || 0,
-      gananciaMesActual: gananciaMes.gananciaMesActual || 0,
+      stockTotal: stockData?.stockTotal || 0,
+      productosStockCritico: stockCriticoData?.productosStockCritico || 0,
+      gananciaMesActual: gananciaMes?.gananciaMesActual || 0,
       productoMasRentable: rentable?.nombre
         ? { nombre: rentable.nombre, rentabilidad: rentable.rentabilidad }
         : null,
        ganancias: {
-      dia: ganDia.total || 0,
-      mes: ganMes.total || 0,
-      anio: ganAnio.total || 0,
+      dia: ganDia?.total || 0,
+      mes: ganMes?.total || 0,
+      anio: ganAnio?.total || 0,
     },
     };
   } catch (error) {
@@ -419,9 +447,11 @@ export const obtenerEstadisticas = async (): Promise<{
     throw error;
   }
 };
+
 export const obtenerVentasPorMes = async (): Promise<{ mes: string; total: number }[]> => {
   try {
-    const resultados = await db.getAllAsync(`
+    const dbInstance = getDb();
+    const resultados = await dbInstance.getAllAsync(`
       SELECT substr(fecha, 1, 7) as mes, SUM(precioTotal) as total
       FROM ventas
       GROUP BY mes
@@ -443,7 +473,8 @@ export const obtenerVentasPorMes = async (): Promise<{ mes: string; total: numbe
 export const insertarMaterial = async (material: Material, callback?: () => void) => {
   const { nombre, precioCosto, unidad, stock } = material;
   try {
-    const result = await db.runAsync(
+    const dbInstance = getDb();
+    const result = await dbInstance.runAsync(
       'INSERT INTO materiales (nombre, precioCosto, unidad, stock) VALUES (?, ?, ?, ?)',
       [nombre, precioCosto, unidad, stock]
     );
@@ -457,7 +488,8 @@ export const insertarMaterial = async (material: Material, callback?: () => void
 
 export const obtenerMateriales = async (callback: (materiales: Material[]) => void) => {
   try {
-    const materiales = await db.getAllAsync('SELECT * FROM materiales;');
+    const dbInstance = getDb();
+    const materiales = await dbInstance.getAllAsync<Material>('SELECT * FROM materiales;');
     console.log('📦 Materiales obtenidos:', materiales);
     callback(materiales);
   } catch (error) {
@@ -469,7 +501,12 @@ export const obtenerMateriales = async (callback: (materiales: Material[]) => vo
 export const actualizarMaterial = async (material: Material, callback?: () => void) => {
   const { id, nombre, precioCosto, unidad, stock } = material;
   try {
-    const result = await db.runAsync(
+    const dbInstance = getDb();
+    if (id === undefined || id === null) {
+      console.error('❌ Error: El ID del material es indefinido o nulo al intentar actualizar.');
+      throw new Error('ID del material no puede ser nulo para actualizar.');
+    }
+    const result = await dbInstance.runAsync(
       'UPDATE materiales SET nombre = ?, precioCosto = ?, unidad = ?, stock = ? WHERE id = ?',
       [nombre, precioCosto, unidad, stock, id]
     );
@@ -489,7 +526,8 @@ export const actualizarMaterial = async (material: Material, callback?: () => vo
 export const insertarComponenteProducto = async (componente: ComponenteProducto, callback?: () => void) => {
   const { productoId, materialId, cantidad } = componente;
   try {
-    const result = await db.runAsync(
+    const dbInstance = getDb();
+    const result = await dbInstance.runAsync(
       'INSERT INTO componentes_producto (productoId, materialId, cantidad) VALUES (?, ?, ?)',
       [productoId, materialId, cantidad]
     );
@@ -507,7 +545,8 @@ export const insertarComponenteProducto = async (componente: ComponenteProducto,
 
 export const obtenerComponentesProducto = async (productoId: number, callback: (componentes: ComponenteProducto[]) => void) => {
   try {
-    const componentes = await db.getAllAsync(
+    const dbInstance = getDb();
+    const componentes = await dbInstance.getAllAsync<ComponenteProducto>(
       'SELECT * FROM componentes_producto WHERE productoId = ?',
       [productoId]
     );
@@ -522,16 +561,20 @@ export const obtenerComponentesProducto = async (productoId: number, callback: (
 // Función para actualizar el costo de un producto basado en sus componentes
 const actualizarCostoProducto = async (productoId: number) => {
   try {
-    const costoTotal = await db.getFirstAsync(`
+    const dbInstance = getDb();
+    const costoTotal = await dbInstance.getFirstAsync<{ costoTotal: number }>(
+      `
       SELECT SUM(cp.cantidad * m.precioCosto) as costoTotal
       FROM componentes_producto cp
       JOIN materiales m ON cp.materialId = m.id
       WHERE cp.productoId = ?
-    `, [productoId]);
+    `,
+      [productoId]
+    );
 
-    await db.runAsync(
+    await dbInstance.runAsync(
       'UPDATE productos SET precioCosto = ? WHERE id = ?',
-      [costoTotal.costoTotal || 0, productoId]
+      [costoTotal?.costoTotal || 0, productoId]
     );
   } catch (error) {
     console.error('❌ Error al actualizar costo del producto:', error);
@@ -542,7 +585,8 @@ const actualizarCostoProducto = async (productoId: number) => {
 // Función para actualizar los costos de todos los productos
 const actualizarCostosProductos = async () => {
   try {
-    const productos = await db.getAllAsync('SELECT id FROM productos');
+    const dbInstance = getDb();
+    const productos = await dbInstance.getAllAsync<{ id: number }>('SELECT id FROM productos');
     for (const producto of productos) {
       await actualizarCostoProducto(producto.id);
     }
@@ -555,7 +599,8 @@ const actualizarCostosProductos = async () => {
 export const insertarVariante = async (variante: VarianteProducto, callback?: () => void) => {
   const { productoId, nombre, stock } = variante;
   try {
-    const result = await db.runAsync(
+    const dbInstance = getDb();
+    const result = await dbInstance.runAsync(
       'INSERT INTO variantes_producto (productoId, nombre, stock) VALUES (?, ?, ?)',
       [productoId, nombre, stock]
     );
@@ -570,7 +615,12 @@ export const insertarVariante = async (variante: VarianteProducto, callback?: ()
 export const actualizarVariante = async (variante: VarianteProducto, callback?: () => void) => {
   const { id, nombre, stock } = variante;
   try {
-    await db.runAsync(
+    const dbInstance = getDb();
+    if (id === undefined || id === null) {
+      console.error('❌ Error: El ID de la variante es indefinido o nulo al intentar actualizar.');
+      throw new Error('ID de la variante no puede ser nulo para actualizar.');
+    }
+    await dbInstance.runAsync(
       'UPDATE variantes_producto SET nombre = ?, stock = ? WHERE id = ?',
       [nombre, stock, id]
     );
@@ -584,7 +634,8 @@ export const actualizarVariante = async (variante: VarianteProducto, callback?: 
 
 export const eliminarVariante = async (id: number, callback?: () => void) => {
   try {
-    await db.runAsync('DELETE FROM variantes_producto WHERE id = ?', [id]);
+    const dbInstance = getDb();
+    await dbInstance.runAsync('DELETE FROM variantes_producto WHERE id = ?', [id]);
     console.log('✅ Variante eliminada de DB exitosamente');
     callback?.();
   } catch (error) {
@@ -596,8 +647,9 @@ export const eliminarVariante = async (id: number, callback?: () => void) => {
 export const eliminarComponenteProducto = async (componenteId: number, callback?: () => void): Promise<void> => {
   console.log('🗑️ Eliminando componente de producto:', componenteId);
   try {
+    const dbInstance = getDb();
     // Paso 1: obtener el productoId del componente
-    const result = await db.getFirstAsync(
+    const result = await dbInstance.getFirstAsync<{ productoId: number }>(
       'SELECT productoId FROM componentes_producto WHERE id = ?',
       [componenteId]
     );
@@ -610,7 +662,7 @@ export const eliminarComponenteProducto = async (componenteId: number, callback?
     const productoId = result.productoId;
 
     // Paso 2: eliminar el componente
-    const deleteResult = await db.runAsync(
+    const deleteResult = await dbInstance.runAsync(
       'DELETE FROM componentes_producto WHERE id = ?',
       [componenteId]
     );

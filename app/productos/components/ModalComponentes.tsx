@@ -1,0 +1,228 @@
+// productos/views/modales/ModalComponentes.tsx
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import {
+    Alert,
+    FlatList,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
+} from 'react-native';
+import {
+    ComponenteProducto,
+    db,
+    eliminarComponenteProducto,
+    insertarComponenteProducto,
+    Material,
+    obtenerComponentesProducto,
+    Producto
+} from '../../../services/db';
+import { colors } from '../../styles/theme';
+import { styles } from '../styles/styles';
+
+interface Props {
+  visible: boolean;
+  onClose: () => void;
+  producto: Producto;
+  materiales: Material[];
+  onActualizar?: () => void;
+}
+
+export default function ModalComponentes({ visible, onClose, producto, materiales, onActualizar }: Props) {
+  const [componentes, setComponentes] = useState<ComponenteProducto[]>([]);
+  const [materialSeleccionado, setMaterialSeleccionado] = useState<Material | null>(null);
+  const [cantidad, setCantidad] = useState('');
+
+  useEffect(() => {
+    if (visible) {
+      cargarComponentes();
+      setMaterialSeleccionado(null);
+      setCantidad('');
+    }
+  }, [visible]);
+
+  const cargarComponentes = async () => {
+    try {
+      await obtenerComponentesProducto(producto.id!, (componentes) => {
+        setComponentes(componentes);
+      });
+    } catch (error) {
+      Alert.alert('Error', 'No se pudieron cargar los componentes');
+      console.error(error);
+    }
+  };
+
+  const obtenerCostoActual = async (): Promise<number> => {
+    const row = await db.getFirstAsync('SELECT precioCosto FROM productos WHERE id = ?', [producto.id]);
+    return row?.precioCosto || 0;
+  };
+
+  const agregarComponente = async () => {
+    if (!materialSeleccionado || !cantidad) {
+      Alert.alert('Error', 'Seleccione un material y cantidad válida');
+      return;
+    }
+
+    const cantidadNum = parseFloat(cantidad.replace(',', '.'));
+    if (isNaN(cantidadNum) || cantidadNum <= 0) {
+      Alert.alert('Error', 'Cantidad inválida');
+      return;
+    }
+
+    const costoActual = await obtenerCostoActual();
+    const nuevoCosto = costoActual + materialSeleccionado.precioCosto * cantidadNum;
+
+    if (nuevoCosto >= producto.precioVenta) {
+      Alert.alert('Error', 'El costo total no puede ser mayor o igual al precio de venta');
+      return;
+    }
+
+    try {
+      await insertarComponenteProducto({
+        productoId: producto.id!,
+        materialId: materialSeleccionado.id!,
+        cantidad: cantidadNum,
+      });
+
+      await db.runAsync(
+        'UPDATE productos SET precioCosto = ? WHERE id = ?',
+        [nuevoCosto, producto.id]
+      );
+
+      await cargarComponentes();
+      onActualizar?.();
+      setCantidad('');
+      setMaterialSeleccionado(null);
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo agregar el componente');
+      console.error(error);
+    }
+  };
+
+  const eliminarComponente = async (componenteId: number) => {
+    const componente = componentes.find(c => c.id === componenteId);
+    if (!componente) return;
+
+    const material = materiales.find(m => m.id === componente.materialId);
+    if (!material) return;
+
+    const costoActual = await obtenerCostoActual();
+    const costoEliminar = material.precioCosto * componente.cantidad;
+    const nuevoCosto = Math.max(costoActual - costoEliminar, 0);
+
+    try {
+      await eliminarComponenteProducto(componenteId);
+      await db.runAsync(
+        'UPDATE productos SET precioCosto = ? WHERE id = ?',
+        [nuevoCosto, producto.id]
+      );
+      await cargarComponentes();
+      onActualizar?.();
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo eliminar el componente');
+      console.error(error);
+    }
+  };
+
+  const renderComponente = ({ item }: { item: ComponenteProducto }) => {
+    const material = materiales.find(m => m.id === item.materialId);
+    if (!material) return null;
+
+    return (
+      <View style={styles.componenteItem}>
+        <View style={styles.componenteInfo}>
+          <Text style={styles.componenteNombre}>{material.nombre}</Text>
+          <Text style={styles.componenteDetalles}>
+            {item.cantidad} {material.unidad} - ${material.precioCosto * item.cantidad}
+          </Text>
+        </View>
+        <TouchableOpacity onPress={() => eliminarComponente(item.id!)}>
+          <MaterialCommunityIcons name="delete" size={20} color={colors.danger} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.modalContainer}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Componentes de {producto.nombre}</Text>
+              <TouchableOpacity onPress={onClose}>
+                <MaterialCommunityIcons name="close" size={24} color={colors.gray[800]} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.sectionTitle}>Componentes actuales</Text>
+              <FlatList
+                data={componentes}
+                keyExtractor={(item) => item.id?.toString() || ''}
+                renderItem={renderComponente}
+                scrollEnabled={false}
+                ListEmptyComponent={<Text style={styles.emptyText}>No hay componentes agregados</Text>}
+              />
+
+              <Text style={styles.sectionTitle}>Agregar nuevo componente</Text>
+              <View style={styles.materialesList}>
+                {materiales.map((material) => (
+                  <TouchableOpacity
+                    key={material.id}
+                    style={[
+                      styles.materialItem,
+                      materialSeleccionado?.id === material.id && styles.materialItemSelected
+                    ]}
+                    onPress={() => setMaterialSeleccionado(material)}
+                  >
+                    <Text style={styles.materialNombre}>{material.nombre}</Text>
+                    <Text style={styles.materialUnidad}>
+                      {material.unidad} - ${material.precioCosto}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {materialSeleccionado && (
+                <View>
+                  <TextInput
+                    style={styles.input}
+                    value={cantidad}
+                    onChangeText={(text) => {
+                      const valid = /^\d*[.,]?\d*$/;
+                      if (valid.test(text) || text === '') setCantidad(text);
+                    }}
+                    placeholder={`Cantidad en ${materialSeleccionado.unidad}`}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={[
+                  styles.agregarButton,
+                  (!materialSeleccionado || !cantidad) && styles.agregarButtonDisabled
+                ]}
+                onPress={agregarComponente}
+                disabled={!materialSeleccionado || !cantidad}
+              >
+                <Text style={styles.agregarButtonText}>Agregar Componente</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}

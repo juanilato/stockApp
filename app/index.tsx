@@ -8,8 +8,8 @@ import EstadisticasView from './components/EstadisticasView';
 import InicioView from './components/InicioView';
 import MaterialesView from './components/MaterialesView';
 import NuevaVentaView from './components/NuevaVentaView';
-import ProductosView from './components/ProductosView';
-
+//import ProductosView from './components/ProductosView';
+import ProductosView from '../app/productos/pages/main';
 const { width } = Dimensions.get('window');
 
 export default function Dashboard() {
@@ -81,7 +81,7 @@ useEffect(() => {
     });
   };
 
-  const renderContent = async () => {
+  const renderContent =  () => {
  
 
     switch (currentView) {
