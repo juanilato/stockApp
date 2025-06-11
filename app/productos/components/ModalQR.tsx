@@ -4,14 +4,14 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import React, { useRef } from 'react';
 import {
-  Modal,
-  Text, TouchableOpacity,
-  View
+    Modal,
+    Text, TouchableOpacity,
+    View
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Producto } from '../../../services/db';
 import { colors } from '../../styles/theme';
-import { styles } from '../styles/styles';
+import { styles } from '../styles/modals/ModalQR.styles';
 
 interface Props {
   visible: boolean;

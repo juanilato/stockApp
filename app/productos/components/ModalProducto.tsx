@@ -2,17 +2,17 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Text, TextInput, TouchableOpacity,
-  TouchableWithoutFeedback,
-  View
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Text, TextInput, TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
 import { Producto, getDb } from '../../../services/db';
 import { colors } from '../../styles/theme';
-import { styles } from '../styles/styles';
+import { styles } from '../styles/modals/ModalProducto.styles';
 
 interface Props {
   visible: boolean;

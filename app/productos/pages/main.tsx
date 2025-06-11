@@ -2,8 +2,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
-  Animated, FlatList, Text, TouchableOpacity, View
+    Alert,
+    Animated, FlatList, Text, TouchableOpacity, View
 } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 

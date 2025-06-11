@@ -1,8 +1,7 @@
 // productos/views/MenuOpciones.tsx
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  Alert,
   Modal,
   StyleSheet,
   Text, TouchableOpacity, TouchableWithoutFeedback,
@@ -10,7 +9,7 @@ import {
 } from 'react-native';
 import { Producto, VarianteProducto } from '../../../services/db';
 import { colors } from '../../styles/theme';
-import { styles } from '../styles/styles';
+import { styles } from '../styles/modals/MenuOpciones.styles';
 
 interface Props {
   visible: boolean;
@@ -31,27 +30,17 @@ export default function MenuOpciones({
   onManejarComponentes,
   onManejarVariantes
 }: Props) {
+  const [modalVariantesVisible, setModalVariantesVisible] = useState(false);
   if (!producto) return null;
-
   // Maneja la generación del QR, mostrando opciones si tiene variantes 
   const handleGenerarQR = () => {
-    onClose();
 
     if (producto.variantes?.length) {
       // Si tiene variantes, mostrar opciones
-      const opciones = producto.variantes.map((v) => ({
-        text: v.nombre,
-        onPress: () => onGenerarQR(producto, v),
-      }));
-
-      opciones.push({ text: "Cancelar", onPress: () => {} });
-
-      // Esto asume que estás usando Alert de React Native para elegir
-      // Podrías adaptarlo a un modal propio si querés más personalización
-      // @ts-ignore
-      alertMultiple("Seleccionar variante", opciones);
+    setModalVariantesVisible(true); 
     } else {
       onGenerarQR(producto);
+      onClose();
     }
   };
 
@@ -109,11 +98,34 @@ export default function MenuOpciones({
           </TouchableOpacity>
         </View>
       </View>
+      {modalVariantesVisible && (
+  <Modal transparent animationType="fade" visible={modalVariantesVisible} onRequestClose={() => setModalVariantesVisible(false)}>
+    <View style={styles.modalOverlay}>
+      <View style={styles.variantModal}>
+        <Text style={styles.modalTitle}>Seleccionar Variante</Text>
+        {producto?.variantes?.map((variante) => (
+          <TouchableOpacity
+            key={variante.id}
+            style={styles.variantItem}
+            onPress={() => {
+              onGenerarQR(producto, variante);
+              setModalVariantesVisible(false);
+              onClose();
+            }}
+          >
+            <Text style={styles.variantText}>{variante.nombre}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity onPress={() => setModalVariantesVisible(false)} style={styles.cancelButton}>
+          <Text style={styles.cancelText}>Cancelar</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+)}
+
     </Modal>
   );
 }
 
-function alertMultiple(title: string, buttons: any[]) {
-  Alert.alert(title, undefined, buttons);
-}
 

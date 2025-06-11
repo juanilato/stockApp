@@ -25,7 +25,7 @@ import {
   Producto
 } from '../../../services/db';
 import { colors } from '../../styles/theme';
-import { styles } from '../styles/styles';
+import { styles } from '../styles/modals/ModalComponentes.styles';
 
 interface Props {
   visible: boolean;
@@ -183,73 +183,60 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
 
   
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.modalContainer}
-      >
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Componentes de {producto.nombre}</Text>
+          <View style={styles.modalBox}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Componentes de {producto.nombre}</Text>
               <TouchableOpacity onPress={onClose}>
                 <MaterialCommunityIcons name="close" size={24} color={colors.gray[800]} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalBody}>
-              <Text style={styles.sectionTitle}>Componentes actuales</Text>
+            <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
+              <Text style={styles.subtitle}>Componentes actuales</Text>
               <FlatList
                 data={componentes}
                 keyExtractor={(item) => item.id?.toString() || ''}
                 renderItem={renderComponente}
                 scrollEnabled={false}
-                ListEmptyComponent={<Text style={styles.emptyText}>No hay componentes agregados</Text>}
+                ListEmptyComponent={<Text style={styles.empty}>No hay componentes agregados</Text>}
               />
 
-              <Text style={styles.sectionTitle}>Agregar nuevo componente</Text>
-              <View style={styles.materialesList}>
-                {materiales.map((material) => (
+              <Text style={styles.subtitle}>Agregar nuevo componente</Text>
+              <View style={styles.materialList}>
+                {materiales.map((mat) => (
                   <TouchableOpacity
-                    key={material.id}
-                    style={[
-                      styles.materialItem,
-                      materialSeleccionado?.id === material.id && styles.materialItemSelected
-                    ]}
-                    onPress={() => setMaterialSeleccionado(material)}
+                    key={mat.id}
+                    style={[styles.materialBox, materialSeleccionado?.id === mat.id && styles.materialSelected]}
+                    onPress={() => setMaterialSeleccionado(mat)}
                   >
-                    <Text style={styles.materialNombre}>{material.nombre}</Text>
-                    <Text style={styles.materialUnidad}>
-                      {material.unidad} - ${material.precioCosto}
-                    </Text>
+                    <Text style={styles.materialName}>{mat.nombre}</Text>
+                    <Text style={styles.materialDetails}>{mat.unidad} - ${mat.precioCosto}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
               {materialSeleccionado && (
-                <View>
-                  <TextInput
-                    style={styles.input}
-                    value={cantidad}
-                    onChangeText={(text) => {
-                      const valid = /^\d*[.,]?\d*$/;
-                      if (valid.test(text) || text === '') setCantidad(text);
-                    }}
-                    placeholder={`Cantidad en ${materialSeleccionado.unidad}`}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
+                <TextInput
+                  style={styles.input}
+                  value={cantidad}
+                  onChangeText={(text) => {
+                    const valid = /^\d*[.,]?\d*$/;
+                    if (valid.test(text) || text === '') setCantidad(text);
+                  }}
+                  placeholder={`Cantidad en ${materialSeleccionado.unidad}`}
+                  keyboardType="decimal-pad"
+                />
               )}
 
               <TouchableOpacity
-                style={[
-                  styles.agregarButton,
-                  (!materialSeleccionado || !cantidad) && styles.agregarButtonDisabled
-                ]}
+                style={[styles.button, (!materialSeleccionado || !cantidad) && styles.buttonDisabled]}
                 onPress={agregarComponente}
                 disabled={!materialSeleccionado || !cantidad}
               >
-                <Text style={styles.agregarButtonText}>Agregar Componente</Text>
+                <Text style={styles.buttonText}>Agregar Componente</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>

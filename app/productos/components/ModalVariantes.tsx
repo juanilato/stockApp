@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Producto, VarianteProducto, actualizarVariante, eliminarVariante, insertarVariante } from '../../../services/db';
 import { colors } from '../../styles/theme';
-import { styles } from '../styles/styles';
+import { styles } from '../styles/modals/ModalVariantes.styles';
 
 interface Props {
   visible: boolean;
@@ -154,7 +154,7 @@ export default function ModalVariantes({ visible, onClose, producto, onActualiza
               style={styles.saveButton}
               onPress={guardarVariante}
             >
-              <MaterialCommunityIcons name="content-save" size={20} color={colors.white} />
+    
               <Text style={styles.saveButtonText}>
                 {varianteSeleccionada ? 'Actualizar' : 'Agregar'} Variante
               </Text>
