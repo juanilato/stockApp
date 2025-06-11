@@ -2,10 +2,11 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import {
-    Modal,
-    StyleSheet,
-    Text, TouchableOpacity, TouchableWithoutFeedback,
-    View
+  Alert,
+  Modal,
+  StyleSheet,
+  Text, TouchableOpacity, TouchableWithoutFeedback,
+  View
 } from 'react-native';
 import { Producto, VarianteProducto } from '../../../services/db';
 import { colors } from '../../styles/theme';
@@ -16,6 +17,7 @@ interface Props {
   producto: Producto | null;
   onClose: () => void;
   onGenerarQR: (producto: Producto, variante?: VarianteProducto) => void;
+  onEditarProducto: (producto: Producto) => void;
   onManejarComponentes: (producto: Producto) => void;
   onManejarVariantes: (producto: Producto) => void;
 }
@@ -25,11 +27,13 @@ export default function MenuOpciones({
   producto,
   onClose,
   onGenerarQR,
+  onEditarProducto,
   onManejarComponentes,
   onManejarVariantes
 }: Props) {
   if (!producto) return null;
 
+  // Maneja la generación del QR, mostrando opciones si tiene variantes 
   const handleGenerarQR = () => {
     onClose();
 
@@ -40,7 +44,7 @@ export default function MenuOpciones({
         onPress: () => onGenerarQR(producto, v),
       }));
 
-      opciones.push({ text: "Cancelar", style: "cancel", onPress: () => {} });
+      opciones.push({ text: "Cancelar", onPress: () => {} });
 
       // Esto asume que estás usando Alert de React Native para elegir
       // Podrías adaptarlo a un modal propio si querés más personalización
@@ -68,7 +72,16 @@ export default function MenuOpciones({
             <MaterialCommunityIcons name="qrcode" size={20} color={colors.primary} />
             <Text style={styles.menuButtonText}>Generar QR</Text>
           </TouchableOpacity>
-
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => {
+              onClose();
+              onEditarProducto(producto);
+            }}
+          >
+            <MaterialCommunityIcons name="pencil" size={20} color={colors.primary} />
+            <Text style={styles.menuButtonText}>Editar Producto</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() => {
@@ -100,8 +113,7 @@ export default function MenuOpciones({
   );
 }
 
-// ✅ Función auxiliar simple para reemplazar alert nativo con múltiples opciones
 function alertMultiple(title: string, buttons: any[]) {
-  const { Alert } = require('react-native');
   Alert.alert(title, undefined, buttons);
 }
+

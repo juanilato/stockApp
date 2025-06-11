@@ -2,11 +2,11 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    FlatList,
-    Modal,
-    Text, TextInput, TouchableOpacity,
-    View
+  Alert,
+  FlatList,
+  Modal,
+  Text, TextInput, TouchableOpacity,
+  View
 } from 'react-native';
 import { Producto, VarianteProducto, actualizarVariante, eliminarVariante, insertarVariante } from '../../../services/db';
 import { colors } from '../../styles/theme';
@@ -20,11 +20,13 @@ interface Props {
 }
 
 export default function ModalVariantes({ visible, onClose, producto, onActualizar }: Props) {
-  const [varianteNombre, setVarianteNombre] = useState('');
-  const [varianteStock, setVarianteStock] = useState('');
-  const [varianteSeleccionada, setVarianteSeleccionada] = useState<VarianteProducto | null>(null);
-  const [variantes, setVariantes] = useState<VarianteProducto[]>(producto.variantes || []);
+  const [varianteNombre, setVarianteNombre] = useState(''); // Nombre de la variante
+  const [varianteStock, setVarianteStock] = useState(''); // Stock de la variante
+  const [varianteSeleccionada, setVarianteSeleccionada] = useState<VarianteProducto | null>(null);  // Variante seleccionada para editar
+  const [variantes, setVariantes] = useState<VarianteProducto[]>(producto.variantes || []); // Lista de variantes del producto
 
+  // Resetea los campos al abrir el modal o cambiar de producto
+  // y carga las variantes del producto seleccionado
   useEffect(() => {
     if (visible) {
       setVariantes(producto.variantes || []);
@@ -34,9 +36,17 @@ export default function ModalVariantes({ visible, onClose, producto, onActualiza
     }
   }, [visible, producto]);
 
+
+  // Guarda la variante nueva o actualizada
+  // Si varianteSeleccionada tiene valor, actualiza la variante, si no, inserta una nueva
   const guardarVariante = async () => {
     if (!varianteNombre || !varianteStock) {
       Alert.alert('Error', 'Todos los campos son obligatorios');
+      return;
+    }
+
+    if (parseInt(varianteStock) <= 0){
+      Alert.alert('Error', 'El stock debe ser un número positivo');
       return;
     }
 
@@ -46,6 +56,8 @@ export default function ModalVariantes({ visible, onClose, producto, onActualiza
       stock: parseInt(varianteStock),
     };
 
+    // Si se está editando una variante, se agrega el ID para actualizarla
+    // Si es una nueva variante, no se agrega ID y se inserta como nueva en el producto id
     try {
       if (varianteSeleccionada) {
         await actualizarVariante({ ...variante, id: varianteSeleccionada.id });
@@ -61,6 +73,8 @@ export default function ModalVariantes({ visible, onClose, producto, onActualiza
     }
   };
 
+  // Confirma la eliminación de una variante
+  // Si se confirma, llama a eliminarVariante y actualiza la lista de variantes
   const confirmarEliminarVariante = async (id: number) => {
     try {
       await eliminarVariante(id);
@@ -72,12 +86,16 @@ export default function ModalVariantes({ visible, onClose, producto, onActualiza
     }
   };
 
+  // Abre el formulario de edición con los datos de la variante seleccionada
+  // Carga el nombre y stock de la variante en los campos de entrada
   const editarVariante = (variante: VarianteProducto) => {
     setVarianteSeleccionada(variante);
     setVarianteNombre(variante.nombre);
     setVarianteStock(variante.stock.toString());
   };
 
+  // Renderiza cada variante en la FlatList
+  // Incluye botones para editar y eliminar la variante
   const renderVariante = ({ item }: { item: VarianteProducto }) => (
     <View style={styles.varianteItem}>
       <View style={styles.varianteInfo}>

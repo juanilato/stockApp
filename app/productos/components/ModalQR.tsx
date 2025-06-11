@@ -4,9 +4,9 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import React, { useRef } from 'react';
 import {
-    Modal,
-    Text, TouchableOpacity,
-    View
+  Modal,
+  Text, TouchableOpacity,
+  View
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Producto } from '../../../services/db';
@@ -23,6 +23,8 @@ interface Props {
 export default function ModalQR({ visible, onClose, qrData, producto }: Props) {
   const qrRef = useRef<any>(null);
 
+
+  // Función para compartir el código QR
   const compartirQR = async () => {
     try {
       if (!qrRef.current || !producto) return;
@@ -48,6 +50,7 @@ export default function ModalQR({ visible, onClose, qrData, producto }: Props) {
     }
   };
 
+  // Renderiza el contenido del QR, mostrando nombre, variante (si existe) y precio
   const renderContenidoQR = () => {
     try {
       const parsed = JSON.parse(qrData);

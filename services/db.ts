@@ -49,6 +49,7 @@ export interface Venta {
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
+
 export const setupProductosDB = async () => {
   console.log('=== INICIALIZANDO BASE DE DATOS ===');
   try {
@@ -150,7 +151,7 @@ export const setupProductosDB = async () => {
   }
 };
 
-const getDb = (): SQLite.SQLiteDatabase => {
+export const getDb = (): SQLite.SQLiteDatabase => {
   if (_db === null) {
     throw new Error('Database not initialized. Call setupProductosDB first.');
   }

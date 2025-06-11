@@ -2,12 +2,12 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    Animated, FlatList, Text, TouchableOpacity, View
+  Alert,
+  Animated, FlatList, Text, TouchableOpacity, View
 } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 
-import { eliminarProducto, Material, obtenerMateriales, obtenerProductos, Producto, setupProductosDB } from '../../../services/db';
+import { actualizarProducto, eliminarProducto, insertarProducto, Material, obtenerMateriales, obtenerProductos, Producto, setupProductosDB } from '../../../services/db';
 import { colors, commonStyles } from '../../styles/theme';
 import { styles } from '../styles/styles';
 
@@ -17,22 +17,24 @@ import ModalProducto from '../components/ModalProducto';
 import ModalQR from '../components/ModalQR';
 import ModalVariantes from '../components/ModalVariantes';
 
+
 export default function ProductosView() {
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [materiales, setMateriales] = useState<Material[]>([]);
-  const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
-  const [modalProductoVisible, setModalProductoVisible] = useState(false);
-  const [modalVariantesVisible, setModalVariantesVisible] = useState(false);
-  const [modalQRVisible, setModalQRVisible] = useState(false);
-  const [modalComponentesVisible, setModalComponentesVisible] = useState(false);
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [qrData, setQrData] = useState('');
-  const fadeAnim = new Animated.Value(0);
+  const [productos, setProductos] = useState<Producto[]>([]); // productos de la db
+  const [materiales, setMateriales] = useState<Material[]>([]); // materiales de la db
+  const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null); // producto seleccionado para editar o ver detalles
+  const [modalProductoVisible, setModalProductoVisible] = useState(false); // modal para crear/editar producto
+  const [modalVariantesVisible, setModalVariantesVisible] = useState(false); // modal para ver variantes del producto
+  const [modalQRVisible, setModalQRVisible] = useState(false); // modal para generar QR del producto
+  const [modalComponentesVisible, setModalComponentesVisible] = useState(false); // modal para ver componentes del producto
+  const [menuVisible, setMenuVisible] = useState(false); // menu de opciones del producto 
+  const [qrData, setQrData] = useState(''); // datos del QR a generar
+  const fadeAnim = new Animated.Value(0); 
 
   useEffect(() => {
     inicializar();
   }, []);
 
+  // setea los productos y materiales al iniciar la vista
   const inicializar = async () => {
     await setupProductosDB();
     await cargarProductos();
@@ -44,19 +46,28 @@ export default function ProductosView() {
     }).start();
   };
 
+
+  // carga los productos de la db guarda en productos
   const cargarProductos = async () => {
     await obtenerProductos(setProductos);
   };
 
+
+  // carga los materiales de la db y guarda en materiales
   const cargarMateriales = async () => {
     await obtenerMateriales(setMateriales);
   };
 
+  // abre el menu de opciones para el producto seleccionado
   const abrirMenu = (producto: Producto) => {
     setProductoSeleccionado(producto);
     setMenuVisible(true);
   };
 
+
+  // genera el QR donde incluye:
+  // - Si tiene variante, incluye id, nombre y precio de venta de la variante (variante.id, variante.nombre, variante.precioVenta)
+  // - Si no tiene variante, incluye id, nombre y precio de venta del producto 
   const generarQR = (producto: Producto, variante?: any) => {
     const payload = variante
       ? {
@@ -72,14 +83,30 @@ export default function ProductosView() {
           precioVenta: producto.precioVenta,
         };
 
+    // una vez generado el payload, se setea el qrData y se muestra el modal
     setQrData(JSON.stringify(payload));
     setModalQRVisible(true);
   };
 
+  // maneja el guardado del producto (nuevo o editado)
+
   const manejarGuardarProducto = async (producto: Producto, esNuevo: boolean) => {
-    await cargarProductos();
+ try {
+    if (esNuevo) {
+      await insertarProducto(producto);
+      console.log('🆕 Producto creado');
+    } else {
+      await actualizarProducto(producto);
+      console.log('✏️ Producto editado');
+    }
+    await cargarProductos(); // Refresca la lista
+  } catch (error) {
+    console.error('❌ Error al guardar producto:', error);
+    alert('Hubo un error al guardar el producto.');
+  }
   };
 
+  // maneja la eliminación del producto, muestra un alert de confirmación
   const manejarEliminar = (id: number) => {
     Alert.alert(
       'Confirmar eliminación',
@@ -98,6 +125,8 @@ export default function ProductosView() {
     );
   };
 
+
+  // renderiza cada producto en la lista, incluyendo acciones de swipe para editar y eliminar
   const renderProducto = ({ item }: { item: Producto }) => {
     const renderRightActions = () => (
       <View style={{ flexDirection: 'row' }}>
@@ -107,15 +136,7 @@ export default function ProductosView() {
         >
           <MaterialCommunityIcons name="dots-horizontal" size={24} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: '#10b981' }]}
-          onPress={() => {
-            setProductoSeleccionado(item);
-            setModalProductoVisible(true);
-          }}
-        >
-          <MaterialCommunityIcons name="pencil" size={24} color="#fff" />
-        </TouchableOpacity>
+
         <TouchableOpacity
           style={[styles.actionButton, { backgroundColor: '#ef4444' }]}
           onPress={() => manejarEliminar(item.id!)}
@@ -141,11 +162,14 @@ export default function ProductosView() {
     );
   };
 
+
+  // Vista principal de productos 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Animated.View style={[commonStyles.container, { opacity: 1 }]}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>📦 Productos</Text>
+          <Text style={styles.headerTitle}>Productos</Text>
+          {/* Botón para agregar un nuevo producto  selecciona en null el seleccionado y abre modal de ingreso de producto*/}
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => {
@@ -158,6 +182,7 @@ export default function ProductosView() {
           </TouchableOpacity>
         </View>
 
+        {/* Lista de productos */}
         <FlatList
           data={productos}
           keyExtractor={(item) => item.id?.toString() || ''}
@@ -172,14 +197,16 @@ export default function ProductosView() {
         />
 
         {/* MODALES */}
+        {/* Modal para crear/editar producto (segun si se pasa productoEditado) */}
+      <ModalProducto
+        visible={modalProductoVisible}
+        onClose={() => setModalProductoVisible(false)}
+        onSubmit={manejarGuardarProducto}
+        productoEditado={productoSeleccionado}
+      />
 
-          <ModalProducto
-            visible={modalProductoVisible}
-            onClose={() => setModalProductoVisible(false)}
-            onSubmit={manejarGuardarProducto}
-          />
         
-
+      { /* Modal para ver variantes del producto */}
         {modalVariantesVisible && productoSeleccionado && (
         <ModalVariantes
             visible={modalVariantesVisible}
@@ -190,6 +217,7 @@ export default function ProductosView() {
         )}
 
 
+        {/** Modal para generar QR (si tiene variantes se mostrara menu para seleccionar variante*/}
         <ModalQR
           visible={modalQRVisible}
           onClose={() => setModalQRVisible(false)}
@@ -197,6 +225,7 @@ export default function ProductosView() {
           producto={productoSeleccionado}
         />
 
+{ /* Modal para manejar componentes del producto  (componen precio total)*/}
 {modalComponentesVisible && productoSeleccionado && (
   <ModalComponentes
     visible={modalComponentesVisible}
@@ -210,12 +239,16 @@ export default function ProductosView() {
   />
 )}
 
-
+{ /* Menu de opciones del producto seleccionado desliza a la derecha opciones se abre el menu (apertura de modales) */}
         <MenuOpciones
           visible={menuVisible}
           producto={productoSeleccionado}
           onClose={() => setMenuVisible(false)}
           onGenerarQR={generarQR}
+          onEditarProducto={(p) => {
+            setProductoSeleccionado(p);
+            setModalProductoVisible(true);
+          }}
           onManejarComponentes={(p) => {
             setProductoSeleccionado(p);
             setModalComponentesVisible(true);

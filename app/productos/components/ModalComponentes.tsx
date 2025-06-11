@@ -2,27 +2,27 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    FlatList,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View
+  Alert,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from 'react-native';
 import {
-    ComponenteProducto,
-    db,
-    eliminarComponenteProducto,
-    insertarComponenteProducto,
-    Material,
-    obtenerComponentesProducto,
-    Producto
+  ComponenteProducto,
+  eliminarComponenteProducto,
+  getDb,
+  insertarComponenteProducto,
+  Material,
+  obtenerComponentesProducto,
+  Producto
 } from '../../../services/db';
 import { colors } from '../../styles/theme';
 import { styles } from '../styles/styles';
@@ -40,15 +40,11 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
   const [materialSeleccionado, setMaterialSeleccionado] = useState<Material | null>(null);
   const [cantidad, setCantidad] = useState('');
 
-  useEffect(() => {
-    if (visible) {
-      cargarComponentes();
-      setMaterialSeleccionado(null);
-      setCantidad('');
-    }
-  }, [visible]);
+  const db = getDb();
 
-  const cargarComponentes = async () => {
+  // Carga los componentes del producto al abrir el modal (useCallback evita recargas innecesarias)
+  // y se asegura de que la función no cambie entre renders a menos que producto.id cambie.
+  const cargarComponentes = React.useCallback(async () => {
     try {
       await obtenerComponentesProducto(producto.id!, (componentes) => {
         setComponentes(componentes);
@@ -57,25 +53,45 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
       Alert.alert('Error', 'No se pudieron cargar los componentes');
       console.error(error);
     }
-  };
+  }, [producto.id]);
 
+  useEffect(() => {
+    if (visible) {
+      cargarComponentes();
+      setMaterialSeleccionado(null);
+      setCantidad('');
+    }
+  }, [visible, cargarComponentes]);
+
+
+  // Obtiene el costo actual del producto para calcular el nuevo costo al agregar un componente
+  // Se usa una función asíncrona para manejar la consulta a la base de datos.
   const obtenerCostoActual = async (): Promise<number> => {
-    const row = await db.getFirstAsync('SELECT precioCosto FROM productos WHERE id = ?', [producto.id]);
+    if (producto.id === undefined) {
+      return 0;
+    }
+    const row = await db.getFirstAsync<{ precioCosto: number }>('SELECT precioCosto FROM productos WHERE id = ?', [producto.id]);
     return row?.precioCosto || 0;
   };
 
+
+  // Agrega un nuevo componente al producto
+  // Verifica que se haya seleccionado un material y una cantidad válida.
   const agregarComponente = async () => {
     if (!materialSeleccionado || !cantidad) {
       Alert.alert('Error', 'Seleccione un material y cantidad válida');
       return;
     }
 
+    // Verifica que la cantidad sea un número válido y mayor a 0
     const cantidadNum = parseFloat(cantidad.replace(',', '.'));
     if (isNaN(cantidadNum) || cantidadNum <= 0) {
       Alert.alert('Error', 'Cantidad inválida');
       return;
     }
 
+    // Calcula el nuevo costo total del producto
+    // y verifica que no sea mayor o igual al precio de venta del producto.
     const costoActual = await obtenerCostoActual();
     const nuevoCosto = costoActual + materialSeleccionado.precioCosto * cantidadNum;
 
@@ -85,17 +101,23 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
     }
 
     try {
+      // Inserta el nuevo componente en la base de datos
       await insertarComponenteProducto({
         productoId: producto.id!,
         materialId: materialSeleccionado.id!,
         cantidad: cantidadNum,
       });
 
+      // Actualiza el costo del producto en la base de datos
+      if (producto.id === undefined) {
+        throw new Error('El id del producto es undefined');
+      }
       await db.runAsync(
         'UPDATE productos SET precioCosto = ? WHERE id = ?',
-        [nuevoCosto, producto.id]
+        [nuevoCosto, producto.id as number]
       );
 
+      // Recarga los componentes y actualiza el estado
       await cargarComponentes();
       onActualizar?.();
       setCantidad('');
@@ -106,6 +128,8 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
     }
   };
 
+  // Elimina un componente del producto
+  // Calcula el nuevo costo del producto restando el costo del componente eliminado.
   const eliminarComponente = async (componenteId: number) => {
     const componente = componentes.find(c => c.id === componenteId);
     if (!componente) return;
@@ -118,19 +142,26 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
     const nuevoCosto = Math.max(costoActual - costoEliminar, 0);
 
     try {
+      // Elimina el componente de la base de datos
       await eliminarComponenteProducto(componenteId);
+      if (producto.id === undefined) {
+        throw new Error('El id del producto es undefined');
+      }
       await db.runAsync(
         'UPDATE productos SET precioCosto = ? WHERE id = ?',
-        [nuevoCosto, producto.id]
+        [nuevoCosto, producto.id as number]
       );
+      // Recarga los componentes y actualiza el estado
       await cargarComponentes();
       onActualizar?.();
+
     } catch (error) {
       Alert.alert('Error', 'No se pudo eliminar el componente');
       console.error(error);
     }
   };
 
+  // Renderiza cada componente en la lista
   const renderComponente = ({ item }: { item: ComponenteProducto }) => {
     const material = materiales.find(m => m.id === item.materialId);
     if (!material) return null;
@@ -150,6 +181,7 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
     );
   };
 
+  
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
