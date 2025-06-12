@@ -1,10 +1,11 @@
+// productos/views/styles/modals/ModalProducto.styles.ts
 import { StyleSheet } from 'react-native';
-import { borderRadius, colors, spacing, typography } from '../../../styles/theme';
+import { spacing } from '../../../styles/theme';
 
 export const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.5)', // fondo más oscuro y profesional
+    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
@@ -12,91 +13,90 @@ export const styles = StyleSheet.create({
 
   modalContent: {
     width: '100%',
-    maxWidth: 440,
-    backgroundColor: colors.white,
-    borderRadius: borderRadius.xl,
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 10,
+    maxWidth: 420,
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    overflow: 'hidden', // para que el header redondeado quede integrado
   },
 
+  // 💡 Header diferenciado
   modalHeader: {
-    backgroundColor: colors.gray[50],
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.lg,
+    backgroundColor: '#f0f4ff',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderBottomWidth: 1,
-    borderBottomColor: colors.gray[200],
+    borderBottomColor: '#e2e8f0',
   },
 
   modalTitle: {
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
-    color: colors.gray[900],
-    letterSpacing: 0.5,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1e293b',
+  },
+
+  // ❌ “X” más notoria
+  closeIcon: {
+    padding: 8,
+    borderRadius: 999,
+    backgroundColor: '#e2e8f0',
   },
 
   modalBody: {
-    gap: spacing.lg,
+    padding: spacing.lg,
   },
 
+  // ✏️ Inputs más simples y amigables
   input: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: '#0f172a',
     borderWidth: 1,
-    borderColor: colors.gray[300],
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    fontSize: typography.sizes.base,
-    backgroundColor: colors.gray[50],
-    color: colors.gray[900],
+    borderColor: '#e2e8f0',
+    marginBottom: spacing.md,
   },
 
   modalFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: spacing.xl,
+    justifyContent: 'flex-end',
     gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
 
   modalButton: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    gap: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 6,
   },
 
   modalButtonPrimary: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#2563eb',
   },
 
   modalButtonSecondary: {
-    backgroundColor: colors.gray[100],
+    backgroundColor: '#f1f5f9',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
   },
 
   modalButtonText: {
-    fontSize: typography.sizes.base,
-    fontWeight: '700',
-    color: colors.white,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 
   modalButtonTextSecondary: {
-    color: colors.gray[700],
-    fontWeight: '600',
+    color: '#1e293b',
   },
 });

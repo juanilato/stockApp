@@ -1,136 +1,109 @@
 import { StyleSheet } from 'react-native';
-import { borderRadius, colors, spacing, typography } from '../../../styles/theme';
 
 export const styles = StyleSheet.create({
-  modalContainer: {
+  overlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'flex-end',
   },
 
-  modalContent: {
-    width: '100%',
-    maxWidth: 440,
-    backgroundColor: colors.white,
-    borderRadius: borderRadius.xl,
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 10,
+  sheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 16,
+    minHeight: '75%',
   },
 
-  modalHeader: {
-    backgroundColor: colors.gray[50],
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.lg,
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xl,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[200],
+    marginBottom: 16,
   },
 
-  modalTitle: {
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
-    color: colors.gray[900],
-    letterSpacing: 0.5,
+  title: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1e293b',
   },
 
-  modalBody: {
-    gap: spacing.md,
+  body: {
+    flexGrow: 1,
   },
 
   input: {
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    fontSize: typography.sizes.base,
-    backgroundColor: colors.gray[50],
-    color: colors.gray[900],
+    backgroundColor: '#f1f5f9',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#0f172a',
+    marginBottom: 12,
   },
 
   saveButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
+    backgroundColor: '#2563eb',
+    paddingVertical: 12,
+    borderRadius: 30,
     alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
-    marginTop: spacing.sm,
+    marginBottom: 20,
   },
 
   saveButtonText: {
-    color: colors.white,
-    fontSize: typography.sizes.base,
-    fontWeight: '700',
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 
   sectionTitle: {
-    marginTop: spacing.lg,
-    fontSize: typography.sizes.lg,
+    fontSize: 14,
     fontWeight: '600',
-    color: colors.gray[800],
-  },
-
-  varianteItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: colors.gray[50],
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    marginTop: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-  },
-
-  varianteInfo: {
-    flex: 1,
-  },
-
-  varianteNombre: {
-    fontSize: typography.sizes.base,
-    fontWeight: '600',
-    color: colors.gray[800],
-  },
-
-  varianteStock: {
-    fontSize: typography.sizes.sm,
-    color: colors.gray[600],
-    marginTop: 2,
-  },
-
-  varianteActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginLeft: spacing.md,
-  },
-
-  varianteButton: {
-    padding: 4,
+    color: '#334155',
+    marginBottom: 10,
   },
 
   emptyText: {
-    marginTop: spacing.sm,
+    fontSize: 13,
+    color: '#94a3b8',
     textAlign: 'center',
-    fontSize: typography.sizes.base,
-    color: colors.gray[500],
+    marginBottom: 16,
+  },
+
+  variantList: {
+    gap: 12,
+  },
+
+  variantCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+
+  variantInfo: {
+    flex: 1,
+  },
+
+  variantName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0f172a',
+    marginBottom: 2,
+  },
+
+  variantStock: {
+    fontSize: 13,
+    color: '#64748b',
+  },
+
+  variantActions: {
+    flexDirection: 'row',
+    gap: 12,
   },
 });

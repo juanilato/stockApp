@@ -2,13 +2,13 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    Animated, FlatList, Text, TouchableOpacity, View
+  Alert,
+  Animated, FlatList, Text, TouchableOpacity, View
 } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 
 import { actualizarProducto, eliminarProducto, insertarProducto, Material, obtenerMateriales, obtenerProductos, Producto, setupProductosDB } from '../../../services/db';
-import { colors, commonStyles } from '../../styles/theme';
+import { commonStyles } from '../../styles/theme';
 import { styles } from '../styles/styles';
 
 import MenuOpciones from '../components/MenuOpciones';
@@ -128,38 +128,54 @@ export default function ProductosView() {
 
   // renderiza cada producto en la lista, incluyendo acciones de swipe para editar y eliminar
   const renderProducto = ({ item }: { item: Producto }) => {
-    const renderRightActions = () => (
-      <View style={{ flexDirection: 'row' }}>
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: '#3b82f6' }]}
-          onPress={() => abrirMenu(item)}
-        >
-          <MaterialCommunityIcons name="dots-horizontal" size={24} color="#fff" />
-        </TouchableOpacity>
+const renderRightActions = () => (
+<View style={styles.swipeActionsContainer}>
+  <TouchableOpacity
+    style={[styles.swipeButton, styles.swipeButtonEdit]}
+    onPress={() => abrirMenu(item)}
+  >
+    <MaterialCommunityIcons name="dots-horizontal" size={20} color="#fff" />
+  </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: '#ef4444' }]}
-          onPress={() => manejarEliminar(item.id!)}
-        >
-          <MaterialCommunityIcons name="delete" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    );
+  <TouchableOpacity
+    style={[styles.swipeButton, styles.swipeButtonDelete]}
+    onPress={() => manejarEliminar(item.id!)}
+  >
+    <MaterialCommunityIcons name="trash-can-outline" size={20} color="#fff" />
+  </TouchableOpacity>
+</View>
+);
 
-    return (
-      <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
-        <View style={styles.productoItem}>
-          <View style={styles.productoInfo}>
-            <Text style={styles.productoNombre}>{item.nombre}</Text>
-            <View style={styles.productoDetails}>
-              <Text style={styles.productoPrecio}>Venta: ${item.precioVenta}</Text>
-              <Text style={styles.productoPrecioCosto}>Costo: ${item.precioCosto}</Text>
-              <Text style={styles.productoStock}>Stock: {item.stock}</Text>
+
+
+return (
+  <View style={styles.productoWrapper}>
+    <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
+      <View style={styles.productoItemCompact}>
+        <View style={styles.productoInfo}>
+          <Text style={styles.productoNombreCompact}>{item.nombre}</Text>
+
+          <View style={styles.productoTagsCompact}>
+            <View style={styles.tagCompact}>
+              <Text style={styles.tagLabelCompact}>Venta</Text>
+              <Text style={styles.tagValueCompact}>${item.precioVenta}</Text>
+            </View>
+            <View style={styles.tagCompact}>
+              <Text style={styles.tagLabelCompact}>Costo</Text>
+              <Text style={styles.tagValueCompact}>${item.precioCosto}</Text>
+            </View>
+            <View style={styles.tagCompact}>
+              <Text style={styles.tagLabelCompact}>Stock</Text>
+              <Text style={styles.tagValueCompact}>{item.stock}</Text>
             </View>
           </View>
         </View>
-      </Swipeable>
-    );
+      </View>
+    </Swipeable>
+  </View>
+);
+
+
   };
 
 
@@ -167,20 +183,23 @@ export default function ProductosView() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Animated.View style={[commonStyles.container, { opacity: 1 }]}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Productos</Text>
-          {/* Botón para agregar un nuevo producto  selecciona en null el seleccionado y abre modal de ingreso de producto*/}
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => {
-              setProductoSeleccionado(null);
-              setModalProductoVisible(true);
-            }}
-          >
-            <MaterialCommunityIcons name="plus" size={20} color={colors.white} />
-            <Text style={styles.addButtonText}>Nuevo</Text>
-          </TouchableOpacity>
-        </View>
+<View style={styles.headerProductos}>
+  <View>
+    <Text style={styles.headerSectionLabel}>Catálogo</Text>
+    <Text style={styles.headerTitleProductos}>Mis productos</Text>
+  </View>
+
+  <TouchableOpacity
+    style={styles.addButtonPunch}
+    onPress={() => {
+      setProductoSeleccionado(null);
+      setModalProductoVisible(true);
+    }}
+  >
+    <MaterialCommunityIcons name="plus" size={18} color="#ffffff" />
+    <Text style={styles.addButtonTextPunch}>Agregar</Text>
+  </TouchableOpacity>
+</View>
 
         {/* Lista de productos */}
         <FlatList

@@ -2,18 +2,19 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Text, TextInput, TouchableOpacity,
-    TouchableWithoutFeedback,
-    View
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from 'react-native';
+import FloatingLabelInput from '../../../components/FloatingLabel';
 import { Producto, getDb } from '../../../services/db';
 import { colors } from '../../styles/theme';
 import { styles } from '../styles/modals/ModalProducto.styles';
-
 interface Props {
   visible: boolean;
   onClose: () => void;
@@ -141,45 +142,36 @@ const handleSave = async () => {
             </View>
 
             <View style={styles.modalBody}>
-              <Text >
-                Nombre
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={nombre}
-                onChangeText={setNombre}
-                placeholder="Nombre"
-              />
-                       <Text >
-                Precio de Costo
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={precioCosto}
-                onChangeText={setPrecioCosto}
-                keyboardType="numeric"
-                placeholder="Precio de costo"
-              />
-                       <Text >
-                Precio de Venta
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={precioVenta}
-                onChangeText={setPrecioVenta}
-                keyboardType="numeric"
-                placeholder="Precio de venta"
-              />
-                       <Text >
-                Stock
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={stock}
-                onChangeText={setStock}
-                keyboardType="numeric"
-                placeholder="Stock"
-              />
+              <View style={styles.modalBody}>
+  <FloatingLabelInput
+    label="Nombre"
+    value={nombre}
+    onChangeText={setNombre}
+   
+  />
+  <FloatingLabelInput
+    label="Precio de Costo"
+    value={precioCosto}
+    onChangeText={setPrecioCosto}
+    keyboardType="numeric"
+  
+  />
+  <FloatingLabelInput
+    label="Precio de Venta"
+    value={precioVenta}
+    onChangeText={setPrecioVenta}
+    keyboardType="numeric"
+   
+  />
+  <FloatingLabelInput
+    label="Stock"
+    value={stock}
+    onChangeText={setStock}
+    keyboardType="numeric"
+   
+  />
+</View>
+
             </View>
 
             <View style={styles.modalFooter}>

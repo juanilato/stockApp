@@ -3,7 +3,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
-  FlatList,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -181,67 +180,91 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
     );
   };
 
-  
-  return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.modalBox}>
-            <View style={styles.header}>
-              <Text style={styles.title}>Componentes de {producto.nombre}</Text>
-              <TouchableOpacity onPress={onClose}>
-                <MaterialCommunityIcons name="close" size={24} color={colors.gray[800]} />
-              </TouchableOpacity>
+return (
+  <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.overlay}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.sheet}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Componentes de {producto.nombre}</Text>
+            <TouchableOpacity onPress={onClose}>
+              <MaterialCommunityIcons name="close" size={24} color="#334155" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
+         
+
+            <Text style={styles.sectionTitle}>Agregar nuevo componente</Text>
+            <View style={styles.materialList}>
+              {materiales.map((mat) => (
+                <TouchableOpacity
+                  key={mat.id}
+                  style={[
+                    styles.materialBox,
+                    materialSeleccionado?.id === mat.id && styles.materialSelected,
+                  ]}
+                  onPress={() => setMaterialSeleccionado(mat)}
+                >
+                  <Text style={styles.materialName}>{mat.nombre}</Text>
+                  <Text style={styles.materialDetails}>
+                    {mat.unidad} · ${mat.precioCosto}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
 
-            <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
-              <Text style={styles.subtitle}>Componentes actuales</Text>
-              <FlatList
-                data={componentes}
-                keyExtractor={(item) => item.id?.toString() || ''}
-                renderItem={renderComponente}
-                scrollEnabled={false}
-                ListEmptyComponent={<Text style={styles.empty}>No hay componentes agregados</Text>}
+            {materialSeleccionado && (
+              <TextInput
+                style={styles.input}
+                value={cantidad}
+                onChangeText={(text) => {
+                  const valid = /^\d*[.,]?\d*$/;
+                  if (valid.test(text) || text === '') setCantidad(text);
+                }}
+                placeholder={`Cantidad en ${materialSeleccionado.unidad}`}
+                keyboardType="decimal-pad"
               />
+            )}
+<Text style={styles.sectionTitle}>Componentes actuales</Text>
+{componentes.length === 0 ? (
+  <Text style={styles.empty}>No hay componentes agregados</Text>
+) : (
+  <View style={styles.componentList}>
+    {componentes.map((item) => {
+      const material = materiales.find(m => m.id === item.materialId);
+      if (!material) return null;
 
-              <Text style={styles.subtitle}>Agregar nuevo componente</Text>
-              <View style={styles.materialList}>
-                {materiales.map((mat) => (
-                  <TouchableOpacity
-                    key={mat.id}
-                    style={[styles.materialBox, materialSeleccionado?.id === mat.id && styles.materialSelected]}
-                    onPress={() => setMaterialSeleccionado(mat)}
-                  >
-                    <Text style={styles.materialName}>{mat.nombre}</Text>
-                    <Text style={styles.materialDetails}>{mat.unidad} - ${mat.precioCosto}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {materialSeleccionado && (
-                <TextInput
-                  style={styles.input}
-                  value={cantidad}
-                  onChangeText={(text) => {
-                    const valid = /^\d*[.,]?\d*$/;
-                    if (valid.test(text) || text === '') setCantidad(text);
-                  }}
-                  placeholder={`Cantidad en ${materialSeleccionado.unidad}`}
-                  keyboardType="decimal-pad"
-                />
-              )}
-
-              <TouchableOpacity
-                style={[styles.button, (!materialSeleccionado || !cantidad) && styles.buttonDisabled]}
-                onPress={agregarComponente}
-                disabled={!materialSeleccionado || !cantidad}
-              >
-                <Text style={styles.buttonText}>Agregar Componente</Text>
-              </TouchableOpacity>
-            </ScrollView>
+      return (
+        <View key={item.id} style={styles.componentCard}>
+          <View style={styles.componentInfo}>
+            <Text style={styles.componentName}>{material.nombre}</Text>
+            <Text style={styles.componentDetails}>
+              {item.cantidad} {material.unidad} · ${material.precioCosto * item.cantidad}
+            </Text>
           </View>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
-    </Modal>
-  );
+          <TouchableOpacity onPress={() => eliminarComponente(item.id!)}>
+            <MaterialCommunityIcons name="trash-can-outline" size={20} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
+      );
+    })}
+  </View>
+)}
+
+            
+          </ScrollView>
+
+          <TouchableOpacity
+            style={[styles.button, (!materialSeleccionado || !cantidad) && styles.buttonDisabled]}
+            onPress={agregarComponente}
+            disabled={!materialSeleccionado || !cantidad}
+          >
+            <Text style={styles.buttonText}>Agregar Componente</Text>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </View>
+    </TouchableWithoutFeedback>
+  </Modal>
+);
 }

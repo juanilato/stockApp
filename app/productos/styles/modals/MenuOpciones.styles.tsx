@@ -1,113 +1,119 @@
 import { StyleSheet } from 'react-native';
-import { borderRadius, colors, spacing, typography } from '../../../styles/theme';
 
 export const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)', // fondo más sutil y elegante
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-  },
+  variantModal: {
+  width: '90%',
+  backgroundColor: '#ffffff',
+  borderRadius: 20,
+  padding: 20,
+  alignItems: 'center',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.1,
+  shadowRadius: 10,
+  elevation: 8,
+},
 
-  menuContainer: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: colors.white,
-    borderRadius: borderRadius.xl,
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.xl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
-  },
+modalTitle: {
+  fontSize: 16,
+  fontWeight: '700',
+  color: '#1e293b',
+  marginBottom: 16,
+  textAlign: 'center',
+},
+
+variantItem: {
+  width: '100%',
+  backgroundColor: '#f8fafc',
+  paddingVertical: 10,
+  paddingHorizontal: 16,
+  borderRadius: 12,
+  marginBottom: 10,
+  alignItems: 'center',
+},
+
+variantText: {
+  fontSize: 14,
+  fontWeight: '600',
+  color: '#0f172a',
+},
+
+cancelButton: {
+  marginTop: 10,
+  paddingVertical: 8,
+  paddingHorizontal: 20,
+  backgroundColor: '#e2e8f0',
+  borderRadius: 24,
+},
+
+cancelText: {
+  fontSize: 13,
+  fontWeight: '600',
+  color: '#475569',
+},
+
+modalOverlay: {
+  flex: 1,
+  backgroundColor: 'rgba(0,0,0,0.3)',
+  justifyContent: 'center',
+  alignItems: 'center',
+  paddingHorizontal: 20,
+},
+menuContainer: {
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  backgroundColor: '#fff',
+  paddingTop: 24,
+  paddingBottom: 32,
+  paddingHorizontal: 24,
+  borderTopLeftRadius: 24,
+  borderTopRightRadius: 24,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: -4 },
+  shadowOpacity: 0.1,
+  shadowRadius: 10,
+  elevation: 10,
+  minHeight: '75%',
+},
 
   menuTitle: {
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.semibold,
-    color: colors.gray[900],
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 20,
     textAlign: 'center',
-    marginBottom: spacing.xl,
   },
 
-  menuButton: {
+  buttonList: {
+    marginBottom: 16,
+  },
+
+  optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.gray[50],
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.sm,
     gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderBottomColor: '#e2e8f0',
+    borderBottomWidth: 1,
   },
 
-  menuButtonText: {
-    fontSize: typography.sizes.base,
-    fontWeight: '600',
-    color: colors.gray[800],
+  optionText: {
+    fontSize: 15,
+    color: '#334155',
+    fontWeight: '500',
   },
 
-  cancelButton: {
-    marginTop: spacing.lg,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.gray[100],
+ 
+
+  variantTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 12,
   },
 
-  cancelText: {
-    fontSize: typography.sizes.base,
-    fontWeight: '600',
-    color: colors.gray[600],
-  },
 
-  // MODAL de VARIANTES
-  variantModal: {
-    width: '90%',
-    backgroundColor: colors.white,
-    borderRadius: borderRadius.xl,
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 10,
-    alignItems: 'center',
-  },
-
-  modalTitle: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
-    color: colors.gray[800],
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-
-  variantItem: {
-    width: '100%',
-    backgroundColor: colors.gray[100],
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-  },
-
-  variantText: {
-    fontSize: typography.sizes.base,
-    fontWeight: '600',
-    color: colors.gray[800],
-  },
 });

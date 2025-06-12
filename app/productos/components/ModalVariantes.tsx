@@ -3,13 +3,11 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
-  FlatList,
   Modal,
   Text, TextInput, TouchableOpacity,
   View
 } from 'react-native';
 import { Producto, VarianteProducto, actualizarVariante, eliminarVariante, insertarVariante } from '../../../services/db';
-import { colors } from '../../styles/theme';
 import { styles } from '../styles/modals/ModalVariantes.styles';
 
 interface Props {
@@ -94,84 +92,69 @@ export default function ModalVariantes({ visible, onClose, producto, onActualiza
     setVarianteStock(variante.stock.toString());
   };
 
-  // Renderiza cada variante en la FlatList
-  // Incluye botones para editar y eliminar la variante
-  const renderVariante = ({ item }: { item: VarianteProducto }) => (
-    <View style={styles.varianteItem}>
-      <View style={styles.varianteInfo}>
-        <Text style={styles.varianteNombre}>{item.nombre}</Text>
-        <Text style={styles.varianteStock}>Stock: {item.stock}</Text>
-      </View>
-      <View style={styles.varianteActions}>
-        <TouchableOpacity
-          style={styles.varianteButton}
-          onPress={() => editarVariante(item)}
-        >
-          <MaterialCommunityIcons name="pencil" size={24} color={colors.primary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.varianteButton}
-          onPress={() => confirmarEliminarVariante(item.id!)}
-        >
-          <MaterialCommunityIcons name="delete" size={24} color={colors.danger} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Variantes de {producto.nombre}</Text>
-            <TouchableOpacity onPress={onClose}>
-              <MaterialCommunityIcons name="close" size={24} color={colors.gray[500]} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.modalBody}>
-            <TextInput
-              style={styles.input}
-              placeholder="Nombre de la variante"
-              value={varianteNombre}
-              onChangeText={setVarianteNombre}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Stock"
-              value={varianteStock}
-              onChangeText={setVarianteStock}
-              keyboardType="numeric"
-            />
-
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={guardarVariante}
-            >
-    
-              <Text style={styles.saveButtonText}>
-                {varianteSeleccionada ? 'Actualizar' : 'Agregar'} Variante
-              </Text>
-            </TouchableOpacity>
-
-            <Text style={styles.sectionTitle}>Variantes Existentes</Text>
-            <FlatList
-              data={variantes}
-              keyExtractor={(item) => item.id?.toString() || ''}
-              renderItem={renderVariante}
-              ListEmptyComponent={
-                <Text style={styles.emptyText}>No hay variantes registradas</Text>
-              }
-            />
-          </View>
-        </View>
+ <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+  <View style={styles.overlay}>
+    <View style={styles.sheet}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Variantes de {producto.nombre}</Text>
+        <TouchableOpacity onPress={onClose}>
+          <MaterialCommunityIcons name="close" size={24} color="#334155" />
+        </TouchableOpacity>
       </View>
-    </Modal>
+
+      <View style={styles.body}>
+        <TextInput
+          style={styles.input}
+          placeholder="Nombre de la variante"
+          value={varianteNombre}
+          onChangeText={setVarianteNombre}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Stock"
+          value={varianteStock}
+          onChangeText={setVarianteStock}
+          keyboardType="numeric"
+        />
+
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={guardarVariante}
+        >
+          <Text style={styles.saveButtonText}>
+            {varianteSeleccionada ? 'Actualizar' : 'Agregar'} Variante
+          </Text>
+        </TouchableOpacity>
+
+        <Text style={styles.sectionTitle}>Variantes existentes</Text>
+        {variantes.length === 0 ? (
+          <Text style={styles.emptyText}>No hay variantes registradas</Text>
+        ) : (
+          <View style={styles.variantList}>
+            {variantes.map((item) => (
+              <View key={item.id} style={styles.variantCard}>
+                <View style={styles.variantInfo}>
+                  <Text style={styles.variantName}>{item.nombre}</Text>
+                  <Text style={styles.variantStock}>Stock: {item.stock}</Text>
+                </View>
+                <View style={styles.variantActions}>
+                  <TouchableOpacity onPress={() => editarVariante(item)}>
+                    <MaterialCommunityIcons name="pencil" size={20} color="#2563eb" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => confirmarEliminarVariante(item.id!)}>
+                    <MaterialCommunityIcons name="delete" size={20} color="#ef4444" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    </View>
+  </View>
+</Modal>
+
   );
 }

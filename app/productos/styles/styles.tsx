@@ -1,124 +1,155 @@
 import { StyleSheet } from 'react-native';
-import { borderRadius, colors, shadows, spacing } from '../../styles/theme';
+import { spacing } from '../../styles/theme';
 
 export const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f4f4f5',
-  },
-  lista: {
-    flex: 1,
-  },
-  listaContent: {
-    padding: 16,
-    paddingBottom: 80,
-  },
-  productoItem: {
-    backgroundColor: '#f8fafc',
-    padding: 16,
-    borderColor: '#e2e8f0',
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 3,
-    marginBottom: 12,
-  },
-  productoInfo: {
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
-  productoNombre: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#0f172a',
-  },
-  productoDetails: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  productoPrecio: {
-    fontSize: 14,
-    color: '#10b981',
-  },
-  productoPrecioCosto: {
-    fontSize: 14,
-    color: '#f59e0b',
-  },
-  productoStock: {
-    fontSize: 14,
-    color: '#3b82f6',
-  },
-  productoActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  editButton: {
-    backgroundColor: colors.info,
-  },
-  componentesButton: {
-    backgroundColor: colors.success,
-  },
-  qrButton: {
-    backgroundColor: colors.secondary,
-  },
-  deleteButton: {
-    backgroundColor: colors.danger,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: spacing.md,
-    marginTop: spacing.xl,
-  },
-  actionButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 70,
-    marginBottom: spacing.md,
-    ...shadows.md,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[200],
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.gray[800],
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: borderRadius.full,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  addButtonText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 6,
-  },
+
+
+
+
+
+
+
+
+productoInfo: {
+  flex: 1,
+  flexDirection: 'column',
+  justifyContent: 'center',
+},
+
+
+
+
+
+productoItemCompact: {
+  backgroundColor: '#ffffff',
+  borderRadius: 14,
+  paddingVertical: 10,
+  paddingHorizontal: 14,
+
+  flexDirection: 'row',
+  alignItems: 'center',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.03,
+  shadowRadius: 3,
+  elevation: 1,
+},
+
+productoNombreCompact: {
+  fontSize: 15,
+  fontWeight: '600',
+  color: '#1e293b',
+  marginBottom: 2,
+},
+
+productoTagsCompact: {
+  flexDirection: 'row',
+  gap: 10,
+  flexWrap: 'wrap',
+},
+
+tagCompact: {
+  backgroundColor: '#f1f5f9',
+  borderRadius: 6,
+  paddingVertical: 3,
+  paddingHorizontal: 8,
+},
+
+tagLabelCompact: {
+  fontSize: 10,
+  color: '#64748b',
+  fontWeight: '500',
+  textTransform: 'uppercase',
+},
+
+tagValueCompact: {
+  fontSize: 13,
+  fontWeight: '600',
+  color: '#2563eb',
+},
+
+
+swipeActionsContainer: {
+  flexDirection: 'row',
+  alignItems: 'stretch',
+  height: '100%',
+  overflow: 'hidden',
+  marginLeft: -12,
+},
+
+swipeButton: {
+  width: 56,
+  height: '100%',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+swipeButtonEdit: {
+backgroundColor: '#3b82f6', // Azul uniforme con info
+},
+
+swipeButtonDelete: {
+  backgroundColor: '#ef4444', // Rojo intenso moderno
+  borderTopRightRadius: 16,
+  borderBottomRightRadius: 16,
+},
+
+
+productoWrapper: {
+  marginHorizontal: 16,
+  marginBottom: 12,
+  borderRadius: 16,
+  overflow: 'hidden', // clave para que los bordes se recorten
+},
+
+
+ 
+
+
+headerProductos: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'flex-end',
+  paddingHorizontal: spacing.lg,
+  paddingTop: 40,
+  paddingBottom: 20,
+  backgroundColor: '#f8fafc',
+},
+
+headerSectionLabel: {
+  fontSize: 12,
+  color: '#94a3b8',
+  letterSpacing: 1,
+  textTransform: 'uppercase',
+  marginBottom: 2,
+},
+
+headerTitleProductos: {
+  fontSize: 24,
+  fontWeight: '700',
+  color: '#0f172a',
+},
+
+addButtonPunch: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#1d4ed8',
+  paddingHorizontal: 16,
+  paddingVertical: 8,
+  borderRadius: 30,
+  shadowColor: '#1e40af',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.2,
+  shadowRadius: 6,
+  elevation: 6,
+},
+
+addButtonTextPunch: {
+  color: '#ffffff',
+  fontSize: 14,
+  fontWeight: '600',
+  marginLeft: 6,
+},
+
+
 }); 

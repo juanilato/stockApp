@@ -3,14 +3,16 @@ import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, SafeAreaView, StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
 import EstadisticasView from './components/EstadisticasView';
 import InicioView from './components/InicioView';
 import MaterialesView from './components/MaterialesView';
 import NuevaVentaView from './components/NuevaVentaView';
+
+import { borderRadius, spacing, typography } from '../styles/theme';
 //import ProductosView from './components/ProductosView';
 import ProductosView from '../app/productos/pages/main';
-const { width } = Dimensions.get('window');
+
 
 export default function Dashboard() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -50,6 +52,7 @@ useEffect(() => {
     ]).start();
   }, []);
 
+  
   const handleViewChange = (view: 'dashboard' | 'productos' | 'ventas' | 'estadisticas' | 'materiales') => {
      sonidoSwipe.current?.replayAsync();
     Animated.parallel([
@@ -153,18 +156,20 @@ useEffect(() => {
 
       {/* Bottom Navigation Bar */}
       <View style={styles.bottomNav}>
+
+
+
         <TouchableOpacity 
-          style={[styles.navButton, currentView === 'dashboard' && styles.navButtonActive]} 
-          onPress={() => handleViewChange('dashboard')}
+          style={[styles.navButton, currentView === 'materiales' && styles.navButtonActive]} 
+          onPress={() => handleViewChange('materiales')}
         >
           <MaterialCommunityIcons 
-            name="view-dashboard" 
+            name="basket" 
             size={24} 
-            color={currentView === 'dashboard' ? '#2563eb' : '#64748b'} 
+            color={currentView === 'materiales' ? '#2563eb' : '#64748b'} 
           />
-          <Text style={[styles.navLabel, currentView === 'dashboard' && styles.navLabelActive]}>Inicio</Text>
+          <Text style={[styles.navLabel, currentView === 'materiales' && styles.navLabelActive]}>Materiales</Text>
         </TouchableOpacity>
-
         <TouchableOpacity 
           style={[styles.navButton, currentView === 'productos' && styles.navButtonActive]} 
           onPress={() => handleViewChange('productos')}
@@ -178,15 +183,15 @@ useEffect(() => {
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={[styles.navButton, currentView === 'materiales' && styles.navButtonActive]} 
-          onPress={() => handleViewChange('materiales')}
+          style={[styles.navButton, currentView === 'dashboard' && styles.navButtonActive]} 
+          onPress={() => handleViewChange('dashboard')}
         >
           <MaterialCommunityIcons 
-            name="basket" 
+            name="home-variant-outline" 
             size={24} 
-            color={currentView === 'materiales' ? '#2563eb' : '#64748b'} 
+            color={currentView === 'dashboard' ? '#2563eb' : '#64748b'} 
           />
-          <Text style={[styles.navLabel, currentView === 'materiales' && styles.navLabelActive]}>Materiales</Text>
+          <Text style={[styles.navLabel, currentView === 'dashboard' && styles.navLabelActive]}>Inicio</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -212,135 +217,144 @@ useEffect(() => {
           />
           <Text style={[styles.navLabel, currentView === 'estadisticas' && styles.navLabelActive]}>Métricas</Text>
         </TouchableOpacity>
+
+
       </View>
+      
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<{
+  container: ViewStyle;
+  content: ViewStyle;
+  bottomNav: ViewStyle;
+  navButton: ViewStyle;
+  navButtonActive: ViewStyle;
+  navLabel: TextStyle;
+  navLabelActive: TextStyle;
+  title: TextStyle;
+  card: ViewStyle;
+  cardContent: ViewStyle;
+  statContainer: ViewStyle;
+  statValue: TextStyle;
+  statLabel: TextStyle;
+  main: ViewStyle;
+}>({
   container: {
     flex: 1,
-    backgroundColor: '#f4f4f5',
+    backgroundColor: '#f8fafc',
   },
-  userNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-  },
-  settingsButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: '#f1f5f9',
-  },
+
   content: {
     flex: 1,
+
   },
- bottomNav: {
+
+bottomNav: {
+  position: 'absolute',
+  bottom: 6,
+  left: 16,
+  right: 16,
   flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  paddingVertical: 12,
-  paddingHorizontal: 24,
-  backgroundColor: '#ffffffee', // semitransparente elegante
-  borderTopWidth: 0,
+  justifyContent: 'space-around',
+  backgroundColor: 'rgba(255,255,255,0.9)',
+  borderRadius: 30,
+  paddingVertical: 2,
+  paddingHorizontal: 12,
   shadowColor: '#000',
-  shadowOffset: { width: 0, height: -2 },
-  shadowOpacity: 0.05,
-  shadowRadius: 10,
-  elevation: 20,
-  borderTopLeftRadius: 20,
-  borderTopRightRadius: 20,
+
+  shadowOpacity: 0.08,
+  shadowRadius: 16,
+  elevation: 10,
+  backdropFilter: 'blur(10px)', // solo para web, visualmente iOS
 },
 
 navButton: {
-  flex: 1,
   alignItems: 'center',
   justifyContent: 'center',
-  paddingVertical: 8,
-  paddingHorizontal: 6,
-  borderRadius: 16,
-  gap: 2,
+  flex: 1,
+  borderRadius: 20,
+  marginHorizontal: 2,
+  paddingVertical: 6,
+  transitionDuration: '200ms',
 },
 
 navButtonActive: {
-  backgroundColor: '#e0f2fe',
-  shadowColor: '#2563eb',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.15,
+  backgroundColor: '#e0edff', // más claro y suave que #eef2ff
+  paddingVertical: 8,
+  paddingHorizontal: 10,
+  borderRadius: 20,
+  transform: [{ scale: 1.12 }],
+  shadowColor: '#1d4ed8',
+  shadowOffset: { width: 0, height: 3 },
+  shadowOpacity: 0.1,
   shadowRadius: 6,
-  elevation: 5,
+  elevation: 8,
 },
 
+
 navLabel: {
-  fontSize: 10,
+  fontSize: 7,
   color: '#64748b',
+  marginTop: 2,
 },
 
 navLabelActive: {
   color: '#2563eb',
   fontWeight: '600',
+  fontSize: 8,
 },
 
-  main: {
-    flex: 1,
-    padding: 24,
-  },
+
+  // Título para el fallback
   title: {
-    fontSize: 32,
-    fontWeight: '700',
-    marginBottom: 32,
-    color: '#1f2937',
+    fontSize: typography.sizes.lg,
+    fontWeight: typeof typography.weights.bold === 'number' ? typography.weights.bold : (typography.weights.bold as any),
+    color: '#1e293b',
     textAlign: 'center',
+    marginBottom: spacing.lg,
   },
+
   card: {
-    borderRadius: 24,
-    padding: 24,
-    width: '100%',
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    backgroundColor: '#fff',
+    elevation: 6,
   },
+
   cardContent: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    alignItems: 'center',
   },
+
   statContainer: {
     alignItems: 'center',
-    padding: 16,
   },
+
   statValue: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: typography.sizes.lg,
+    fontWeight: typeof typography.weights.bold === 'number' ? typography.weights.bold : (typography.weights.bold as any),
     color: '#1e293b',
     marginTop: 8,
   },
   statLabel: {
-    fontSize: 14,
-    color: '#64748b',
-    marginTop: 4,
+    fontSize: typography.sizes.sm,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+
+  main: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+
+    backgroundColor: '#f8fafc',
   },
   
 });
+
