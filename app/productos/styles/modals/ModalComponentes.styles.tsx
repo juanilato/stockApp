@@ -1,64 +1,69 @@
 import { StyleSheet } from 'react-native';
+import { RFValue } from 'react-native-responsive-fontsize';
+import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
+import { colors } from '../../../styles/theme'; // Ajustá el path si está en otro lado
 
 export const styles = StyleSheet.create({
   overlay: {
-  flex: 1,
-  backgroundColor: 'rgba(0,0,0,0.3)',
-  justifyContent: 'center',
-  alignItems: 'center',
-  paddingHorizontal: 20,
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.3)',
+    justifyContent: 'flex-end',
+    alignItems: 'stretch',
   },
 
-
-
   sheet: {
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 16,
-    minHeight: '75%',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.card,
+    borderTopLeftRadius: wp('6%'),
+    borderTopRightRadius: wp('6%'),
+    paddingHorizontal: wp('5%'),
+    paddingTop: hp('3%'),
+    paddingBottom: hp('20%'),
+    minHeight: hp('75%'),
+    width: '100%',
   },
 
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: hp('1.5%'),
   },
 
   title: {
-    fontSize: 17,
+    fontSize: RFValue(17),
     fontWeight: '700',
-    color: '#1e293b',
+    color: colors.text,
   },
 
   body: {
-    marginBottom: 12,
+    marginBottom: hp('1.5%'),
   },
 
   sectionTitle: {
-    fontSize: 14,
+    fontSize: RFValue(14),
     fontWeight: '600',
-    color: '#334155',
-    marginVertical: 10,
+    color: '#334155', // opcional: podés crear `colors.subText` si lo usás mucho
+    marginVertical: hp('1.2%'),
   },
 
   empty: {
-    fontSize: 13,
-    color: '#94a3b8',
+    fontSize: RFValue(13),
+    color: colors.placeholder,
     textAlign: 'center',
-    paddingVertical: 12,
+    paddingVertical: hp('1.5%'),
   },
 
   componenteItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: hp('1.2%'),
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: colors.border,
   },
 
   componenteInfo: {
@@ -66,107 +71,108 @@ export const styles = StyleSheet.create({
   },
 
   componenteNombre: {
-    fontSize: 14,
+    fontSize: RFValue(14),
     fontWeight: '600',
-    color: '#1e293b',
+    color: colors.text,
   },
 
   componenteDetalles: {
-    fontSize: 13,
-    color: '#64748b',
+    fontSize: RFValue(13),
+    color: colors.secondary,
   },
 
   materialList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 12,
+    gap: wp('2.5%'),
+    marginBottom: hp('1.5%'),
   },
 
   materialBox: {
-    backgroundColor: '#f8fafc',
-    padding: 10,
-    borderRadius: 12,
-    width: '48%',
+    backgroundColor: colors.background,
+    padding: hp('1.2%'),
+    borderRadius: wp('3.5%'),
+    width: wp('48%'),
   },
 
   materialSelected: {
     borderWidth: 1,
-    borderColor: '#2563eb',
-    backgroundColor: '#e0f2fe',
+    borderColor: colors.primary,
+    backgroundColor: '#e0f2fe', // Podés crear `colors.primarySoft` si querés manejarlo desde el theme
   },
 
   materialName: {
-    fontSize: 13,
+    fontSize: RFValue(13),
     fontWeight: '600',
-    color: '#0f172a',
+    color: colors.strongText,
   },
 
   materialDetails: {
-    fontSize: 12,
-    color: '#64748b',
+    fontSize: RFValue(12),
+    color: colors.secondary,
   },
 
   input: {
-    backgroundColor: '#f1f5f9',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: '#0f172a',
-    marginBottom: 16,
+    backgroundColor: '#f1f5f9', // Podés agregar `colors.inputBackground`
+    borderRadius: wp('3.5%'),
+    paddingHorizontal: wp('4%'),
+    paddingVertical: hp('1.2%'),
+    fontSize: RFValue(14),
+    color: colors.strongText,
+    marginBottom: hp('2%'),
   },
 
   button: {
-    backgroundColor: '#2563eb',
-    paddingVertical: 12,
-    borderRadius: 30,
+    backgroundColor: colors.primary,
+    paddingVertical: hp('1.5%'),
+    borderRadius: wp('8%'),
     alignItems: 'center',
+    marginBottom: hp('5%'),
   },
 
   buttonDisabled: {
-    backgroundColor: '#cbd5e1',
+    backgroundColor: '#cbd5e1', // Podés crear `colors.disabled` si lo usás seguido
   },
 
   buttonText: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: RFValue(14),
     fontWeight: '600',
   },
+
   componentList: {
-  gap: 12,
-  marginBottom: 16,
-},
+    gap: hp('1.5%'),
+    marginBottom: hp('2%'),
+  },
 
-componentCard: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  backgroundColor: '#f8fafc',
-  borderRadius: 12,
-  paddingVertical: 10,
-  paddingHorizontal: 14,
-  elevation: 1,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 1 },
-  shadowOpacity: 0.04,
-  shadowRadius: 2,
-},
+  componentCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderRadius: wp('3.5%'),
+    paddingVertical: hp('1.2%'),
+    paddingHorizontal: wp('4%'),
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+  },
 
-componentInfo: {
-  flex: 1,
-},
+  componentInfo: {
+    flex: 1,
+  },
 
-componentName: {
-  fontSize: 14,
-  fontWeight: '600',
-  color: '#0f172a',
-  marginBottom: 2,
-},
+  componentName: {
+    fontSize: RFValue(14),
+    fontWeight: '600',
+    color: colors.strongText,
+    marginBottom: hp('0.5%'),
+  },
 
-componentDetails: {
-  fontSize: 13,
-  color: '#64748b',
-},
-
+  componentDetails: {
+    fontSize: RFValue(13),
+    color: colors.secondary,
+  },
 });

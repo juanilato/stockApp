@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   Text,
@@ -30,11 +30,25 @@ export default function MenuOpciones({
   onManejarVariantes
 }: Props) {
   const [modalVariantesVisible, setModalVariantesVisible] = useState(false);
+  const [showVariantes, setShowVariantes] = useState(false);
+
+  // En cuanto se cierra el menú principal, abrimos el modal de variantes
+  useEffect(() => {
+    if (!visible && showVariantes) {
+      const timeout = setTimeout(() => {
+        setModalVariantesVisible(true);
+      }, 150); // margen de tiempo para evitar superposición
+      return () => clearTimeout(timeout);
+    }
+  }, [visible, showVariantes]);
+
   if (!producto) return null;
 
   const handleGenerarQR = () => {
     if (producto.variantes?.length) {
-      setModalVariantesVisible(true);
+      // Cerramos el modal principal primero y marcamos intención
+      setShowVariantes(true);
+      onClose();
     } else {
       onGenerarQR(producto);
       onClose();
@@ -42,43 +56,55 @@ export default function MenuOpciones({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.modalOverlay} />
-      </TouchableWithoutFeedback>
+    <>
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={styles.modalOverlay} />
+        </TouchableWithoutFeedback>
 
-      <View style={styles.menuContainer}>
-        <Text style={styles.menuTitle}>{producto.nombre}</Text>
+        <View style={styles.menuContainer}>
+          <Text style={styles.menuTitle}>{producto.nombre}</Text>
 
-        <View style={styles.buttonList}>
-          <TouchableOpacity style={styles.optionRow} onPress={handleGenerarQR}>
-            <MaterialCommunityIcons name="qrcode" size={20} color="#334155" />
-            <Text style={styles.optionText}>Generar QR</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonList}>
+            <TouchableOpacity style={styles.optionRow} onPress={handleGenerarQR}>
+              <MaterialCommunityIcons name="qrcode" size={20} color="#334155" />
+              <Text style={styles.optionText}>Generar QR</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.optionRow} onPress={() => { onClose(); onEditarProducto(producto); }}>
-            <MaterialCommunityIcons name="pencil" size={20} color="#334155" />
-            <Text style={styles.optionText}>Editar Producto</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.optionRow} onPress={() => { onClose(); onEditarProducto(producto); }}>
+              <MaterialCommunityIcons name="pencil" size={20} color="#334155" />
+              <Text style={styles.optionText}>Editar Producto</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.optionRow} onPress={() => { onClose(); onManejarComponentes(producto); }}>
-            <MaterialCommunityIcons name="package-variant" size={20} color="#334155" />
-            <Text style={styles.optionText}>Componentes</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.optionRow} onPress={() => { onClose(); onManejarComponentes(producto); }}>
+              <MaterialCommunityIcons name="package-variant" size={20} color="#334155" />
+              <Text style={styles.optionText}>Componentes</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.optionRow} onPress={() => { onClose(); onManejarVariantes(producto); }}>
-            <MaterialCommunityIcons name="format-list-bulleted" size={20} color="#334155" />
-            <Text style={styles.optionText}>Variantes</Text>
+            <TouchableOpacity style={styles.optionRow} onPress={() => { onClose(); onManejarVariantes(producto); }}>
+              <MaterialCommunityIcons name="format-list-bulleted" size={20} color="#334155" />
+              <Text style={styles.optionText}>Variantes</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity onPress={onClose}>
+            <Text style={styles.cancelText}>Cancelar</Text>
           </TouchableOpacity>
         </View>
+      </Modal>
 
-        <TouchableOpacity onPress={onClose}>
-          <Text style={styles.cancelText}>Cancelar</Text>
-        </TouchableOpacity>
-      </View>
-
+      {/* MODAL DE VARIANTES SEPARADO */}
       {modalVariantesVisible && (
-        <Modal transparent animationType="fade" visible={modalVariantesVisible} onRequestClose={() => setModalVariantesVisible(false)}>
+        <Modal
+          visible={modalVariantesVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            setModalVariantesVisible(false);
+            setShowVariantes(false);
+          }}
+          presentationStyle="overFullScreen"
+        >
           <View style={styles.modalOverlay}>
             <View style={styles.variantModal}>
               <Text style={styles.variantTitle}>Elegí una variante</Text>
@@ -89,19 +115,24 @@ export default function MenuOpciones({
                   onPress={() => {
                     onGenerarQR(producto, variante);
                     setModalVariantesVisible(false);
-                    onClose();
+                    setShowVariantes(false);
                   }}
                 >
                   <Text style={styles.variantText}>{variante.nombre}</Text>
                 </TouchableOpacity>
               ))}
-              <TouchableOpacity onPress={() => setModalVariantesVisible(false)}>
+              <TouchableOpacity
+                onPress={() => {
+                  setModalVariantesVisible(false);
+                  setShowVariantes(false);
+                }}
+              >
                 <Text style={styles.cancelText}>Cancelar</Text>
               </TouchableOpacity>
             </View>
           </View>
         </Modal>
       )}
-    </Modal>
+    </>
   );
 }

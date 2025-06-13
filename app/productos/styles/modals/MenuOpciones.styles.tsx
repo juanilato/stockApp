@@ -1,119 +1,121 @@
 import { StyleSheet } from 'react-native';
+import { RFValue } from 'react-native-responsive-fontsize';
+import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
+import { colors } from '../../../styles/theme'; // ajustá el path según tu estructura
 
 export const styles = StyleSheet.create({
-  variantModal: {
-  width: '90%',
-  backgroundColor: '#ffffff',
-  borderRadius: 20,
-  padding: 20,
+variantModal: {
+  zIndex: 10, // 👈 agregado
+  minHeight: hp('30%'), 
+  width: wp('90%'),
+  backgroundColor: colors.card,
+  borderRadius: wp('5%'),
+  padding: wp('5%'),
   alignItems: 'center',
   shadowColor: '#000',
-  shadowOffset: { width: 0, height: 4 },
+  shadowOffset: { width: 0, height: hp('0.5%') },
   shadowOpacity: 0.1,
   shadowRadius: 10,
-  elevation: 8,
+  elevation: 5,
 },
 
-modalTitle: {
-  fontSize: 16,
-  fontWeight: '700',
-  color: '#1e293b',
-  marginBottom: 16,
-  textAlign: 'center',
-},
+  modalTitle: {
+    fontSize: RFValue(16),
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: hp('2%'),
+    textAlign: 'center',
+  },
 
-variantItem: {
-  width: '100%',
-  backgroundColor: '#f8fafc',
-  paddingVertical: 10,
-  paddingHorizontal: 16,
-  borderRadius: 12,
-  marginBottom: 10,
-  alignItems: 'center',
-},
+  variantItem: {
+    width: '100%',
+    backgroundColor: colors.background,
+    paddingVertical: hp('1.2%'),
+    paddingHorizontal: wp('4%'),
+    borderRadius: wp('3.5%'),
+    marginBottom: hp('1.2%'),
+    alignItems: 'center',
+  },
 
-variantText: {
-  fontSize: 14,
-  fontWeight: '600',
-  color: '#0f172a',
-},
+  variantText: {
+    fontSize: RFValue(14),
+    fontWeight: '600',
+    color: colors.strongText,
+  },
 
-cancelButton: {
-  marginTop: 10,
-  paddingVertical: 8,
-  paddingHorizontal: 20,
-  backgroundColor: '#e2e8f0',
-  borderRadius: 24,
-},
+  cancelButton: {
+    marginTop: hp('1%'),
+    paddingVertical: hp('1.2%'),
+    paddingHorizontal: wp('5%'),
+    backgroundColor: colors.neutral,
+    borderRadius: wp('6%'),
+  },
 
-cancelText: {
-  fontSize: 13,
-  fontWeight: '600',
-  color: '#475569',
-},
+  cancelText: {
+    fontSize: RFValue(13),
+    fontWeight: '600',
+    color: colors.mutedText,
+  },
 
-modalOverlay: {
-  flex: 1,
-  backgroundColor: 'rgba(0,0,0,0.3)',
-  justifyContent: 'center',
-  alignItems: 'center',
-  paddingHorizontal: 20,
-},
-menuContainer: {
-  position: 'absolute',
-  bottom: 0,
-  left: 0,
-  right: 0,
-  backgroundColor: '#fff',
-  paddingTop: 24,
-  paddingBottom: 32,
-  paddingHorizontal: 24,
-  borderTopLeftRadius: 24,
-  borderTopRightRadius: 24,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: -4 },
-  shadowOpacity: 0.1,
-  shadowRadius: 10,
-  elevation: 10,
-  minHeight: '75%',
-},
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: wp('5%'),
+  },
+
+  menuContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.card,
+    paddingTop: hp('3%'),
+    paddingBottom: hp('4%'),
+    paddingHorizontal: wp('6%'),
+    borderTopLeftRadius: wp('6%'),
+    borderTopRightRadius: wp('6%'),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -hp('0.5%') },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 10,
+    minHeight: hp('75%'),
+  },
 
   menuTitle: {
-    fontSize: 17,
+    fontSize: RFValue(17),
     fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 20,
+    color: colors.text,
+    marginBottom: hp('2.2%'),
     textAlign: 'center',
   },
 
   buttonList: {
-    marginBottom: 16,
+    marginBottom: hp('2%'),
   },
 
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderBottomColor: '#e2e8f0',
+    gap: wp('3%'),
+    paddingVertical: hp('1.5%'),
+    paddingHorizontal: wp('1%'),
+    borderBottomColor: colors.border,
     borderBottomWidth: 1,
   },
 
   optionText: {
-    fontSize: 15,
+    fontSize: RFValue(15),
     color: '#334155',
     fontWeight: '500',
   },
 
- 
-
   variantTitle: {
-    fontSize: 16,
+    fontSize: RFValue(16),
     fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 12,
+    color: colors.text,
+    marginBottom: hp('1.5%'),
   },
-
-
 });

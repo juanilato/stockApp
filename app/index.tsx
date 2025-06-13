@@ -3,15 +3,17 @@ import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, SafeAreaView, StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { Animated, Dimensions, SafeAreaView, StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { RFValue } from "react-native-responsive-fontsize";
+import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import EstadisticasView from './components/EstadisticasView';
 import InicioView from './components/InicioView';
 import MaterialesView from './components/MaterialesView';
 import NuevaVentaView from './components/NuevaVentaView';
-
-import { borderRadius, spacing, typography } from '../styles/theme';
 //import ProductosView from './components/ProductosView';
 import ProductosView from '../app/productos/pages/main';
+
+const { width, height } = Dimensions.get('window');
 
 
 export default function Dashboard() {
@@ -241,84 +243,78 @@ const styles = StyleSheet.create<{
   statLabel: TextStyle;
   main: ViewStyle;
 }>({
-  container: {
+    container: {
     flex: 1,
     backgroundColor: '#f8fafc',
   },
 
   content: {
     flex: 1,
-
   },
 
-bottomNav: {
-  position: 'absolute',
-  bottom: 6,
-  left: 16,
-  right: 16,
-  flexDirection: 'row',
-  justifyContent: 'space-around',
-  backgroundColor: 'rgba(255,255,255,0.9)',
-  borderRadius: 30,
-  paddingVertical: 2,
-  paddingHorizontal: 12,
-  shadowColor: '#000',
+  bottomNav: {
+    position: 'absolute',
+    bottom: hp('0%'),
 
-  shadowOpacity: 0.08,
-  shadowRadius: 16,
-  elevation: 10,
-  backdropFilter: 'blur(10px)', // solo para web, visualmente iOS
-},
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderTopLeftRadius: wp('7%'),
+    borderTopRightRadius: wp('7%'),
 
-navButton: {
-  alignItems: 'center',
-  justifyContent: 'center',
-  flex: 1,
-  borderRadius: 20,
-  marginHorizontal: 2,
-  paddingVertical: 6,
-  transitionDuration: '200ms',
-},
+    paddingVertical: hp('0.5%'),
+    paddingHorizontal: wp('3%'),
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 10,
+  },
 
-navButtonActive: {
-  backgroundColor: '#e0edff', // más claro y suave que #eef2ff
-  paddingVertical: 8,
-  paddingHorizontal: 10,
-  borderRadius: 20,
-  transform: [{ scale: 1.12 }],
-  shadowColor: '#1d4ed8',
-  shadowOffset: { width: 0, height: 3 },
-  shadowOpacity: 0.1,
-  shadowRadius: 6,
-  elevation: 8,
-},
+  navButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    borderRadius: wp('5%'),
+    marginHorizontal: wp('0.5%'),
+    paddingVertical: hp('0.8%'),
+  },
 
+  navButtonActive: {
+    backgroundColor: '#e0edff',
+    paddingVertical: hp('1%'),
+    paddingHorizontal: wp('2.5%'),
+    borderRadius: wp('5%'),
+    transform: [{ scale: 1.12 }],
+    shadowColor: '#1d4ed8',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 8,
+  },
 
-navLabel: {
-  fontSize: 7,
-  color: '#64748b',
-  marginTop: 2,
-},
+  navLabel: {
+    fontSize: RFValue(6, height),
+    color: '#64748b',
+    marginTop: hp('0.3%'),
+  },
 
-navLabelActive: {
-  color: '#2563eb',
-  fontWeight: '600',
-  fontSize: 8,
-},
+  navLabelActive: {
+    color: '#2563eb',
+    fontWeight: '600',
+    fontSize: RFValue(7, height),
+  },
 
-
-  // Título para el fallback
   title: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typeof typography.weights.bold === 'number' ? typography.weights.bold : (typography.weights.bold as any),
+    fontSize: RFValue(18, height),
+    fontWeight: '700',
     color: '#1e293b',
     textAlign: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: hp('2%'),
   },
 
   card: {
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
+    borderRadius: wp('4%'),
+    padding: wp('5%'),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -337,24 +333,23 @@ navLabelActive: {
   },
 
   statValue: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typeof typography.weights.bold === 'number' ? typography.weights.bold : (typography.weights.bold as any),
+    fontSize: RFValue(18, height),
+    fontWeight: '700',
     color: '#1e293b',
-    marginTop: 8,
+    marginTop: hp('1%'),
   },
+
   statLabel: {
-    fontSize: typography.sizes.sm,
+    fontSize: RFValue(12, height),
     color: '#6b7280',
-    marginTop: 2,
+    marginTop: hp('0.5%'),
   },
 
   main: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-
     backgroundColor: '#f8fafc',
   },
-  
 });
 

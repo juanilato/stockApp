@@ -1,11 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
-    Animated,
-    StyleSheet,
-    TextInput,
-    TextInputProps,
-    View,
+  Animated,
+  StyleSheet,
+  TextInput,
+  TextInputProps,
+  View,
 } from 'react-native';
+
+import { RFValue } from 'react-native-responsive-fontsize';
+import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 
 interface Props extends TextInputProps {
   label: string;
@@ -22,37 +25,38 @@ export default function FloatingLabelInput({
   const [isFocused, setIsFocused] = useState(false);
   const animatedIsFocused = useRef(new Animated.Value(value ? 1 : 0)).current;
 
-  useEffect(() => {
-    Animated.timing(animatedIsFocused, {
-      toValue: isFocused || value ? 1 : 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
-  }, [isFocused, value, animatedIsFocused]);
+Animated.timing(animatedIsFocused, {
+  toValue: isFocused || value ? 1 : 0,
+  duration: 300, 
+  useNativeDriver: false,
+}).start();
 
-  const labelStyle = {
-    position: 'absolute' as const,
-    left: 14,
-    top: animatedIsFocused.interpolate({
-      inputRange: [0, 1],
-      outputRange: [30, -6], // flota hacia arriba
-    }),
-    fontSize: animatedIsFocused.interpolate({
-      inputRange: [0, 1],
-      outputRange: [16, 12],
-    }),
-    color: animatedIsFocused.interpolate({
-      inputRange: [0, 1],
-      outputRange: ['#94a3b8', '#2563eb'],
-    }),
-   
-    paddingHorizontal: 4,
-    zIndex: 1,
-  };
+const labelStyle = {
+  position: 'absolute' as const,
+  left: animatedIsFocused.interpolate({
+    inputRange: [0, 1],
+    outputRange: [wp('4%'), wp('0.5%')], // se mueve levemente a la izquierda
+  }),
+  top: animatedIsFocused.interpolate({
+    inputRange: [0, 1],
+    outputRange: [hp('4%'), hp('0.2%')], // más sutil, no flota tanto
+  }),
+  fontSize: animatedIsFocused.interpolate({
+    inputRange: [0, 1],
+    outputRange: [RFValue(11), RFValue(10)], // menos salto de tamaño
+  }),
+  color: animatedIsFocused.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#94a3b8', '#2563eb'], // mismo, pero suave por duración
+  }),
+  paddingHorizontal: wp('1%'),
+  zIndex: 1,
+};
+
 
   return (
     <View style={styles.container}>
-      <Animated.Text style={labelStyle}>{label}</Animated.Text>
+      <Animated.Text  style={labelStyle} pointerEvents="none">{label}</Animated.Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -67,17 +71,17 @@ export default function FloatingLabelInput({
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 18,
-    marginBottom: 20,
+    paddingTop: hp('2.2%'),
+    marginBottom: hp('2.5%'),
   },
   input: {
-    height: 48,
+    height: hp('6%'),
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingTop: 14, // para no superponer con el label
-    fontSize: 15,
+    borderRadius: wp('3.5%'),
+    paddingHorizontal: wp('4%'),
+
+    fontSize: RFValue(12),
     backgroundColor: '#f9fafb',
     color: '#0f172a',
   },

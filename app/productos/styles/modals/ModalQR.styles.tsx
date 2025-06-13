@@ -1,20 +1,35 @@
 import { StyleSheet } from 'react-native';
+import { colors } from '../../../styles/theme'; // ajustá el path según tu estructura
 
 export const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    justifyContent: 'flex-end',
+  qrBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    minHeight: 220,
+  },
+
+  body: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexGrow: 1,
+    minHeight: 250,
   },
 
   sheet: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 24,
-    paddingBottom: 16,
-    minHeight: '75%',
+    paddingBottom: 24,
+    minHeight: '60%',
+  },
+
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.2)',
+    justifyContent: 'flex-end',
   },
 
   header: {
@@ -27,36 +42,25 @@ export const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#1e293b',
-  },
-
-  body: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-
-  qrBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
+    color: colors.text,
   },
 
   qrText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
+    color: colors.strongText,
     marginTop: 12,
   },
 
   qrVarianteText: {
     fontSize: 13,
-    color: '#64748b',
+    color: colors.secondary,
   },
 
   qrPrice: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#2563eb',
+    color: colors.primary,
     marginTop: 4,
   },
 
@@ -70,7 +74,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#2563eb',
+    backgroundColor: colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 30,
@@ -88,7 +92,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: colors.secondaryButtonBg,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 30,
@@ -97,7 +101,7 @@ export const styles = StyleSheet.create({
   },
 
   buttonSecondaryText: {
-    color: '#475569',
+    color: colors.mutedText,
     fontSize: 14,
     fontWeight: '600',
   },

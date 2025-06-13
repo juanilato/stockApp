@@ -1,155 +1,149 @@
 import { StyleSheet } from 'react-native';
-import { spacing } from '../../styles/theme';
+import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
+import { colors, spacing } from '../../styles/theme'; // Asegurate que el path sea correcto
 
 export const styles = StyleSheet.create({
-
-
-
-
-
-
-
-
-productoInfo: {
-  flex: 1,
-  flexDirection: 'column',
-  justifyContent: 'center',
-},
-
-
-
-
+  productoInfo: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'center',
+  },
 
 productoItemCompact: {
-  backgroundColor: '#ffffff',
-  borderRadius: 14,
-  paddingVertical: 10,
-  paddingHorizontal: 14,
-
+  backgroundColor: '#f0f9ff',             // fondo celeste pastel
+  borderColor: '#c7d2fe',                 // borde azul claro
+  borderWidth: 1,
+  borderRadius: wp('3.4%'),
+  paddingVertical: hp('1.2%'),
+  paddingHorizontal: wp('3.4%'),
   flexDirection: 'row',
   alignItems: 'center',
   shadowColor: '#000',
   shadowOffset: { width: 0, height: 1 },
-  shadowOpacity: 0.03,
-  shadowRadius: 3,
+  shadowOpacity: 0.04,
+  shadowRadius: 4,
   elevation: 1,
 },
 
-productoNombreCompact: {
-  fontSize: 15,
-  fontWeight: '600',
-  color: '#1e293b',
-  marginBottom: 2,
-},
 
-productoTagsCompact: {
-  flexDirection: 'row',
-  gap: 10,
-  flexWrap: 'wrap',
+productoNombreCompact: {
+  fontSize: wp('4%'), // Subido un poco (~16px)
+  fontWeight: '700',
+  color: colors.text, // '#1e293b'
+  marginBottom: hp('0.5%'),
 },
+  productoTagsCompact: {
+    flexDirection: 'row',
+    gap: wp('2.4%'),
+    flexWrap: 'wrap',
+  },
 
 tagCompact: {
-  backgroundColor: '#f1f5f9',
-  borderRadius: 6,
-  paddingVertical: 3,
-  paddingHorizontal: 8,
+  backgroundColor: colors.background, // '#f8fafc'
+  borderRadius: wp('2.5%'),
+  paddingVertical: hp('0.6%'),
+  paddingHorizontal: wp('3%'),
+  minWidth: wp('22%'),
+  alignItems: 'center',
 },
-
 tagLabelCompact: {
-  fontSize: 10,
-  color: '#64748b',
+  fontSize: wp('2.6%'),
+  color: colors.placeholder, // '#94a3b8'
   fontWeight: '500',
-  textTransform: 'uppercase',
-},
-
-tagValueCompact: {
-  fontSize: 13,
-  fontWeight: '600',
-  color: '#2563eb',
-},
-
-
-swipeActionsContainer: {
-  flexDirection: 'row',
-  alignItems: 'stretch',
-  height: '100%',
-  overflow: 'hidden',
-  marginLeft: -12,
-},
-
-swipeButton: {
-  width: 56,
-  height: '100%',
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-
-swipeButtonEdit: {
-backgroundColor: '#3b82f6', // Azul uniforme con info
-},
-
-swipeButtonDelete: {
-  backgroundColor: '#ef4444', // Rojo intenso moderno
-  borderTopRightRadius: 16,
-  borderBottomRightRadius: 16,
-},
-
-
-productoWrapper: {
-  marginHorizontal: 16,
-  marginBottom: 12,
-  borderRadius: 16,
-  overflow: 'hidden', // clave para que los bordes se recorten
-},
-
-
- 
-
-
-headerProductos: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'flex-end',
-  paddingHorizontal: spacing.lg,
-  paddingTop: 40,
-  paddingBottom: 20,
-  backgroundColor: '#f8fafc',
-},
-
-headerSectionLabel: {
-  fontSize: 12,
-  color: '#94a3b8',
-  letterSpacing: 1,
-  textTransform: 'uppercase',
   marginBottom: 2,
+  textTransform: 'uppercase',
+  letterSpacing: 0.6,
 },
-
-headerTitleProductos: {
-  fontSize: 24,
-  fontWeight: '700',
-  color: '#0f172a',
-},
-
-addButtonPunch: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: '#1d4ed8',
-  paddingHorizontal: 16,
-  paddingVertical: 8,
-  borderRadius: 30,
-  shadowColor: '#1e40af',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.2,
-  shadowRadius: 6,
-  elevation: 6,
-},
-
-addButtonTextPunch: {
-  color: '#ffffff',
-  fontSize: 14,
+tagValueCompact: {
+  fontSize: wp('3.4%'),
   fontWeight: '600',
-  marginLeft: 6,
+},
+  swipeActionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    height: '100%',
+    overflow: 'hidden',
+    marginLeft: wp('-2.5%'),
+  },
+
+  swipeButton: {
+    width: wp('13.5%'),
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  swipeButtonEdit: {
+    backgroundColor: colors.swipeEdit,
+  },
+
+  swipeButtonDelete: {
+    backgroundColor: colors.swipeDelete,
+    borderTopRightRadius: wp('4%'),
+    borderBottomRightRadius: wp('4%'),
+  },
+
+  ball: {
+  width: wp('7%'),
+  height: wp('7%'),
+  borderRadius: wp('3.5%'),
+  backgroundColor: '#2563eb',
+  marginHorizontal: wp('1.5%'),
 },
 
+  productoWrapper: {
+    marginHorizontal: wp('4%'),
+    marginBottom: hp('1.4%'),
+    backgroundColor: colors.background,
+    marginTop: hp('0.5%'),
+    borderRadius: wp('4%'),
+    overflow: 'hidden',
+  },
 
-}); 
+  headerProductos: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: hp('4.4%'),
+    paddingBottom: hp('2.2%'),
+    backgroundColor: colors.primary,
+  },
+
+  headerSectionLabel: {
+    fontSize: wp('2.9%'),
+    color: colors.placeholder,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: hp('0.2%'),
+  },
+
+  headerTitleProductos: {
+    fontSize: wp('5.8%'),
+    fontWeight: '700',
+    color: colors.strongText,
+  },
+
+  addButtonPunch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: '#ffffff',
+    paddingHorizontal: wp('3.9%'),
+    paddingVertical: hp('0.9%'),
+    borderRadius: wp('7.2%'),
+    shadowColor: colors.shadowDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+
+  addButtonTextPunch: {
+    color: '#ffffff',
+    fontSize: wp('3.4%'),
+    fontWeight: '600',
+    marginLeft: wp('1.4%'),
+  },
+});

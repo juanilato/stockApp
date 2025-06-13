@@ -1,10 +1,12 @@
 // productos/views/modales/ModalVariantes.tsx
+import FloatingLabelInput from '@/components/FloatingLabel';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Modal,
-  Text, TextInput, TouchableOpacity,
+  Text,
+  TouchableOpacity,
   View
 } from 'react-native';
 import { Producto, VarianteProducto, actualizarVariante, eliminarVariante, insertarVariante } from '../../../services/db';
@@ -105,15 +107,17 @@ export default function ModalVariantes({ visible, onClose, producto, onActualiza
       </View>
 
       <View style={styles.body}>
-        <TextInput
+        <FloatingLabelInput
           style={styles.input}
-          placeholder="Nombre de la variante"
+          label="Nombre de la variante"
+          placeholder=""
           value={varianteNombre}
           onChangeText={setVarianteNombre}
         />
-        <TextInput
+        <FloatingLabelInput
           style={styles.input}
-          placeholder="Stock"
+          label="Stock"
+          placeholder=""
           value={varianteStock}
           onChangeText={setVarianteStock}
           keyboardType="numeric"

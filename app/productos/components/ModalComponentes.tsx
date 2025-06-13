@@ -1,4 +1,5 @@
 // productos/views/modales/ModalComponentes.tsx
+import FloatingLabelInput from '@/components/FloatingLabel';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
@@ -9,7 +10,6 @@ import {
   Platform,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View
@@ -23,7 +23,6 @@ import {
   obtenerComponentesProducto,
   Producto
 } from '../../../services/db';
-import { colors } from '../../styles/theme';
 import { styles } from '../styles/modals/ModalComponentes.styles';
 
 interface Props {
@@ -160,27 +159,10 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
     }
   };
 
-  // Renderiza cada componente en la lista
-  const renderComponente = ({ item }: { item: ComponenteProducto }) => {
-    const material = materiales.find(m => m.id === item.materialId);
-    if (!material) return null;
-
-    return (
-      <View style={styles.componenteItem}>
-        <View style={styles.componenteInfo}>
-          <Text style={styles.componenteNombre}>{material.nombre}</Text>
-          <Text style={styles.componenteDetalles}>
-            {item.cantidad} {material.unidad} - ${material.precioCosto * item.cantidad}
-          </Text>
-        </View>
-        <TouchableOpacity onPress={() => eliminarComponente(item.id!)}>
-          <MaterialCommunityIcons name="delete" size={20} color={colors.danger} />
-        </TouchableOpacity>
-      </View>
-    );
-  };
+  
 
 return (
+  
   <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.overlay}>
@@ -215,8 +197,9 @@ return (
             </View>
 
             {materialSeleccionado && (
-              <TextInput
+              <FloatingLabelInput
                 style={styles.input}
+                label={`Cantidad en ${materialSeleccionado.unidad}`}
                 value={cantidad}
                 onChangeText={(text) => {
                   const valid = /^\d*[.,]?\d*$/;

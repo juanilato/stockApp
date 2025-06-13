@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 
-import { actualizarProducto, eliminarProducto, insertarProducto, Material, obtenerMateriales, obtenerProductos, Producto, setupProductosDB } from '../../../services/db';
+import { actualizarProducto, eliminarProducto, insertarProducto, Material, obtenerMateriales, obtenerProductos, Producto, setupProductosDB, VarianteProducto } from '../../../services/db';
 import { commonStyles } from '../../styles/theme';
 import { styles } from '../styles/styles';
 
@@ -28,6 +28,8 @@ export default function ProductosView() {
   const [modalComponentesVisible, setModalComponentesVisible] = useState(false); // modal para ver componentes del producto
   const [menuVisible, setMenuVisible] = useState(false); // menu de opciones del producto 
   const [qrData, setQrData] = useState(''); // datos del QR a generar
+  const [varianteSeleccionada, setVarianteSeleccionada] = useState<VarianteProducto | null>(null);
+
   const fadeAnim = new Animated.Value(0); 
 
   useEffect(() => {
@@ -68,25 +70,26 @@ export default function ProductosView() {
   // genera el QR donde incluye:
   // - Si tiene variante, incluye id, nombre y precio de venta de la variante (variante.id, variante.nombre, variante.precioVenta)
   // - Si no tiene variante, incluye id, nombre y precio de venta del producto 
-  const generarQR = (producto: Producto, variante?: any) => {
-    const payload = variante
-      ? {
-          productoId: producto.id,
-          nombre: producto.nombre,
-          precioVenta: producto.precioVenta,
-          varianteId: variante.id,
-          varianteNombre: variante.nombre,
-        }
-      : {
-          id: producto.id,
-          nombre: producto.nombre,
-          precioVenta: producto.precioVenta,
-        };
+const generarQR = (producto: Producto, variante?: VarianteProducto) => {
+  const payload = variante
+    ? {
+        productoId: producto.id,
+        nombre: producto.nombre,
+        precioVenta: producto.precioVenta, 
+        varianteId: variante.id,
+        varianteNombre: variante.nombre,
+      }
+    : {
+        id: producto.id,
+        nombre: producto.nombre,
+        precioVenta: producto.precioVenta,
+      };
 
-    // una vez generado el payload, se setea el qrData y se muestra el modal
-    setQrData(JSON.stringify(payload));
-    setModalQRVisible(true);
-  };
+  setProductoSeleccionado(producto);
+  setVarianteSeleccionada(variante || null); // ← guardar variante
+  setQrData(JSON.stringify(payload));
+  setModalQRVisible(true);
+};
 
   // maneja el guardado del producto (nuevo o editado)
 
@@ -150,28 +153,41 @@ const renderRightActions = () => (
 
 return (
   <View style={styles.productoWrapper}>
+
     <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
+      
       <View style={styles.productoItemCompact}>
+
         <View style={styles.productoInfo}>
           <Text style={styles.productoNombreCompact}>{item.nombre}</Text>
 
-          <View style={styles.productoTagsCompact}>
-            <View style={styles.tagCompact}>
-              <Text style={styles.tagLabelCompact}>Venta</Text>
-              <Text style={styles.tagValueCompact}>${item.precioVenta}</Text>
-            </View>
-            <View style={styles.tagCompact}>
-              <Text style={styles.tagLabelCompact}>Costo</Text>
-              <Text style={styles.tagValueCompact}>${item.precioCosto}</Text>
-            </View>
-            <View style={styles.tagCompact}>
-              <Text style={styles.tagLabelCompact}>Stock</Text>
-              <Text style={styles.tagValueCompact}>{item.stock}</Text>
-            </View>
-          </View>
+<View style={styles.productoTagsCompact}>
+  <View style={styles.tagCompact}>
+    <Text style={styles.tagLabelCompact}>Venta</Text>
+    <Text style={[styles.tagValueCompact, { color: '#10b981' }]}>
+      ${item.precioVenta}
+    </Text>
+  </View>
+  <View style={styles.tagCompact}>
+    <Text style={styles.tagLabelCompact}>Costo</Text>
+    <Text style={[styles.tagValueCompact, { color: '#f59e0b' }]}>
+      ${item.precioCosto}
+    </Text>
+  </View>
+  <View style={styles.tagCompact}>
+    <Text style={styles.tagLabelCompact}>Stock</Text>
+    <Text style={[styles.tagValueCompact, { color: '#0ea5e9' }]}>
+      {item.stock}
+    </Text>
+  </View>
+</View>
+
         </View>
+        
       </View>
+      
     </Swipeable>
+ 
   </View>
 );
 
@@ -185,8 +201,13 @@ return (
       <Animated.View style={[commonStyles.container, { opacity: 1 }]}>
 <View style={styles.headerProductos}>
   <View>
-    <Text style={styles.headerSectionLabel}>Catálogo</Text>
-    <Text style={styles.headerTitleProductos}>Mis productos</Text>
+<Text style={[styles.headerSectionLabel, { color: '#bfdbfe' }]}>
+  Catálogo
+</Text>
+<Text style={[styles.headerTitleProductos, { color: '#ffffff' }]}>
+  Mis productos
+</Text>
+
   </View>
 
   <TouchableOpacity
@@ -211,6 +232,7 @@ return (
               <Text style={commonStyles.emptyStateText}>No hay productos</Text>
             </View>
           }
+          ListHeaderComponent={<View style={{ height: 16 }} />}
           contentContainerStyle={{ paddingBottom: 40 }}
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
         />
@@ -242,6 +264,8 @@ return (
           onClose={() => setModalQRVisible(false)}
           qrData={qrData}
           producto={productoSeleccionado}
+          variante={varianteSeleccionada}
+          
         />
 
 { /* Modal para manejar componentes del producto  (componen precio total)*/}
