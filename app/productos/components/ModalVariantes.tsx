@@ -1,15 +1,15 @@
 // productos/views/modales/ModalVariantes.tsx
+import CustomToast from '@/components/CustomToast';
 import FloatingLabelInput from '@/components/FloatingLabel';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   Modal,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
-import { Producto, VarianteProducto, actualizarVariante, eliminarVariante, insertarVariante } from '../../../services/db';
+import { Producto, VarianteProducto, actualizarVariante, eliminarVariante, getDb, insertarVariante } from '../../../services/db';
 import { styles } from '../styles/modals/ModalVariantes.styles';
 
 interface Props {
@@ -24,7 +24,25 @@ export default function ModalVariantes({ visible, onClose, producto, onActualiza
   const [varianteStock, setVarianteStock] = useState(''); // Stock de la variante
   const [varianteSeleccionada, setVarianteSeleccionada] = useState<VarianteProducto | null>(null);  // Variante seleccionada para editar
   const [variantes, setVariantes] = useState<VarianteProducto[]>(producto.variantes || []); // Lista de variantes del producto
+  const [toast, setToast] = useState<{ message: string; type?: 'success' | 'error' | 'warning' } | null>(null);
 
+
+const cargarVariantes = async () => {
+  if (typeof producto.id !== 'number') {
+    setVariantes([]);
+    return;
+  }
+  try {
+    const db = getDb();
+    const nuevasVariantes = await db.getAllAsync<VarianteProducto>(
+      'SELECT * FROM variantes_producto WHERE productoId = ?',
+      [producto.id]
+    );
+    setVariantes(nuevasVariantes);
+  } catch (error) {
+    console.error('❌ Error al cargar variantes del producto:', error);
+  }
+};
   // Resetea los campos al abrir el modal o cambiar de producto
   // y carga las variantes del producto seleccionado
   useEffect(() => {
@@ -33,6 +51,7 @@ export default function ModalVariantes({ visible, onClose, producto, onActualiza
       setVarianteNombre('');
       setVarianteStock('');
       setVarianteSeleccionada(null);
+      setToast(null); // Limpia el mensaje anterior
     }
   }, [visible, producto]);
 
@@ -40,15 +59,15 @@ export default function ModalVariantes({ visible, onClose, producto, onActualiza
   // Guarda la variante nueva o actualizada
   // Si varianteSeleccionada tiene valor, actualiza la variante, si no, inserta una nueva
   const guardarVariante = async () => {
-    if (!varianteNombre || !varianteStock) {
-      Alert.alert('Error', 'Todos los campos son obligatorios');
-      return;
-    }
+if (!varianteNombre || !varianteStock) {
+  setToast({ message: 'Todos los campos son obligatorios', type: 'warning' });
+  return;
+}
 
-    if (parseInt(varianteStock) <= 0){
-      Alert.alert('Error', 'El stock debe ser un número positivo');
-      return;
-    }
+if (parseInt(varianteStock) <= 0) {
+  setToast({ message: 'El stock debe ser un número positivo', type: 'warning' });
+  return;
+}
 
     const variante: VarianteProducto = {
       productoId: producto.id!,
@@ -64,12 +83,19 @@ export default function ModalVariantes({ visible, onClose, producto, onActualiza
       } else {
         await insertarVariante(variante);
       }
-
+      setVarianteNombre(''); // Limpia el campo de nombre
+      setVarianteStock(''); // Limpia el campo de stock
       onActualizar?.(); // Refresca productos desde componente padre
-      onClose();
+      setToast({
+        message: varianteSeleccionada
+          ? 'Variante actualizada correctamente'
+          : 'Variante agregada correctamente',
+        type: 'success',
+      });
+      await cargarVariantes();
     } catch (error) {
       console.error('Error al guardar variante:', error);
-      Alert.alert('Error', 'No se pudo guardar la variante');
+      setToast({ message: 'No se pudo guardar la variante', type: 'error' });
     }
   };
 
@@ -79,10 +105,12 @@ export default function ModalVariantes({ visible, onClose, producto, onActualiza
     try {
       await eliminarVariante(id);
       onActualizar?.();
-      onClose();
+      setToast({ message: 'Variante eliminada correctamente', type: 'success' });
+      await cargarVariantes();
     } catch (error) {
       console.error('Error al eliminar variante:', error);
-      Alert.alert('Error', 'No se pudo eliminar la variante');
+     setToast({ message: 'No se pudo eliminar la variante', type: 'error' });
+
     }
   };
 
@@ -158,6 +186,13 @@ export default function ModalVariantes({ visible, onClose, producto, onActualiza
       </View>
     </View>
   </View>
+  {toast && (
+  <CustomToast
+    message={toast.message}
+    type={toast.type}
+    onClose={() => setToast(null)}
+  />
+)}
 </Modal>
 
   );

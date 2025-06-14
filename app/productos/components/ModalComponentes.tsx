@@ -1,9 +1,9 @@
 // productos/views/modales/ModalComponentes.tsx
+import CustomToast from '@/components/CustomToast';
 import FloatingLabelInput from '@/components/FloatingLabel';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -37,6 +37,7 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
   const [componentes, setComponentes] = useState<ComponenteProducto[]>([]);
   const [materialSeleccionado, setMaterialSeleccionado] = useState<Material | null>(null);
   const [cantidad, setCantidad] = useState('');
+  const [toast, setToast] = useState<{ message: string; type?: 'success' | 'error' | 'warning' } | null>(null);
 
   const db = getDb();
 
@@ -48,7 +49,8 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
         setComponentes(componentes);
       });
     } catch (error) {
-      Alert.alert('Error', 'No se pudieron cargar los componentes');
+    setToast({ message: 'No se pudieron cargar los componentes', type: 'error' });
+
       console.error(error);
     }
   }, [producto.id]);
@@ -58,6 +60,7 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
       cargarComponentes();
       setMaterialSeleccionado(null);
       setCantidad('');
+      setToast(null);
     }
   }, [visible, cargarComponentes]);
 
@@ -77,14 +80,16 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
   // Verifica que se haya seleccionado un material y una cantidad válida.
   const agregarComponente = async () => {
     if (!materialSeleccionado || !cantidad) {
-      Alert.alert('Error', 'Seleccione un material y cantidad válida');
+  setToast({ message: 'Seleccione un material y cantidad válida', type: 'warning' });
+
       return;
     }
 
     // Verifica que la cantidad sea un número válido y mayor a 0
     const cantidadNum = parseFloat(cantidad.replace(',', '.'));
     if (isNaN(cantidadNum) || cantidadNum <= 0) {
-      Alert.alert('Error', 'Cantidad inválida');
+    setToast({ message: 'Cantidad inválida', type: 'warning' });
+
       return;
     }
 
@@ -94,7 +99,8 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
     const nuevoCosto = costoActual + materialSeleccionado.precioCosto * cantidadNum;
 
     if (nuevoCosto >= producto.precioVenta) {
-      Alert.alert('Error', 'El costo total no puede ser mayor o igual al precio de venta');
+setToast({ message: 'El costo total no puede ser mayor o igual al precio de venta', type: 'warning' });
+
       return;
     }
 
@@ -120,8 +126,11 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
       onActualizar?.();
       setCantidad('');
       setMaterialSeleccionado(null);
+      setToast({ message: 'Componente agregado correctamente', type: 'success' });
+
     } catch (error) {
-      Alert.alert('Error', 'No se pudo agregar el componente');
+setToast({ message: 'No se pudo agregar el componente', type: 'error' });
+
       console.error(error);
     }
   };
@@ -152,9 +161,10 @@ export default function ModalComponentes({ visible, onClose, producto, materiale
       // Recarga los componentes y actualiza el estado
       await cargarComponentes();
       onActualizar?.();
-
+      setToast({ message: 'Componente eliminado correctamente', type: 'success' });
     } catch (error) {
-      Alert.alert('Error', 'No se pudo eliminar el componente');
+     setToast({ message: 'No se pudo eliminar el componente', type: 'error' });
+
       console.error(error);
     }
   };
@@ -248,6 +258,14 @@ return (
         </KeyboardAvoidingView>
       </View>
     </TouchableWithoutFeedback>
+    {toast && (
+  <CustomToast
+    message={toast.message}
+    type={toast.type}
+    onClose={() => setToast(null)}
+  />
+)}
+
   </Modal>
 );
 }

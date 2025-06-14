@@ -2,7 +2,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   Animated, FlatList, Text, TouchableOpacity, View
 } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
@@ -11,6 +10,8 @@ import { actualizarProducto, eliminarProducto, insertarProducto, Material, obten
 import { commonStyles } from '../../styles/theme';
 import { styles } from '../styles/styles';
 
+import ModalConfirmacion from '@/components/ModalConfirmacion';
+import CustomToast from '../../../components/CustomToast';
 import MenuOpciones from '../components/MenuOpciones';
 import ModalComponentes from '../components/ModalComponentes';
 import ModalProducto from '../components/ModalProducto';
@@ -93,13 +94,23 @@ const generarQR = (producto: Producto, variante?: VarianteProducto) => {
 
   // maneja el guardado del producto (nuevo o editado)
 
+  const [toast, setToast] = useState<{ message: string; type?: 'success' | 'error' | 'warning' } | null>(null);
   const manejarGuardarProducto = async (producto: Producto, esNuevo: boolean) => {
  try {
+
     if (esNuevo) {
       await insertarProducto(producto);
+      setToast({
+        type: 'success',
+        message: 'Producto creado correctamente',
+      });
       console.log('🆕 Producto creado');
     } else {
       await actualizarProducto(producto);
+      setToast({
+        type: 'success',
+        message: 'Producto editado correctamente',
+      });
       console.log('✏️ Producto editado');
     }
     await cargarProductos(); // Refresca la lista
@@ -110,23 +121,15 @@ const generarQR = (producto: Producto, variante?: VarianteProducto) => {
   };
 
   // maneja la eliminación del producto, muestra un alert de confirmación
-  const manejarEliminar = (id: number) => {
-    Alert.alert(
-      'Confirmar eliminación',
-      '¿Deseas eliminar este producto?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            await eliminarProducto(id);
-            await cargarProductos();
-          }
-        }
-      ]
-    );
-  };
+
+  const [productoAEliminar, setProductoAEliminar] = useState<Producto | null>(null);
+
+const manejarEliminar = (id: number) => {
+  const producto = productos.find((p) => p.id === id);
+  if (producto) {
+    setProductoAEliminar(producto);
+  }
+};
 
 
   // renderiza cada producto en la lista, incluyendo acciones de swipe para editar y eliminar
@@ -170,7 +173,7 @@ return (
   </View>
   <View style={styles.tagCompact}>
     <Text style={styles.tagLabelCompact}>Costo</Text>
-    <Text style={[styles.tagValueCompact, { color: '#f59e0b' }]}>
+    <Text style={[styles.tagValueCompact, { color: '#ef4444' }]}>
       ${item.precioCosto}
     </Text>
   </View>
@@ -302,6 +305,27 @@ return (
           }}
         />
       </Animated.View>
+{toast && !modalProductoVisible && !modalVariantesVisible && !modalQRVisible && !modalComponentesVisible && !menuVisible && (
+  <CustomToast
+    message={toast.message}
+    type={toast.type}
+    onClose={() => setToast(null)}
+  />
+)}
+<ModalConfirmacion
+  visible={!!productoAEliminar}
+  mensaje={`¿Deseas eliminar el producto "${productoAEliminar?.nombre}"?`}
+  onCancelar={() => setProductoAEliminar(null)}
+  onConfirmar={async () => {
+    if (productoAEliminar?.id) {
+      await eliminarProducto(productoAEliminar.id);
+      await cargarProductos();
+      setToast({ type: 'success', message: 'Producto eliminado' });
+    }
+    setProductoAEliminar(null);
+  }}
+/>
+
     </GestureHandlerRootView>
   );
 }

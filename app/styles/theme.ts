@@ -42,6 +42,9 @@ export const colors = {
   },
   white: '#ffffff',
   black: '#000000',
+    green: '#22c55e',    // Éxito
+    yellow: '#eab308',   // Advertencia
+    red: '#ef4444',      // Error
 };
 
 export const spacing = {

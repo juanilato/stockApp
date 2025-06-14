@@ -11,6 +11,7 @@ import {
   TouchableWithoutFeedback,
   View
 } from 'react-native';
+import CustomToast from '../../../components/CustomToast';
 import FloatingLabelInput from '../../../components/FloatingLabel';
 import { Producto, getDb } from '../../../services/db';
 import { colors } from '../../styles/theme';
@@ -49,39 +50,39 @@ useEffect(() => {
       setPrecioCosto('');
       setStock('');
     }
+    setToast(null); // <- limpieza del mensaje anterior
   }
 }, [visible, productoEditado]);
 
-
   // Todos los campos son obligatorios, si alguno está vacío muestra un alert
   // Realiza validaciones (valores positivos, enteros, != 0, precio costo < precio venta, stock > 0, precio costo >= costo de componentes si tiene)
+const [toast, setToast] = useState<{ message: string; type?: 'success' | 'error' | 'warning' } | null>(null);
+
 const handleSave = async () => {
   if (!nombre || !precioVenta || !precioCosto || !stock) {
-    alert('Por favor complete todos los campos');
+    setToast({ message: 'Por favor complete todos los campos' });
     return;
   }
 
-  // Validaciones básicas
   const parsedPrecioVenta = parseFloat(precioVenta);
   const parsedPrecioCosto = parseFloat(precioCosto);
   const parsedStock = Number(stock);
 
   if (parsedPrecioVenta <= 0 || parsedPrecioCosto <= 0 || parsedStock <= 0) {
-    alert('No se permiten valores negativos o cero');
+    setToast({ message: 'No se permiten valores negativos o cero' });
     return;
   }
 
   if (!Number.isInteger(parsedStock)) {
-    alert('El stock debe ser un número entero sin comas ni decimales');
+    setToast({ message: 'El stock debe ser un número entero sin comas ni decimales' });
     return;
   }
 
   if (parsedPrecioCosto >= parsedPrecioVenta) {
-    alert('El precio de costo debe ser menor que el precio de venta');
+    setToast({ message: 'El precio de costo debe ser menor que el precio de venta' });
     return;
   }
 
-  // Validación con base de datos: verificar precio total de componentes si el producto tiene componentes
   let costoComponentes = 0;
   if (productoEditado?.id) {
     try {
@@ -92,18 +93,18 @@ const handleSave = async () => {
         FROM componentes_producto cp
         JOIN materiales m ON cp.materialId = m.id
         WHERE cp.productoId = ?
-      `,
+        `,
         [productoEditado.id]
       );
       costoComponentes = result?.costoTotal || 0;
 
       if (parsedPrecioCosto < costoComponentes) {
-        alert(`El precio de costo no puede ser menor al costo de los componentes (${costoComponentes.toFixed(2)})`);
+        setToast({ message: `El precio de costo no puede ser menor al costo de los componentes (${costoComponentes.toFixed(2)})` });
         return;
       }
     } catch (error) {
       console.error('Error al verificar componentes:', error);
-      alert('No se pudo verificar el costo de componentes');
+      setToast({ message: 'No se pudo verificar el costo de componentes' });
       return;
     }
   }
@@ -117,6 +118,7 @@ const handleSave = async () => {
   };
 
   onSubmit(producto, !productoEditado);
+
   onClose();
 };
   return (
@@ -193,6 +195,14 @@ const handleSave = async () => {
           </View>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
+      {toast && (
+  <CustomToast
+    message={toast.message}
+    type={toast.type}
+    onClose={() => setToast(null)}
+  />
+)}
+
     </Modal>
   );
 }
