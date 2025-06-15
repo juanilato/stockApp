@@ -124,26 +124,21 @@ tagValueCompact: {
     color: colors.strongText,
   },
 
-  addButtonPunch: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderWidth: 1,
-    borderColor: '#ffffff',
-    paddingHorizontal: wp('3.9%'),
-    paddingVertical: hp('0.9%'),
-    borderRadius: wp('7.2%'),
-    shadowColor: colors.shadowDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 6,
-  },
+ addButtonPunch: {
+  width: 48,
+  height: 48,
+  borderRadius: 24,
+  backgroundColor: '#2563eb', // azul profesional, podés cambiarlo si usás otro color base
 
-  addButtonTextPunch: {
-    color: '#ffffff',
-    fontSize: wp('3.4%'),
-    fontWeight: '600',
-    marginLeft: wp('1.4%'),
-  },
+  alignItems: 'center',
+  justifyContent: 'center',
+
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.15,
+  shadowRadius: 6,
+  elevation: 6,
+},
+
+  
 });

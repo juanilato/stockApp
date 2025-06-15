@@ -2,7 +2,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-  Animated, FlatList, Text, TouchableOpacity, View
+  Alert,
+  Animated, FlatList,
+  Text, TouchableOpacity, View
 } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 
@@ -13,9 +15,10 @@ import { styles } from '../styles/styles';
 import ModalConfirmacion from '@/components/ModalConfirmacion';
 import CustomToast from '../../../components/CustomToast';
 import MenuOpciones from '../components/MenuOpciones';
+import ModalBarCode from '../components/ModalBarCode';
 import ModalComponentes from '../components/ModalComponentes';
 import ModalProducto from '../components/ModalProducto';
-import ModalQR from '../components/ModalQR';
+import ModalScanner from '../components/ModalScanner';
 import ModalVariantes from '../components/ModalVariantes';
 
 
@@ -25,7 +28,8 @@ export default function ProductosView() {
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null); // producto seleccionado para editar o ver detalles
   const [modalProductoVisible, setModalProductoVisible] = useState(false); // modal para crear/editar producto
   const [modalVariantesVisible, setModalVariantesVisible] = useState(false); // modal para ver variantes del producto
-  const [modalQRVisible, setModalQRVisible] = useState(false); // modal para generar QR del producto
+  const [modalBarcodeVisible, setModalBarcodeVisible] = useState(false);
+  const [barcodeData, setBarcodeData] = useState(''); // Modal para generar código de barras
   const [modalComponentesVisible, setModalComponentesVisible] = useState(false); // modal para ver componentes del producto
   const [menuVisible, setMenuVisible] = useState(false); // menu de opciones del producto 
   const [qrData, setQrData] = useState(''); // datos del QR a generar
@@ -39,6 +43,7 @@ export default function ProductosView() {
 
   // setea los productos y materiales al iniciar la vista
   const inicializar = async () => {
+    
     await setupProductosDB();
     await cargarProductos();
     await cargarMateriales();
@@ -71,32 +76,55 @@ export default function ProductosView() {
   // genera el QR donde incluye:
   // - Si tiene variante, incluye id, nombre y precio de venta de la variante (variante.id, variante.nombre, variante.precioVenta)
   // - Si no tiene variante, incluye id, nombre y precio de venta del producto 
-const generarQR = (producto: Producto, variante?: VarianteProducto) => {
+const generarCodigoBarras = (producto: Producto, variante?: VarianteProducto) => {
   const payload = variante
     ? {
-        productoId: producto.id,
-        nombre: producto.nombre,
-        precioVenta: producto.precioVenta, 
-        varianteId: variante.id,
-        varianteNombre: variante.nombre,
-      }
-    : {
-        id: producto.id,
         nombre: producto.nombre,
         precioVenta: producto.precioVenta,
+        varianteNombre: variante.nombre,
+        codigoBarras: variante.codigoBarras,
+      }
+    : {
+        nombre: producto.nombre,
+        precioVenta: producto.precioVenta,
+        codigoBarras: producto.codigoBarras,
       };
 
   setProductoSeleccionado(producto);
-  setVarianteSeleccionada(variante || null); // ← guardar variante
-  setQrData(JSON.stringify(payload));
-  setModalQRVisible(true);
+  setVarianteSeleccionada(variante || null);
+  setBarcodeData(JSON.stringify(payload));
+  setModalBarcodeVisible(true);
 };
 
-  // maneja el guardado del producto (nuevo o editado)
+  // genera un código EAN13 válido
+  const generarEAN13 = (): string => {
+    // Prefijo para Argentina (779)
+    const prefijo = '779';
+    // Generar 9 dígitos aleatorios
+    const random = Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
+    const base = prefijo + random;
+    const checkDigit = calcularDigitoControlEAN13(base);
+    return base + checkDigit;
+  };
+
+  const calcularDigitoControlEAN13 = (codigo: string): string => {
+    const nums = codigo.split('').map(n => parseInt(n));
+    let sum = 0;
+    for (let i = 0; i < nums.length; i++) {
+      // En EAN13, las posiciones pares (0-based) se multiplican por 3
+      sum += i % 2 === 1 ? nums[i] * 3 : nums[i];
+    }
+    const check = (10 - (sum % 10)) % 10;
+    return check.toString();
+  };
 
   const [toast, setToast] = useState<{ message: string; type?: 'success' | 'error' | 'warning' } | null>(null);
-  const manejarGuardarProducto = async (producto: Producto, esNuevo: boolean) => {
- try {
+const manejarGuardarProducto = async (producto: Producto, esNuevo: boolean) => {
+  try {
+    // Si es nuevo y no trae código, lo generamos
+    if (esNuevo && !producto.codigoBarras) {
+      producto.codigoBarras = generarEAN13();
+    }
 
     if (esNuevo) {
       await insertarProducto(producto);
@@ -113,12 +141,14 @@ const generarQR = (producto: Producto, variante?: VarianteProducto) => {
       });
       console.log('✏️ Producto editado');
     }
+
     await cargarProductos(); // Refresca la lista
   } catch (error) {
     console.error('❌ Error al guardar producto:', error);
     alert('Hubo un error al guardar el producto.');
   }
-  };
+};
+
 
   // maneja la eliminación del producto, muestra un alert de confirmación
 
@@ -129,6 +159,25 @@ const manejarEliminar = (id: number) => {
   if (producto) {
     setProductoAEliminar(producto);
   }
+};
+const [scannerVisible, setScannerVisible] = useState(false);
+
+
+ // controla la visibilidad del escáner de código de barras
+const handleBarcodeScanned = (codigo: string) => {
+  const productoEncontrado = productos.find(p =>
+    p.codigoBarras === codigo ||
+    p.variantes?.some(v => v.codigoBarras === codigo)
+  );
+
+  if (productoEncontrado) {
+    setProductoSeleccionado(productoEncontrado);
+    setModalProductoVisible(true);
+  } else {
+    Alert.alert("Producto no encontrado", "Este código no está registrado.");
+  }
+
+  setScannerVisible(false);
 };
 
 
@@ -163,6 +212,7 @@ return (
 
         <View style={styles.productoInfo}>
           <Text style={styles.productoNombreCompact}>{item.nombre}</Text>
+         
 
 <View style={styles.productoTagsCompact}>
   <View style={styles.tagCompact}>
@@ -213,6 +263,7 @@ return (
 
   </View>
 
+<View style={{ flexDirection: 'row', gap: 12 }}>
   <TouchableOpacity
     style={styles.addButtonPunch}
     onPress={() => {
@@ -220,9 +271,21 @@ return (
       setModalProductoVisible(true);
     }}
   >
-    <MaterialCommunityIcons name="plus" size={18} color="#ffffff" />
-    <Text style={styles.addButtonTextPunch}>Agregar</Text>
+    <MaterialCommunityIcons name="plus" size={22} color="#ffffff" />
   </TouchableOpacity>
+
+  <TouchableOpacity
+    style={styles.addButtonPunch}
+    onPress={() => {
+      setScannerVisible(true);
+    }}
+  >
+    <MaterialCommunityIcons name="barcode-scan" size={22} color="#ffffff" />
+  </TouchableOpacity>
+</View>
+
+
+  
 </View>
 
         {/* Lista de productos */}
@@ -261,15 +324,23 @@ return (
         )}
 
 
+<ModalScanner
+  visible={scannerVisible}
+  productos={productos}
+  onClose={() => setScannerVisible(false)}
+  onSubmit={manejarGuardarProducto}
+/>
+
+
+
         {/** Modal para generar QR (si tiene variantes se mostrara menu para seleccionar variante*/}
-        <ModalQR
-          visible={modalQRVisible}
-          onClose={() => setModalQRVisible(false)}
-          qrData={qrData}
-          producto={productoSeleccionado}
-          variante={varianteSeleccionada}
-          
-        />
+      <ModalBarCode
+        visible={modalBarcodeVisible}
+        onClose={() => setModalBarcodeVisible(false)}
+        barcodeData={barcodeData}
+        producto={productoSeleccionado!}
+        variante={varianteSeleccionada}
+      />
 
 { /* Modal para manejar componentes del producto  (componen precio total)*/}
 {modalComponentesVisible && productoSeleccionado && (
@@ -290,7 +361,7 @@ return (
           visible={menuVisible}
           producto={productoSeleccionado}
           onClose={() => setMenuVisible(false)}
-          onGenerarQR={generarQR}
+          onGenerarQR={generarCodigoBarras}
           onEditarProducto={(p) => {
             setProductoSeleccionado(p);
             setModalProductoVisible(true);
@@ -305,7 +376,7 @@ return (
           }}
         />
       </Animated.View>
-{toast && !modalProductoVisible && !modalVariantesVisible && !modalQRVisible && !modalComponentesVisible && !menuVisible && (
+{toast && !modalProductoVisible && !modalVariantesVisible && !modalBarcodeVisible && !modalComponentesVisible && !menuVisible && (
   <CustomToast
     message={toast.message}
     type={toast.type}

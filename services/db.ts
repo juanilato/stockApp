@@ -1,5 +1,5 @@
+import * as FileSystem from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
-
 export interface Material {
   id?: number;
   nombre: string;
@@ -21,6 +21,7 @@ export interface Producto {
   precioCosto: number;
   precioVenta: number;
   stock: number;
+  codigoBarras?: string; // nuevo campo
   componentes?: ComponenteProducto[];
   variantes?: VarianteProducto[];
 }
@@ -30,6 +31,7 @@ export interface VarianteProducto {
   productoId: number;
   nombre: string;
   stock: number;
+  codigoBarras?: string; // nuevo campo
 }
 
 export interface Venta {
@@ -71,28 +73,29 @@ export const setupProductosDB = async () => {
     console.log('✅ Tabla materiales creada correctamente');
 
     // Crear la tabla de productos
-    await _db.execAsync(`
-      CREATE TABLE IF NOT EXISTS productos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        precioCosto REAL NOT NULL,
-        precioVenta REAL NOT NULL,
-        stock INTEGER NOT NULL
-      );
-    `);
-    console.log('✅ Tabla productos creada correctamente');
+// productos
+await _db.execAsync(`
+  CREATE TABLE IF NOT EXISTS productos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    precioCosto REAL NOT NULL,
+    precioVenta REAL NOT NULL,
+    stock INTEGER NOT NULL,
+    codigoBarras TEXT
+  );
+`);
 
-    // Crear la tabla de variantes de productos
-    await _db.execAsync(`
-      CREATE TABLE IF NOT EXISTS variantes_producto (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        productoId INTEGER NOT NULL,
-        nombre TEXT NOT NULL,
-        stock INTEGER NOT NULL,
-        FOREIGN KEY (productoId) REFERENCES productos (id) ON DELETE CASCADE
-      );
-    `);
-    console.log('✅ Tabla variantes_producto creada correctamente');
+// variantes_producto
+await _db.execAsync(`
+  CREATE TABLE IF NOT EXISTS variantes_producto (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    productoId INTEGER NOT NULL,
+    nombre TEXT NOT NULL,
+    stock INTEGER NOT NULL,
+    codigoBarras TEXT,
+    FOREIGN KEY (productoId) REFERENCES productos (id) ON DELETE CASCADE
+  );
+`);
 
     // Crear la tabla de componentes de productos
     await _db.execAsync(`
@@ -186,13 +189,13 @@ export const mostrarContenidoDB = async () => {
 };
 
 export const insertarProducto = async (producto: Producto, callback?: () => void) => {
-  const { nombre, precioCosto, precioVenta, stock } = producto;
+  const { nombre, precioCosto, precioVenta, stock, codigoBarras } = producto;
   console.log('📥 Insertando producto en DB:', producto);
   try {
     const dbInstance = getDb();
     const result = await dbInstance.runAsync(
-      'INSERT INTO productos (nombre, precioCosto, precioVenta, stock) VALUES (?, ?, ?, ?)',
-      [nombre, precioCosto, precioVenta, stock]
+      'INSERT INTO productos (nombre, precioCosto, precioVenta, stock, codigoBarras) VALUES (?, ?, ?, ?, ?)',
+      [nombre, precioCosto, precioVenta, stock, codigoBarras || null]
     );
     console.log('✅ Producto insertado en DB exitosamente. ID:', result.lastInsertRowId);
     callback?.();
@@ -229,6 +232,16 @@ export const obtenerProductos = async (callback: (productos: Producto[]) => void
   }
 };
 
+export const eliminarBaseDeDatos = async () => {
+  const dbPath = `${FileSystem.documentDirectory}SQLite/productos.db`;
+  const existe = await FileSystem.getInfoAsync(dbPath);
+  if (existe.exists) {
+    await FileSystem.deleteAsync(dbPath, { idempotent: true });
+    console.log('🗑️ Base de datos borrada exitosamente');
+  } else {
+    console.log('ℹ️ No se encontró base para borrar');
+  }
+};
 export const eliminarProducto = async (id: number, callback?: () => void) => {
   console.log('🗑️ Eliminando producto de DB:', id);
   try {
@@ -243,7 +256,7 @@ export const eliminarProducto = async (id: number, callback?: () => void) => {
 };
 
 export const actualizarProducto = async (producto: Producto, callback?: () => void) => {
-  const { id, nombre, precioCosto, precioVenta, stock } = producto;
+  const { id, nombre, precioCosto, precioVenta, stock, codigoBarras } = producto;
   console.log('📝 Actualizando producto en DB:', producto);
   try {
     const dbInstance = getDb();
@@ -252,9 +265,9 @@ export const actualizarProducto = async (producto: Producto, callback?: () => vo
       throw new Error('ID del producto no puede ser nulo para actualizar.');
     }
     const result = await dbInstance.runAsync(
-      'UPDATE productos SET nombre = ?, precioCosto = ?, precioVenta = ?, stock = ? WHERE id = ?',
-      [nombre, precioCosto, precioVenta, stock, id]
-    );
+  'UPDATE productos SET nombre = ?, precioCosto = ?, precioVenta = ?, stock = ?, codigoBarras = ? WHERE id = ?',
+  [nombre, precioCosto, precioVenta, stock, codigoBarras || null, id]
+);
     console.log('✅ Producto actualizado en DB exitosamente. Filas afectadas:', result.changes);
     callback?.();
   } catch (error) {
@@ -598,13 +611,13 @@ const actualizarCostosProductos = async () => {
 };
 
 export const insertarVariante = async (variante: VarianteProducto, callback?: () => void) => {
-  const { productoId, nombre, stock } = variante;
+  const { productoId, nombre, stock, codigoBarras } = variante;
   try {
     const dbInstance = getDb();
     const result = await dbInstance.runAsync(
-      'INSERT INTO variantes_producto (productoId, nombre, stock) VALUES (?, ?, ?)',
-      [productoId, nombre, stock]
-    );
+  'INSERT INTO variantes_producto (productoId, nombre, stock, codigoBarras) VALUES (?, ?, ?, ?)',
+  [productoId, nombre, stock, codigoBarras || null]
+);
     console.log('✅ Variante insertada en DB exitosamente. ID:', result.lastInsertRowId);
     callback?.();
   } catch (error) {
@@ -614,7 +627,7 @@ export const insertarVariante = async (variante: VarianteProducto, callback?: ()
 };
 
 export const actualizarVariante = async (variante: VarianteProducto, callback?: () => void) => {
-  const { id, nombre, stock } = variante;
+  const { id, nombre, stock, codigoBarras } = variante;
   try {
     const dbInstance = getDb();
     if (id === undefined || id === null) {
@@ -622,8 +635,8 @@ export const actualizarVariante = async (variante: VarianteProducto, callback?: 
       throw new Error('ID de la variante no puede ser nulo para actualizar.');
     }
     await dbInstance.runAsync(
-      'UPDATE variantes_producto SET nombre = ?, stock = ? WHERE id = ?',
-      [nombre, stock, id]
+      'UPDATE variantes_producto SET nombre = ?, stock = ?, codigoBarras = ? WHERE id = ?',
+      [nombre, stock, codigoBarras || null, id]
     );
     console.log('✅ Variante actualizada en DB exitosamente');
     callback?.();

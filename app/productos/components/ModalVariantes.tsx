@@ -54,6 +54,22 @@ const cargarVariantes = async () => {
       setToast(null); // Limpia el mensaje anterior
     }
   }, [visible, producto]);
+const generarEAN13 = (): string => {
+  const base = Math.floor(100000000000 + Math.random() * 899999999999).toString(); // 12 dígitos
+  const checkDigit = calcularDigitoControlEAN13(base);
+  return base + checkDigit;
+};
+
+const calcularDigitoControlEAN13 = (codigo: string): string => {
+  const nums = codigo.split('').map(n => parseInt(n));
+  let sum = 0;
+  for (let i = 0; i < nums.length; i++) {
+    sum += i % 2 === 0 ? nums[i] : nums[i] * 3;
+  }
+  const remainder = sum % 10;
+  const check = remainder === 0 ? 0 : 10 - remainder;
+  return check.toString();
+};
 
 
   // Guarda la variante nueva o actualizada
@@ -68,21 +84,22 @@ if (parseInt(varianteStock) <= 0) {
   setToast({ message: 'El stock debe ser un número positivo', type: 'warning' });
   return;
 }
-
-    const variante: VarianteProducto = {
-      productoId: producto.id!,
-      nombre: varianteNombre,
-      stock: parseInt(varianteStock),
-    };
+      const variante: VarianteProducto = {
+        productoId: producto.id!,
+        nombre: varianteNombre,
+        stock: parseInt(varianteStock),
+        codigoBarras: generarEAN13(), 
+      };
 
     // Si se está editando una variante, se agrega el ID para actualizarla
     // Si es una nueva variante, no se agrega ID y se inserta como nueva en el producto id
     try {
-      if (varianteSeleccionada) {
-        await actualizarVariante({ ...variante, id: varianteSeleccionada.id });
-      } else {
-        await insertarVariante(variante);
-      }
+        if (varianteSeleccionada) {
+          await actualizarVariante({ ...variante, id: varianteSeleccionada.id, codigoBarras: varianteSeleccionada.codigoBarras });
+        } else {
+          variante.codigoBarras = generarEAN13();
+          await insertarVariante(variante);
+        }
       setVarianteNombre(''); // Limpia el campo de nombre
       setVarianteStock(''); // Limpia el campo de stock
       onActualizar?.(); // Refresca productos desde componente padre

@@ -13,15 +13,17 @@ import {
 } from 'react-native';
 import CustomToast from '../../../components/CustomToast';
 import FloatingLabelInput from '../../../components/FloatingLabel';
-import { Producto, getDb } from '../../../services/db';
+import { getDb, Producto, VarianteProducto } from '../../../services/db';
 import { colors } from '../../styles/theme';
 import { styles } from '../styles/modals/ModalProducto.styles';
 interface Props {
   visible: boolean;
+  productoEditado: Producto | null;
+  variante?: VarianteProducto;
   onClose: () => void;
   onSubmit: (producto: Producto, esNuevo: boolean) => void;
-  productoEditado?: Producto | null;
 }
+
 
 export default function ModalProducto({
   visible,

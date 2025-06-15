@@ -17,6 +17,17 @@ type Props = {
   navigation: NuevaVentaScreenNavigationProp;
 };
 
+// Función para generar un EAN13 válido
+function generarEAN13(): string {
+  const base = Math.floor(100000000000 + Math.random() * 899999999999).toString(); // 12 dígitos
+  let sum = 0;
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(base[i]) * (i % 2 === 0 ? 1 : 3);
+  }
+  const checkDigit = (10 - (sum % 10)) % 10;
+  return base + checkDigit.toString();
+}
+
 export default function NuevaVenta({ navigation }: Props) {
   const [nombre, setNombre] = useState('');
   const [precioVenta, setPrecioVenta] = useState('');
@@ -36,7 +47,8 @@ export default function NuevaVenta({ navigation }: Props) {
       nombre,
       precioVenta: precioVentaNum,
       precioCosto: precioCostoNum,
-      stock: parseInt(stock)
+      stock: parseInt(stock),
+      codigoBarras: generarEAN13(),
     };
 
     insertarProducto(producto, () => {

@@ -66,10 +66,11 @@ export default function MenuOpciones({
           <Text style={styles.menuTitle}>{producto.nombre}</Text>
 
           <View style={styles.buttonList}>
-            <TouchableOpacity style={styles.optionRow} onPress={handleGenerarQR}>
-              <MaterialCommunityIcons name="qrcode" size={20} color="#334155" />
-              <Text style={styles.optionText}>Generar QR</Text>
+              <TouchableOpacity style={styles.optionRow} onPress={handleGenerarQR}>
+              <MaterialCommunityIcons name="barcode" size={20} color="#334155" />
+              <Text style={styles.optionText}>Código de Barras</Text>
             </TouchableOpacity>
+
 
             <TouchableOpacity style={styles.optionRow} onPress={() => { onClose(); onEditarProducto(producto); }}>
               <MaterialCommunityIcons name="pencil" size={20} color="#334155" />

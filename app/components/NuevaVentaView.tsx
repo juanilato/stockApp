@@ -314,70 +314,51 @@ const mostrarMensajeFlotante = async (texto: string) => {
 
 const handleBarCodeScanned = async ({ data }: { data: string }) => {
   const currentTime = Date.now();
-
-  // ✅ Bloqueo inmediato sin esperar re-render
   if (isScanningRef.current || (lastScannedCode === data && currentTime - lastScanTime < SCAN_DELAY)) {
     return;
   }
-
-  isScanningRef.current = true; // 🔒 Bloqueo inmediato
+  isScanningRef.current = true;
   setLastScannedCode(data);
   setLastScanTime(currentTime);
-  
-if (!modoRapido) {
   setScannerVisible(false);
-}
-
-
   try {
-    const productoData = JSON.parse(data);
-    const productoId = Number(productoData.productoId ?? productoData.id);
-    const producto = productos.find(p => p.id === productoId);
-
-    if (!producto) {
-      mostrarMensajeFlotante('❌ Producto no encontrado');
-      return;
-    }
-
-    const yaAgregado = productosSeleccionados.some(p =>
-      p.id === producto.id &&
-      (!productoData.varianteId || p.varianteSeleccionada?.id === productoData.varianteId)
-    );
-
-    if (yaAgregado) {
-        mostrarMensajeFlotante(`⚠️ Ya escaneado: ${producto.nombre}`);
-      return;
-    }
-
-    if (productoData.varianteId) {
-      const variante = producto.variantes?.find(v => v.id === productoData.varianteId);
-      if (!variante) {
-        Alert.alert('Error', 'Variante no encontrada');
-        return;
+    console.log('Escaneado:', data);
+    if (/^\d{13}$/.test(data)) {
+      let productoEncontrado: Producto | null = null;
+      let varianteEncontrada: VarianteProducto | null = null;
+      for (const producto of productos) {
+        if (producto.variantes && producto.variantes.length > 0) {
+          const variante = producto.variantes.find(v => v.codigoBarras === data);
+          if (variante) {
+            productoEncontrado = producto;
+            varianteEncontrada = variante;
+            break;
+          }
+        }
       }
-      if (variante.stock <= 0) {
-        Alert.alert('Sin stock', 'No hay stock disponible de esta variante');
-        return;
+      if (!varianteEncontrada) {
+        productoEncontrado = productos.find(p => p.codigoBarras === data) || null;
       }
-
-      agregarProductoConCantidad(producto, 1, variante);
-mostrarMensajeFlotante(`✅ Agregado: ${producto.nombre} - ${variante.nombre}`);
+      console.log('Resultado búsqueda:', {
+        productoEncontrado,
+        varianteEncontrada
+      });
+      if (varianteEncontrada && productoEncontrado) {
+        agregarProductoConCantidad(productoEncontrado, 1, varianteEncontrada);
+        mostrarMensajeFlotante(`✅ Agregado: ${productoEncontrado.nombre} - ${varianteEncontrada.nombre}`);
+      } else if (productoEncontrado) {
+        agregarProductoConCantidad(productoEncontrado, 1);
+        mostrarMensajeFlotante(`✅ Agregado: ${productoEncontrado.nombre}`);
+      } else {
+        mostrarMensajeFlotante('❌ Producto o variante no encontrado para el código de barras escaneado');
+      }
     } else {
-      if (producto.stock <= 0) {
-        Alert.alert('Sin stock', 'No hay stock disponible');
-        return;
-      }
-
-      agregarProductoConCantidad(producto, 1);
-mostrarMensajeFlotante(`✅ Agregado: ${producto.nombre}`);
+      mostrarMensajeFlotante('❌ Solo se aceptan códigos de barras EAN13 válidos (13 dígitos numéricos)');
     }
-
   } catch (error) {
-    console.error('❌ QR inválido:', error);
-    Alert.alert('Error', 'Código QR inválido');
+    console.error('❌ Código de barras inválido:', error);
+    mostrarMensajeFlotante('❌ Código de barras inválido');
   } finally {
-
-
     setTimeout(() => {
       isScanningRef.current = false;
     }, SCAN_DELAY);
@@ -590,7 +571,7 @@ mostrarMensajeFlotante(`✅ Agregado: ${producto.nombre}`);
             }
           }}
         >
-          <MaterialCommunityIcons name="qrcode-scan" size={24} color={colors.white} />
+          <MaterialCommunityIcons name="barcode-scan" size={24} color={colors.white} />
         </TouchableOpacity>
       </View>
 
@@ -722,9 +703,9 @@ mostrarMensajeFlotante(`✅ Agregado: ${producto.nombre}`);
               style={StyleSheet.absoluteFillObject}
               facing="back"
               barcodeScannerSettings={{
-                barcodeTypes: ["qr"],
+                barcodeTypes: ["qr","ean13"],
               }}
-              onBarcodeScanned={scannerVisible ? handleBarCodeScanned : undefined}
+              onBarcodeScanned={handleBarCodeScanned}
             >
 <View style={styles.scannerHeader}>
   <TouchableOpacity
