@@ -9,7 +9,8 @@ import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-nat
 import EstadisticasView from './components/EstadisticasView';
 import InicioView from './components/InicioView';
 import MaterialesView from './components/MaterialesView';
-import NuevaVentaView from './components/NuevaVentaView';
+
+import NuevaVentaView from '../app/nueva-venta/main';
 //import ProductosView from './components/ProductosView';
 import ProductosView from '../app/productos/pages/main';
 

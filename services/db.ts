@@ -27,7 +27,7 @@ export interface Producto {
 }
 
 export interface VarianteProducto {
-  id?: number;
+  id: number;
   productoId: number;
   nombre: string;
   stock: number;
