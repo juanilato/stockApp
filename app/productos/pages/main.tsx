@@ -2,7 +2,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   Animated, FlatList,
   Text, TouchableOpacity, View
 } from 'react-native';
@@ -13,6 +12,7 @@ import { commonStyles } from '../../styles/theme';
 import { styles } from '../styles/styles';
 
 import ModalConfirmacion from '@/components/ModalConfirmacion';
+import { Menu, Provider as PaperProvider } from 'react-native-paper';
 import CustomToast from '../../../components/CustomToast';
 import MenuOpciones from '../components/MenuOpciones';
 import ModalBarCode from '../components/ModalBarCode';
@@ -20,6 +20,7 @@ import ModalComponentes from '../components/ModalComponentes';
 import ModalProducto from '../components/ModalProducto';
 import ModalScanner from '../components/ModalScanner';
 import ModalVariantes from '../components/ModalVariantes';
+
 
 
 export default function ProductosView() {
@@ -31,9 +32,12 @@ export default function ProductosView() {
   const [modalBarcodeVisible, setModalBarcodeVisible] = useState(false);
   const [barcodeData, setBarcodeData] = useState(''); // Modal para generar código de barras
   const [modalComponentesVisible, setModalComponentesVisible] = useState(false); // modal para ver componentes del producto
-  const [menuVisible, setMenuVisible] = useState(false); // menu de opciones del producto 
-  const [qrData, setQrData] = useState(''); // datos del QR a generar
+  const [menuVisible, setMenuVisible] = useState(false); // menu de opciones del producto
+  const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(null);
   const [varianteSeleccionada, setVarianteSeleccionada] = useState<VarianteProducto | null>(null);
+
+const [menuVisibleOpciones, setMenuVisibleOpciones] = useState(false);
+
 
   const fadeAnim = new Animated.Value(0); 
 
@@ -163,23 +167,6 @@ const manejarEliminar = (id: number) => {
 const [scannerVisible, setScannerVisible] = useState(false);
 
 
- // controla la visibilidad del escáner de código de barras
-const handleBarcodeScanned = (codigo: string) => {
-  const productoEncontrado = productos.find(p =>
-    p.codigoBarras === codigo ||
-    p.variantes?.some(v => v.codigoBarras === codigo)
-  );
-
-  if (productoEncontrado) {
-    setProductoSeleccionado(productoEncontrado);
-    setModalProductoVisible(true);
-  } else {
-    Alert.alert("Producto no encontrado", "Este código no está registrado.");
-  }
-
-  setScannerVisible(false);
-};
-
 
   // renderiza cada producto en la lista, incluyendo acciones de swipe para editar y eliminar
   const renderProducto = ({ item }: { item: Producto }) => {
@@ -250,6 +237,7 @@ return (
 
   // Vista principal de productos 
   return (
+    <PaperProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Animated.View style={[commonStyles.container, { opacity: 1 }]}>
 <View style={styles.headerProductos}>
@@ -263,26 +251,62 @@ return (
 
   </View>
 
-<View style={{ flexDirection: 'row', gap: 12 }}>
-  <TouchableOpacity
-    style={styles.addButtonPunch}
+<View>
+<TouchableOpacity
+  onPress={(e) => {
+    const { pageX, pageY } = e.nativeEvent;
+    setMenuAnchor({ x: pageX, y: pageY });
+    setMenuVisibleOpciones(true);
+  }}
+  style={styles.menuButtonStyle}
+>
+  <MaterialCommunityIcons name="dots-vertical" size={20} color="#ffffff" />
+</TouchableOpacity>
+
+<Menu
+  visible={menuVisibleOpciones}
+  onDismiss={() => setMenuVisibleOpciones(false)}
+  anchor={menuAnchor}
+  contentStyle={styles.menuContentStyle}
+>
+  <Menu.Item
     onPress={() => {
+      setMenuVisibleOpciones(false);
       setProductoSeleccionado(null);
       setModalProductoVisible(true);
     }}
-  >
-    <MaterialCommunityIcons name="plus" size={22} color="#ffffff" />
-  </TouchableOpacity>
-
-  <TouchableOpacity
-    style={styles.addButtonPunch}
+    title="Agregar producto"
+    titleStyle={styles.menuItemTextStyle}
+    leadingIcon={() => (
+      <MaterialCommunityIcons
+        name="plus"
+        size={20}
+        color="#10b981"
+        style={styles.iconStyle}
+      />
+    )}
+  />
+  <Menu.Item
     onPress={() => {
+      setMenuVisibleOpciones(false);
       setScannerVisible(true);
     }}
-  >
-    <MaterialCommunityIcons name="barcode-scan" size={22} color="#ffffff" />
-  </TouchableOpacity>
+    title="Escanear código"
+    titleStyle={styles.menuItemTextStyle}
+    leadingIcon={() => (
+      <MaterialCommunityIcons
+        name="barcode-scan"
+        size={20}
+        color="#3b82f6"
+        style={styles.iconStyle}
+      />
+    )}
+  />
+</Menu>
+
+
 </View>
+
 
 
   
@@ -398,5 +422,6 @@ return (
 />
 
     </GestureHandlerRootView>
+    </PaperProvider>
   );
 }

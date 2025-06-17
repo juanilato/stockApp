@@ -140,5 +140,36 @@ tagValueCompact: {
   elevation: 6,
 },
 
-  
+ menuButtonStyle: {
+  backgroundColor: '#2563eb',
+  padding: 10,
+  borderRadius: 12,
+  justifyContent: 'center',
+  alignItems: 'center',
+  elevation: 2,
+},
+menuContentStyle: {
+  backgroundColor: '#f9fafb',
+  borderRadius: 16,
+  paddingVertical: 6,
+  minWidth: 190,
+  elevation: 6,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.08,
+  shadowRadius: 4,
+},
+menuItemTextStyle:{
+  fontSize: 15,
+  fontWeight: '600',
+  color: '#1e293b',
+},
+iconStyle:{
+  marginRight: 12,
+},
+
+
+
+
+
 });

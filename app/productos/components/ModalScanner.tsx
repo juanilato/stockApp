@@ -18,24 +18,35 @@ export default function ModalScanner({ visible, productos, onClose, onSubmit }: 
   const [mostrarModalProducto, setMostrarModalProducto] = useState(false);
   const [scanned, setScanned] = useState(false);
 
-  const handleBarcodeScanned = (codigo: string) => {
-    if (scanned) return;
-    setScanned(true);
+const [codigoNoRegistrado, setCodigoNoRegistrado] = useState<string | null>(null);
 
-    const producto = productos.find(p =>
-      p.codigoBarras === codigo || p.variantes?.some(v => v.codigoBarras === codigo)
-    );
+const handleBarcodeScanned = (codigo: string) => {
+  if (scanned) return;
+  setScanned(true);
 
-    if (producto) {
-      const variante = producto.variantes?.find(v => v.codigoBarras === codigo);
-      setProductoSeleccionado(producto);
-      setVarianteSeleccionada(variante);
-      setMostrarModalProducto(true);
-    } else {
-      alert('Producto no encontrado');
-      setScanned(false);
-    }
-  };
+  const producto = productos.find(p =>
+    p.codigoBarras === codigo || p.variantes?.some(v => v.codigoBarras === codigo)
+  );
+
+  if (producto) {
+    const variante = producto.variantes?.find(v => v.codigoBarras === codigo);
+    setProductoSeleccionado(producto);
+    setVarianteSeleccionada(variante);
+    setMostrarModalProducto(true);
+  } else {
+    // Código no registrado → crear nuevo producto
+    setProductoSeleccionado({
+      nombre: '',
+      precioCosto: 0,
+      precioVenta: 0,
+      stock: 0,
+      codigoBarras: codigo, // ← se pasa el código escaneado
+    } as Producto);
+    setCodigoNoRegistrado(codigo);
+    setMostrarModalProducto(true);
+  }
+};
+
 
   const cerrarTodo = () => {
     setScanned(false);
@@ -70,16 +81,23 @@ export default function ModalScanner({ visible, productos, onClose, onSubmit }: 
         </TouchableOpacity>
 
         {/* Modal de edición de producto por encima */}
- <ModalProducto
+<ModalProducto
   visible={mostrarModalProducto}
   productoEditado={productoSeleccionado}
   variante={varianteSeleccionada}
   onClose={() => {
     setMostrarModalProducto(false);
-    setScanned(false); // Permite escanear otro sin cerrar la cámara
+    setScanned(false);
+    setProductoSeleccionado(null);
+    setVarianteSeleccionada(undefined);
+    setCodigoNoRegistrado(null);
   }}
-  onSubmit={onSubmit} // ⬅️ PASA onSubmit DESDE ARRIBA
+  onSubmit={(producto, esNuevo) => {
+    onSubmit(producto, codigoNoRegistrado ? true : esNuevo); // fuerza nuevo si es código no registrado
+    cerrarTodo();
+  }}
 />
+
       </View>
     </Modal>
   );
