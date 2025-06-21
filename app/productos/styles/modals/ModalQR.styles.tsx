@@ -1,12 +1,42 @@
 import { StyleSheet } from 'react-native';
-import { colors } from '../../../styles/theme'; // ajustá el path según tu estructura
 
 export const styles = StyleSheet.create({
-  qrBox: {
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+
+  sheet: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 24,
+    minHeight: '60%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 16,
+  },
+
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    minHeight: 220,
+    marginBottom: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+
+  title: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1e293b',
+    letterSpacing: -0.5,
   },
 
   body: {
@@ -16,75 +46,73 @@ export const styles = StyleSheet.create({
     minHeight: 250,
   },
 
-  sheet: {
-    backgroundColor: colors.card,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 24,
-    minHeight: '60%',
-  },
-
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.2)',
-    justifyContent: 'flex-end',
-  },
-
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  qrBox: {
     alignItems: 'center',
-    marginBottom: 20,
-  },
-
-  title: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.text,
+    justifyContent: 'center',
+    paddingVertical: 24,
+    minHeight: 220,
+    backgroundColor: '#f8fafc',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
 
   qrText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.strongText,
-    marginTop: 12,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginTop: 16,
+    textAlign: 'center',
   },
 
   qrVarianteText: {
-    fontSize: 13,
-    color: colors.secondary,
+    fontSize: 14,
+    color: '#64748b',
+    marginTop: 4,
+    textAlign: 'center',
   },
 
   qrPrice: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.primary,
-    marginTop: 4,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#3b82f6',
+    marginTop: 8,
+    textAlign: 'center',
   },
 
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 16,
+    marginTop: 24,
   },
 
   buttonPrimary: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 30,
+    backgroundColor: '#3b82f6',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
     flex: 1,
     justifyContent: 'center',
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
 
   buttonPrimaryText: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
   },
 
@@ -92,17 +120,19 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.secondaryButtonBg,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 30,
+    backgroundColor: '#f1f5f9',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
     flex: 1,
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
 
   buttonSecondaryText: {
-    color: colors.mutedText,
-    fontSize: 14,
+    color: '#64748b',
+    fontSize: 16,
     fontWeight: '600',
   },
 });

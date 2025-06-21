@@ -1,36 +1,44 @@
 import { StyleSheet } from 'react-native';
 import { RFValue } from 'react-native-responsive-fontsize';
-import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
-import { colors } from '../../../styles/theme'; // Ajustá según tu estructura
+import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 export const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
 
   sheet: {
-    backgroundColor: colors.card,
-    borderTopLeftRadius: wp('6%'),
-    borderTopRightRadius: wp('6%'),
-    paddingHorizontal: wp('5%'),
-    paddingTop: hp('3%'),
-    paddingBottom: hp('2%'),
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 24,
     minHeight: hp('75%'),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 16,
   },
 
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: hp('2%'),
+    marginBottom: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
   },
 
   title: {
-    fontSize: RFValue(17),
-    fontWeight: '700',
-    color: colors.text,
+    fontSize: RFValue(20),
+    fontWeight: '800',
+    color: '#1e293b',
+    letterSpacing: -0.5,
   },
 
   body: {
@@ -38,55 +46,70 @@ export const styles = StyleSheet.create({
   },
 
   input: {
-    backgroundColor: colors.inputBg,
-    borderRadius: wp('3%'),
-    paddingHorizontal: wp('4%'),
-    paddingVertical: hp('1.5%'),
-    fontSize: RFValue(14),
-    color: colors.strongText,
-    marginBottom: hp('1.5%'),
+    backgroundColor: '#f8fafc',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: RFValue(15),
+    color: '#1e293b',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
 
   saveButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: hp('1.8%'),
-    borderRadius: wp('10%'),
+    backgroundColor: '#3b82f6',
+    paddingVertical: 16,
+    borderRadius: 16,
     alignItems: 'center',
-    marginBottom: hp('2.5%'),
+    marginBottom: 24,
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
 
   saveButtonText: {
-    color: '#fff',
-    fontSize: RFValue(14),
+    color: '#ffffff',
+    fontSize: RFValue(16),
     fontWeight: '600',
   },
 
   sectionTitle: {
-    fontSize: RFValue(14),
-    fontWeight: '600',
-    color: '#334155', // Podrías definir `colors.subText` si querés centralizar este color
-    marginBottom: hp('1.2%'),
+    fontSize: RFValue(16),
+    fontWeight: '700',
+    color: '#334155',
+    marginBottom: 16,
   },
 
   emptyText: {
-    fontSize: RFValue(13),
-    color: colors.placeholder,
+    fontSize: RFValue(14),
+    color: '#94a3b8',
     textAlign: 'center',
-    marginBottom: hp('2%'),
+    marginBottom: 24,
+    fontStyle: 'italic',
   },
 
   variantList: {
-    gap: hp('1.5%'),
+    gap: 16,
   },
 
   variantCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: wp('3.5%'),
-    paddingVertical: hp('1.2%'),
-    paddingHorizontal: wp('4%'),
+    backgroundColor: '#f8fafc',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
 
   variantInfo: {
@@ -94,19 +117,19 @@ export const styles = StyleSheet.create({
   },
 
   variantName: {
-    fontSize: RFValue(14),
+    fontSize: RFValue(15),
     fontWeight: '600',
-    color: colors.strongText,
-    marginBottom: hp('0.5%'),
+    color: '#1e293b',
+    marginBottom: 4,
   },
 
   variantStock: {
     fontSize: RFValue(13),
-    color: colors.secondary,
+    color: '#64748b',
   },
 
   variantActions: {
     flexDirection: 'row',
-    gap: wp('3%'),
+    gap: 12,
   },
 });

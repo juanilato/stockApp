@@ -6,39 +6,77 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, SafeAreaView, StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { RFValue } from "react-native-responsive-fontsize";
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
-import EstadisticasView from './components/EstadisticasView';
 import InicioView from './components/InicioView';
-import MaterialesView from './components/MaterialesView';
+import EstadisticasView from './estadisticas/main';
+import MaterialesView from './materiales/main';
 
 import NuevaVentaView from '../app/nueva-venta/main';
-//import ProductosView from './components/ProductosView';
+
 import ProductosView from '../app/productos/pages/main';
 
 const { width, height } = Dimensions.get('window');
 
+interface NavItem {
+  key: 'dashboard' | 'productos' | 'ventas' | 'estadisticas' | 'materiales';
+  icon: string;
+  label: string;
+  color: string;
+}
+
+const navItems: NavItem[] = [
+  {
+    key: 'materiales',
+    icon: 'basket',
+    label: 'Materiales',
+    color: '#f59e0b'
+  },
+  {
+    key: 'productos',
+    icon: 'package-variant-closed',
+    label: 'Productos',
+    color: '#3b82f6'
+  },
+  {
+    key: 'dashboard',
+    icon: 'home-variant-outline',
+    label: 'Inicio',
+    color: '#10b981'
+  },
+  {
+    key: 'ventas',
+    icon: 'cart',
+    label: 'Ventas',
+    color: '#ef4444'
+  },
+  {
+    key: 'estadisticas',
+    icon: 'chart-line',
+    label: 'Estadísticas',
+    color: '#8b5cf6'
+  }
+];
 
 export default function Dashboard() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const [currentView, setCurrentView] = useState<'dashboard' | 'productos' | 'ventas' | 'estadisticas' | 'materiales'>('dashboard');
-const sonidoSwipe = useRef<Audio.Sound | null>(null);
-useEffect(() => {
-  const cargarSonidos = async () => {
-    const [swipe] = await Promise.all([
+  const sonidoSwipe = useRef<Audio.Sound | null>(null);
 
-      Audio.Sound.createAsync(require('../assets/sounds/swipe.mp3'))
-    ]);
+  useEffect(() => {
+    const cargarSonidos = async () => {
+      const [swipe] = await Promise.all([
+        Audio.Sound.createAsync(require('../assets/sounds/swipe.mp3'))
+      ]);
+      sonidoSwipe.current = swipe.sound;
+    };
 
+    cargarSonidos();
 
-    sonidoSwipe.current = swipe.sound;
-  };
+    return () => {
+      sonidoSwipe.current?.unloadAsync();
+    };
+  }, []);
 
-  cargarSonidos();
-
-  return () => {
-    sonidoSwipe.current?.unloadAsync();
-  };
-}, []);
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -55,9 +93,8 @@ useEffect(() => {
     ]).start();
   }, []);
 
-  
   const handleViewChange = (view: 'dashboard' | 'productos' | 'ventas' | 'estadisticas' | 'materiales') => {
-     sonidoSwipe.current?.replayAsync();
+    sonidoSwipe.current?.replayAsync();
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -87,27 +124,19 @@ useEffect(() => {
     });
   };
 
-  const renderContent =  () => {
- 
-
+  const renderContent = () => {
     switch (currentView) {
       case 'dashboard':
-         
         return <InicioView />;
       case 'productos':
-          
         return <ProductosView />;
       case 'ventas':
-        
         return <NuevaVentaView />;
       case 'estadisticas':
-          
         return <EstadisticasView />;
       case 'materiales':
-   
         return <MaterialesView />;
       default:
-  
         return (
           <Animated.View 
             style={[
@@ -157,73 +186,42 @@ useEffect(() => {
         {renderContent()}
       </View>
 
-      {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
-
-
-
-        <TouchableOpacity 
-          style={[styles.navButton, currentView === 'materiales' && styles.navButtonActive]} 
-          onPress={() => handleViewChange('materiales')}
-        >
-          <MaterialCommunityIcons 
-            name="basket" 
-            size={24} 
-            color={currentView === 'materiales' ? '#2563eb' : '#64748b'} 
-          />
-          <Text style={[styles.navLabel, currentView === 'materiales' && styles.navLabelActive]}>Materiales</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.navButton, currentView === 'productos' && styles.navButtonActive]} 
-          onPress={() => handleViewChange('productos')}
-        >
-          <MaterialCommunityIcons 
-            name="package-variant-closed" 
-            size={24} 
-            color={currentView === 'productos' ? '#2563eb' : '#64748b'} 
-          />
-          <Text style={[styles.navLabel, currentView === 'productos' && styles.navLabelActive]}>Productos</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.navButton, currentView === 'dashboard' && styles.navButtonActive]} 
-          onPress={() => handleViewChange('dashboard')}
-        >
-          <MaterialCommunityIcons 
-            name="home-variant-outline" 
-            size={24} 
-            color={currentView === 'dashboard' ? '#2563eb' : '#64748b'} 
-          />
-          <Text style={[styles.navLabel, currentView === 'dashboard' && styles.navLabelActive]}>Inicio</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.navButton, currentView === 'ventas' && styles.navButtonActive]} 
-          onPress={() => handleViewChange('ventas')}
-        >
-          <MaterialCommunityIcons 
-            name="cart" 
-            size={24} 
-            color={currentView === 'ventas' ? '#2563eb' : '#64748b'} 
-          />
-          <Text style={[styles.navLabel, currentView === 'ventas' && styles.navLabelActive]}>Ventas</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.navButton, currentView === 'estadisticas' && styles.navButtonActive]} 
-          onPress={() => handleViewChange('estadisticas')}
-        >
-          <MaterialCommunityIcons 
-            name="chart-line" 
-            size={24} 
-            color={currentView === 'estadisticas' ? '#2563eb' : '#64748b'} 
-          />
-          <Text style={[styles.navLabel, currentView === 'estadisticas' && styles.navLabelActive]}>Métricas</Text>
-        </TouchableOpacity>
-
-
+      {/* Modern Bottom Navigation Bar */}
+      <View style={styles.bottomNavContainer}>
+        <View style={styles.bottomNav}>
+          {navItems.map((item) => {
+            const isActive = currentView === item.key;
+            return (
+              <TouchableOpacity 
+                key={item.key}
+                style={[styles.navButton, isActive && styles.navButtonActive]} 
+                onPress={() => handleViewChange(item.key)}
+                activeOpacity={0.8}
+              >
+                <Animated.View style={[
+                  styles.iconContainer,
+                  isActive && { backgroundColor: `${item.color}15` }
+                ]}>
+                  <MaterialCommunityIcons 
+                    name={item.icon as any} 
+                    size={24} 
+                    color={isActive ? item.color : '#94a3b8'} 
+                  />
+                </Animated.View>
+                <Text style={[
+                  styles.navLabel, 
+                  isActive && { color: item.color, fontWeight: '600' }
+                ]}>
+                  {item.label}
+                </Text>
+                {isActive && (
+                  <View style={[{ backgroundColor: item.color }]} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
-      
     </SafeAreaView>
   );
 }
@@ -231,11 +229,13 @@ useEffect(() => {
 const styles = StyleSheet.create<{
   container: ViewStyle;
   content: ViewStyle;
+  bottomNavContainer: ViewStyle;
   bottomNav: ViewStyle;
   navButton: ViewStyle;
   navButtonActive: ViewStyle;
+  iconContainer: ViewStyle;
   navLabel: TextStyle;
-  navLabelActive: TextStyle;
+  activeIndicator: ViewStyle;
   title: TextStyle;
   card: ViewStyle;
   cardContent: ViewStyle;
@@ -244,67 +244,66 @@ const styles = StyleSheet.create<{
   statLabel: TextStyle;
   main: ViewStyle;
 }>({
-    container: {
+  container: {
     flex: 1,
     backgroundColor: '#f8fafc',
   },
-
   content: {
     flex: 1,
   },
-
-  bottomNav: {
+  bottomNavContainer: {
     position: 'absolute',
-    bottom: hp('0%'),
+    bottom: 0,
+    left: 0,
+    right: 0,
 
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderTopLeftRadius: wp('7%'),
-    borderTopRightRadius: wp('7%'),
-
-    paddingVertical: hp('0.5%'),
-    paddingHorizontal: wp('3%'),
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 10,
+    paddingHorizontal: wp('4%'),
   },
-
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    paddingVertical: hp('1.5%'),
+    paddingHorizontal: wp('2%'),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 15,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
   navButton: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    borderRadius: wp('5%'),
-    marginHorizontal: wp('0.5%'),
-    paddingVertical: hp('0.8%'),
-  },
-
-  navButtonActive: {
-    backgroundColor: '#e0edff',
     paddingVertical: hp('1%'),
-    paddingHorizontal: wp('2.5%'),
-    borderRadius: wp('5%'),
-    transform: [{ scale: 1.12 }],
-    shadowColor: '#1d4ed8',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 8,
+    position: 'relative',
   },
+  navButtonActive: {
+    transform: [{ scale: 1.05 }],
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
 
+  },
   navLabel: {
-    fontSize: RFValue(6, height),
-    color: '#64748b',
-    marginTop: hp('0.3%'),
+    fontSize: RFValue(10, height),
+    color: '#94a3b8',
+    fontWeight: '500',
+    textAlign: 'center',
   },
-
-  navLabelActive: {
-    color: '#2563eb',
-    fontWeight: '600',
-    fontSize: RFValue(7, height),
+  activeIndicator: {
+    position: 'absolute',
+    bottom: hp('0.5%'),
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
-
   title: {
     fontSize: RFValue(18, height),
     fontWeight: '700',
@@ -312,7 +311,6 @@ const styles = StyleSheet.create<{
     textAlign: 'center',
     marginBottom: hp('2%'),
   },
-
   card: {
     borderRadius: wp('4%'),
     padding: wp('5%'),
@@ -323,29 +321,24 @@ const styles = StyleSheet.create<{
     backgroundColor: '#fff',
     elevation: 6,
   },
-
   cardContent: {
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
-
   statContainer: {
     alignItems: 'center',
   },
-
   statValue: {
     fontSize: RFValue(18, height),
     fontWeight: '700',
     color: '#1e293b',
     marginTop: hp('1%'),
   },
-
   statLabel: {
     fontSize: RFValue(12, height),
     color: '#6b7280',
     marginTop: hp('0.5%'),
   },
-
   main: {
     flex: 1,
     justifyContent: 'center',

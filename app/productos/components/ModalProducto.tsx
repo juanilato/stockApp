@@ -20,16 +20,17 @@ interface Props {
   visible: boolean;
   productoEditado: Producto | null;
   variante?: VarianteProducto;
+  codigoNoRegistrado?: string | null;
   onClose: () => void;
   onSubmit: (producto: Producto, esNuevo: boolean) => void;
 }
-
 
 export default function ModalProducto({
   visible,
   onClose,
   onSubmit,
-  productoEditado
+  productoEditado,
+  codigoNoRegistrado,
 }: Props) {
   const [nombre, setNombre] = useState(''); // Nombre del producto
   const [precioVenta, setPrecioVenta] = useState(''); // Precio de venta del producto
@@ -111,17 +112,17 @@ const handleSave = async () => {
     }
   }
 
-  const producto: Producto = {
-    id: productoEditado?.id,
-    nombre,
-    precioVenta: parsedPrecioVenta,
-    precioCosto: parsedPrecioCosto,
-    stock: parsedStock,
-  };
+const producto: Producto = {
+  id: productoEditado?.id,
+  nombre,
+  precioVenta: parsedPrecioVenta,
+  precioCosto: parsedPrecioCosto,
+  stock: parsedStock,
+  codigoBarras: productoEditado?.codigoBarras || codigoNoRegistrado || undefined,
+};
 
   onSubmit(producto, !productoEditado);
 
-  onClose();
 };
   return (
     <Modal
@@ -174,6 +175,15 @@ const handleSave = async () => {
     keyboardType="numeric"
    
   />
+  {codigoNoRegistrado && !productoEditado?.codigoBarras && (
+  <FloatingLabelInput
+                    label="Código de Barras"
+                    value={codigoNoRegistrado}
+                    editable={false}
+                    style={{ opacity: 0.6 }} onChangeText={function (text: string): void {
+                      throw new Error('Function not implemented.');
+                    } }  />
+)}
 </View>
 
             </View>

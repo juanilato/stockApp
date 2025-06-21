@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { borderRadius, colors, spacing } from '../styles/theme';
+import { obtenerEstadisticas, setupProductosDB } from '../../services/db';
+import { colors, spacing } from '../../styles/theme';
 
 interface Usuario {
   nombre: string;
@@ -21,23 +22,30 @@ interface ResumenVentas {
 export default function InicioView() {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(0)).current;
+  const [isLoading, setIsLoading] = useState(true);
+  const [estadisticas, setEstadisticas] = useState<any>(null);
 
   const usuario: Usuario = {
-    nombre: 'Juan Pérez',
+    nombre: 'Usuario',
     rol: 'Administrador',
     ultimoAcceso: 'Hace 5 minutos',
   };
 
-  const resumenVentas: ResumenVentas = {
-    ventasHoy: 15,
-    ventasSemana: 87,
-    ventasMes: 342,
-    gananciaHoy: 1250,
-    gananciaSemana: 8750,
-    gananciaMes: 34200,
-  };
-
   useEffect(() => {
+    const cargarDatos = async () => {
+      try {
+        await setupProductosDB();
+        const stats = await obtenerEstadisticas();
+        setEstadisticas(stats);
+      } catch (error) {
+        console.error('Error al cargar estadísticas:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    cargarDatos();
+
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -52,73 +60,139 @@ export default function InicioView() {
     ]).start();
   }, []);
 
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <MaterialCommunityIcons name="chart-line" size={48} color="#94a3b8" />
+        <Text style={styles.loadingText}>Cargando datos...</Text>
+      </View>
+    );
+  }
+
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      {/* Header elegante */}
-<View style={styles.headerContainer}>
-  <View style={styles.headerMinimal}>
-    <View>
-      <Text style={styles.saludoSuave}>Hola de nuevo,</Text>
-      <Text style={styles.nombreDiscreto}>Juan Pérez</Text>
-    </View>
-    <MaterialCommunityIcons
-      name="account-circle-outline"
-      size={40}
-      color="#64748b"
-    />
-  </View>
-</View>
+      {/* Header moderno con gradiente */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerText}>
+            <Text style={styles.saludo}>¡Hola de nuevo!</Text>
+            <Text style={styles.nombre}>{usuario.nombre}</Text>
+            <Text style={styles.subtitulo}>Bienvenido a tu panel de control</Text>
+          </View>
+          <View style={styles.avatarContainer}>
+            <MaterialCommunityIcons
+              name="account-circle"
+              size={24}
+              color="#ffffff"
+            />
+          </View>
+        </View>
+      </View>
 
-
-
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: spacing['2xl'] }}>
-        {/* Usuario */}
-        <View style={styles.cardUsuario}>
-          <MaterialCommunityIcons name="account-circle" size={48} color={colors.primary} />
-          <View style={{ marginLeft: 12 }}>
-            <Text style={styles.usuarioNombre}>{usuario.nombre}</Text>
-            <Text style={styles.usuarioRol}>{usuario.rol}</Text>
-            <Text style={styles.usuarioAcceso}>Último acceso: {usuario.ultimoAcceso}</Text>
+      <ScrollView 
+        style={styles.content} 
+        contentContainerStyle={{ paddingBottom: spacing['2xl'] }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Resumen general */}
+        <View style={styles.resumenCard}>
+          <View style={styles.resumenHeader}>
+            <MaterialCommunityIcons name="chart-line" size={24} color={colors.primary} />
+            <Text style={styles.resumenTitle}>Resumen General</Text>
+          </View>
+          <View style={styles.resumenStats}>
+            <View style={styles.resumenStat}>
+              <Text style={styles.resumenValue}>{estadisticas?.ventasTotales || 0}</Text>
+              <Text style={styles.resumenLabel}>Ventas Totales</Text>
+            </View>
+            <View style={styles.resumenStat}>
+              <Text style={styles.resumenValue}>${(estadisticas?.gananciaTotal || 0).toLocaleString()}</Text>
+              <Text style={styles.resumenLabel}>Ganancia Total</Text>
+            </View>
           </View>
         </View>
 
         {/* Sección de Ventas */}
-        <Text style={styles.sectionTitle}>Resumen de Ventas</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <MaterialCommunityIcons name="calendar-today" size={24} color={colors.primary} />
-            <Text style={styles.statValue}>{resumenVentas.ventasHoy}</Text>
-            <Text style={styles.statLabel}>Hoy</Text>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="calendar" size={20} color={colors.primary} />
+            <Text style={styles.sectionTitle}>Ventas Recientes</Text>
           </View>
-          <View style={styles.statCard}>
-            <MaterialCommunityIcons name="calendar-week" size={24} color={colors.success} />
-            <Text style={styles.statValue}>{resumenVentas.ventasSemana}</Text>
-            <Text style={styles.statLabel}>Semana</Text>
-          </View>
-          <View style={styles.statCard}>
-            <MaterialCommunityIcons name="calendar-month" size={24} color={colors.info} />
-            <Text style={styles.statValue}>{resumenVentas.ventasMes}</Text>
-            <Text style={styles.statLabel}>Mes</Text>
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <View style={styles.statIcon}>
+                <MaterialCommunityIcons name="calendar-today" size={18} color="#ffffff" />
+              </View>
+              <Text style={styles.statValue}>{estadisticas?.ganancias?.dia || 0}</Text>
+              <Text style={styles.statLabel}>Hoy</Text>
+            </View>
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: colors.success }]}>
+                <MaterialCommunityIcons name="calendar-week" size={18} color="#ffffff" />
+              </View>
+              <Text style={styles.statValue}>{estadisticas?.ganancias?.mes || 0}</Text>
+              <Text style={styles.statLabel}>Mes</Text>
+            </View>
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: colors.info }]}>
+                <MaterialCommunityIcons name="calendar-month" size={18} color="#ffffff" />
+              </View>
+              <Text style={styles.statValue}>{estadisticas?.ganancias?.anio || 0}</Text>
+              <Text style={styles.statLabel}>Año</Text>
+            </View>
           </View>
         </View>
 
-        {/* Sección de Ganancias */}
-        <Text style={styles.sectionTitle}>Resumen de Ganancias</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <MaterialCommunityIcons name="cash" size={24} color={colors.primary} />
-            <Text style={styles.statValue}>${resumenVentas.gananciaHoy}</Text>
-            <Text style={styles.statLabel}>Hoy</Text>
+        {/* Sección de Productos */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="package-variant" size={20} color={colors.success} />
+            <Text style={styles.sectionTitle}>Inventario</Text>
           </View>
-          <View style={styles.statCard}>
-            <MaterialCommunityIcons name="cash-multiple" size={24} color={colors.success} />
-            <Text style={styles.statValue}>${resumenVentas.gananciaSemana}</Text>
-            <Text style={styles.statLabel}>Semana</Text>
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <View style={styles.statIcon}>
+                <MaterialCommunityIcons name="package" size={18} color="#ffffff" />
+              </View>
+              <Text style={styles.statValue}>{estadisticas?.stockTotal || 0}</Text>
+              <Text style={styles.statLabel}>Stock Total</Text>
+            </View>
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: colors.warning }]}>
+                <MaterialCommunityIcons name="alert" size={18} color="#ffffff" />
+              </View>
+              <Text style={styles.statValue}>{estadisticas?.productosStockCritico || 0}</Text>
+              <Text style={styles.statLabel}>Stock Crítico</Text>
+            </View>
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: colors.info }]}>
+                <MaterialCommunityIcons name="cube" size={18} color="#ffffff" />
+              </View>
+              <Text style={styles.statValue}>{estadisticas?.productosVendidos || 0}</Text>
+              <Text style={styles.statLabel}>Productos Vendidos</Text>
+            </View>
           </View>
-          <View style={styles.statCard}>
-            <MaterialCommunityIcons name="chart-line" size={24} color={colors.info} />
-            <Text style={styles.statValue}>${resumenVentas.gananciaMes}</Text>
-            <Text style={styles.statLabel}>Mes</Text>
+        </View>
+
+        {/* Acciones Rápidas */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="lightning-bolt" size={20} color={colors.warning} />
+            <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
+          </View>
+          <View style={styles.quickActions}>
+            <View style={styles.quickActionCard}>
+              <MaterialCommunityIcons name="plus-circle" size={28} color={colors.primary} />
+              <Text style={styles.quickActionText}>Nueva Venta</Text>
+            </View>
+            <View style={styles.quickActionCard}>
+              <MaterialCommunityIcons name="package-variant" size={28} color={colors.success} />
+              <Text style={styles.quickActionText}>Productos</Text>
+            </View>
+            <View style={styles.quickActionCard}>
+              <MaterialCommunityIcons name="chart-bar" size={28} color={colors.info} />
+              <Text style={styles.quickActionText}>Estadísticas</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -131,166 +205,182 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
-headerContainer: {
-  paddingHorizontal: spacing.lg,
-  paddingTop: 50,
-  paddingBottom: 20,
-  backgroundColor: '#f8fafc',
-},
-
-headerMinimal: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-},
-
-saludoSuave: {
-  fontSize: 14,
-  color: '#94a3b8',
-},
-
-nombreDiscreto: {
-  fontSize: 20,
-  fontWeight: '600',
-  color: '#1e293b',
-  marginTop: 2,
-},
-
-  header: {
-    backgroundColor: '#ffffff',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: 20,
-    paddingBottom: 16,
+    backgroundColor: '#f8fafc',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#64748b',
+    marginTop: 16,
+    fontWeight: '500',
+  },
+  header: {
+    backgroundColor: '#1e293b',
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-  },
-
-  saludo: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1e293b',
-  },
-
-  subtitulo: {
-    fontSize: 14,
-    color: '#64748b',
-    marginTop: 2,
-  },
-
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-
-  cardUsuario: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: borderRadius.lg,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 2,
-    marginBottom: spacing.lg,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
   },
-
-  usuarioNombre: {
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 20,
+  },
+  headerText: {
+    flex: 1,
+  },
+  saludo: {
+    fontSize: 14,
+    color: '#94a3b8',
+    marginBottom: 4,
+  },
+  nombre: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  subtitulo: {
+    fontSize: 13,
+    color: '#cbd5e1',
+    fontWeight: '500',
+  },
+  avatarContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    padding: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  resumenCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  resumenHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  resumenTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1e293b',
+    marginLeft: 8,
   },
-
-  usuarioRol: {
-    fontSize: 14,
-    color: '#64748b',
+  resumenStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-
-  usuarioAcceso: {
+  resumenStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  resumenValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  resumenLabel: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: '#64748b',
+    fontWeight: '500',
   },
-
+  section: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1e293b',
-    marginBottom: 8,
-    marginTop: spacing.lg,
+    marginLeft: 8,
   },
-
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
+    gap: 8,
   },
-
   statCard: {
     flex: 1,
-    alignItems: 'center',
     backgroundColor: '#ffffff',
-    paddingVertical: 16,
-    marginHorizontal: 4,
-    borderRadius: borderRadius.md,
-    elevation: 1,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
-
+  statIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   statValue: {
     fontSize: 16,
     fontWeight: '700',
-    marginTop: 4,
     color: '#1e293b',
+    marginBottom: 2,
   },
-
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#64748b',
-    marginTop: 2,
+    fontWeight: '500',
+    textAlign: 'center',
   },
-
-
-
-headerGradient: {
-  paddingTop: 60,
-  paddingBottom: 24,
-  paddingHorizontal: spacing.lg,
-},
-
-headerContent: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-},
-
-nombreGrande: {
-  fontSize: 22,
-  fontWeight: 'bold',
-  color: '#ffffff',
-},
-
-saludoPunch: {
-  fontSize: 14,
-  color: '#c7d2fe',
-  marginTop: 4,
-},
-
-avatarIcon: {
-  elevation: 10,
-  shadowColor: '#000',
-  shadowOpacity: 0.3,
-  shadowOffset: { width: 0, height: 4 },
-  shadowRadius: 8,
-},
-
+  quickActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  quickActionCard: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  quickActionText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#64748b',
+    marginTop: 6,
+    textAlign: 'center',
+  },
 });
