@@ -2,14 +2,14 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import {
-    Modal,
-    Text,
-    TouchableOpacity,
-    View,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { Producto, VarianteProducto } from '../../../services/db';
-import { colors } from '../../styles/theme';
-import { styles } from '../main';
+import { borderRadius, colors, shadows, spacing, typography } from '../../styles/theme';
 
 interface Props {
   visible: boolean;
@@ -67,3 +67,58 @@ export default function ModalVariante({
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    padding: spacing.lg,
+    maxHeight: '80%',
+    ...shadows.lg,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  modalTitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+    color: colors.dark,
+    flex: 1,
+  },
+  closeButton: {
+    padding: spacing.sm,
+  },
+  modalBody: {
+    flex: 1,
+  },
+  varianteItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
+  },
+  varianteInfo: {
+    flex: 1,
+  },
+  varianteNombre: {
+    fontSize: typography.sizes.base,
+    fontWeight: typography.weights.semibold,
+    color: colors.dark,
+    marginBottom: spacing.xs,
+  },
+  varianteStock: {
+    fontSize: typography.sizes.sm,
+    color: colors.gray[600],
+  },
+});

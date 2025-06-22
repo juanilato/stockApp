@@ -85,6 +85,7 @@ if (parseInt(varianteStock) <= 0) {
   return;
 }
       const variante: VarianteProducto = {
+        id: varianteSeleccionada?.id || 0,
         productoId: producto.id!,
         nombre: varianteNombre,
         stock: parseInt(varianteStock),

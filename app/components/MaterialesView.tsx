@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Animated, FlatList, Keyboard, KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
-import { actualizarMaterial, db, insertarMaterial, Material, obtenerMateriales, setupProductosDB } from '../../services/db';
+import { actualizarMaterial, eliminarMaterial, insertarMaterial, Material, obtenerMateriales, setupProductosDB } from '../../services/db';
 import { borderRadius, colors, shadows, spacing, typography } from '../styles/theme';
 export default function MaterialesView() {
   const [materiales, setMateriales] = useState<Material[]>([]);
@@ -211,7 +211,7 @@ const [showSaveAnimation, setShowSaveAnimation] = useState(false);
           style: 'destructive',
           onPress: async () => {
             try {
-              await db.runAsync('DELETE FROM materiales WHERE id = ?', [id]);
+              await eliminarMaterial(id);
               animateEliminarProducto();
               await cargarMateriales();
             } catch (error) {

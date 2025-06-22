@@ -203,7 +203,7 @@ export default function ScannerOverlay({ confirmado = false }: Props) {
           <Animated.View
             style={{
               position: 'absolute',
-              top: scanLinePosition,
+              top: 0,
               left: 0,
               right: 0,
               height: 2,

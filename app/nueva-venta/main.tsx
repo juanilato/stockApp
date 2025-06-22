@@ -222,7 +222,6 @@ export default function NuevaVentaView() {
 
       <ModalQRPago
         visible={qrModalVisible}
-        qrData={qrData}
         total={calcularTotal()}
         onClose={() => setQrModalVisible(false)}
         onConfirmarPago={handleConfirmarPago}
@@ -230,24 +229,9 @@ export default function NuevaVentaView() {
 
       <ModalTransferencia
         visible={transferModalVisible}
-        transferQRData={transferQRData}
-        transferAmount={transferAmount}
-        transferAlias={transferAlias}
-        transferAccountId={transferAccountId}
-        transferType={transferType}
-        onChangeAmount={setTransferAmount}
-        onChangeAlias={setTransferAlias}
-        onChangeAccountId={setTransferAccountId}
-        onChangeType={setTransferType}
+        total={calcularTotal()}
         onClose={() => setTransferModalVisible(false)}
-        onGenerarQR={generarQRTransferencia}
-        onReset={() => {
-          setTransferQRData('');
-          setTransferAmount('');
-          setTransferAlias('');
-          setTransferAccountId('');
-          setTransferModalVisible(false);
-        }}
+        onConfirmarPago={handleConfirmarPago}
       />
 
       {/* Scanner Modal */}

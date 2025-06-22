@@ -1,52 +1,58 @@
 // components/NuevaVenta/ModalTransferencia.tsx
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import {
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { colors } from '../../styles/theme';
-import { styles } from '../main';
+import { borderRadius, colors, shadows, spacing, typography } from '../../styles/theme';
 
 interface Props {
   visible: boolean;
-  transferQRData: string;
-  transferAmount: string;
-  transferAlias: string;
-  transferAccountId: string;
-  transferType: 'alias' | 'account';
-  onChangeAmount: (val: string) => void;
-  onChangeAlias: (val: string) => void;
-  onChangeAccountId: (val: string) => void;
-  onChangeType: (type: 'alias' | 'account') => void;
+  total: number;
   onClose: () => void;
-  onGenerarQR: () => void;
-  onReset: () => void;
+  onConfirmarPago: () => void;
 }
 
 export default function ModalTransferencia({
   visible,
-  transferQRData,
-  transferAmount,
-  transferAlias,
-  transferAccountId,
-  transferType,
-  onChangeAmount,
-  onChangeAlias,
-  onChangeAccountId,
-  onChangeType,
+  total,
   onClose,
-  onGenerarQR,
-  onReset
+  onConfirmarPago,
 }: Props) {
+  const [transferType, setTransferType] = useState<'alias' | 'account'>('alias');
+  const [alias, setAlias] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [cbu, setCbu] = useState('');
+  const [showQR, setShowQR] = useState(false);
+
+  const transferAmount = total;
+
+  const generateTransferQR = () => {
+    if (!alias && !accountNumber) {
+      return;
+    }
+    setShowQR(true);
+  };
+
+  const qrData = JSON.stringify({
+    tipo: 'transferencia',
+    monto: transferAmount,
+    alias: alias,
+    cuenta: accountNumber,
+    cbu: cbu,
+    timestamp: new Date().toISOString(),
+  });
+
   return (
     <Modal
       visible={visible}
@@ -63,11 +69,11 @@ export default function ModalTransferencia({
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Transferencia</Text>
               <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <MaterialCommunityIcons name="close-circle" size={28} color={colors.gray[500]} />
+                <MaterialCommunityIcons name="close" size={24} color={colors.gray[500]} />
               </TouchableOpacity>
             </View>
 
-            {!transferQRData ? (
+            {!showQR ? (
               <>
                 <View style={styles.transferTypeContainer}>
                   <TouchableOpacity
@@ -75,17 +81,21 @@ export default function ModalTransferencia({
                       styles.transferTypeButton,
                       transferType === 'alias' && styles.transferTypeButtonActive
                     ]}
-                    onPress={() => onChangeType('alias')}
+                    onPress={() => setTransferType('alias')}
                   >
-                    <MaterialCommunityIcons
-                      name="account"
-                      size={24}
-                      color={transferType === 'alias' ? colors.white : colors.gray[700]}
+                    <MaterialCommunityIcons 
+                      name="account" 
+                      size={20} 
+                      color={transferType === 'alias' ? colors.white : colors.gray[600]} 
                     />
-                    <Text style={[
-                      styles.transferTypeText,
-                      transferType === 'alias' && styles.transferTypeTextActive
-                    ]}>Alias</Text>
+                    <Text
+                      style={[
+                        styles.transferTypeText,
+                        transferType === 'alias' && styles.transferTypeTextActive
+                      ]}
+                    >
+                      Alias
+                    </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -93,48 +103,51 @@ export default function ModalTransferencia({
                       styles.transferTypeButton,
                       transferType === 'account' && styles.transferTypeButtonActive
                     ]}
-                    onPress={() => onChangeType('account')}
+                    onPress={() => setTransferType('account')}
                   >
-                    <MaterialCommunityIcons
-                      name="bank"
-                      size={24}
-                      color={transferType === 'account' ? colors.white : colors.gray[700]}
+                    <MaterialCommunityIcons 
+                      name="bank" 
+                      size={20} 
+                      color={transferType === 'account' ? colors.white : colors.gray[600]} 
                     />
-                    <Text style={[
-                      styles.transferTypeText,
-                      transferType === 'account' && styles.transferTypeTextActive
-                    ]}>ID Cuenta</Text>
+                    <Text
+                      style={[
+                        styles.transferTypeText,
+                        transferType === 'account' && styles.transferTypeTextActive
+                      ]}
+                    >
+                      Cuenta
+                    </Text>
                   </TouchableOpacity>
                 </View>
-
-                <TextInput
-                  style={styles.input}
-                  value={transferAmount}
-                  onChangeText={onChangeAmount}
-                  keyboardType="numeric"
-                  placeholder="Monto a transferir"
-                  returnKeyType="next"
-                />
 
                 {transferType === 'alias' ? (
                   <TextInput
                     style={styles.input}
-                    value={transferAlias}
-                    onChangeText={onChangeAlias}
-                    placeholder="Alias de Mercado Pago"
-                    returnKeyType="done"
-                    onSubmitEditing={onGenerarQR}
+                    value={alias}
+                    onChangeText={setAlias}
+                    placeholder="Ingresa tu alias"
+                    placeholderTextColor={colors.gray[400]}
                   />
                 ) : (
-                  <TextInput
-                    style={styles.input}
-                    value={transferAccountId}
-                    onChangeText={onChangeAccountId}
-                    placeholder="ID de cuenta de Mercado Pago"
-                    keyboardType="numeric"
-                    returnKeyType="done"
-                    onSubmitEditing={onGenerarQR}
-                  />
+                  <>
+                    <TextInput
+                      style={styles.input}
+                      value={accountNumber}
+                      onChangeText={setAccountNumber}
+                      placeholder="Número de cuenta"
+                      keyboardType="numeric"
+                      placeholderTextColor={colors.gray[400]}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      value={cbu}
+                      onChangeText={setCbu}
+                      placeholder="CBU"
+                      keyboardType="numeric"
+                      placeholderTextColor={colors.gray[400]}
+                    />
+                  </>
                 )}
 
                 <View style={styles.modalButtonContainer}>
@@ -142,15 +155,14 @@ export default function ModalTransferencia({
                     style={[styles.modalButton, styles.modalButtonSecondary]}
                     onPress={onClose}
                   >
-                    <MaterialCommunityIcons name="close" size={20} color={colors.gray[700]} />
-                    <Text style={[styles.modalButtonText, styles.modalButtonTextSecondary]}>Cancelar</Text>
+                    <Text style={[styles.modalButtonText, styles.modalButtonTextSecondary]}>
+                      Cancelar
+                    </Text>
                   </TouchableOpacity>
-
                   <TouchableOpacity
                     style={[styles.modalButton, styles.modalButtonPrimary]}
-                    onPress={onGenerarQR}
+                    onPress={generateTransferQR}
                   >
-                    <MaterialCommunityIcons name="qrcode" size={20} color={colors.white} />
                     <Text style={styles.modalButtonText}>Generar QR</Text>
                   </TouchableOpacity>
                 </View>
@@ -158,35 +170,38 @@ export default function ModalTransferencia({
             ) : (
               <>
                 <View style={styles.qrContainer}>
-                  <QRCode
-                    value={transferQRData}
-                    size={250}
-                    backgroundColor="white"
-                    color="black"
-                  />
-                  <Text style={styles.qrTotal}>Total: ${transferAmount}</Text>
-                  <Text style={styles.qrInstructions}>
-                    Escanea este código con la app de Mercado Pago
-                  </Text>
-                  <Text style={[styles.qrInstructions, { marginTop: 8, fontSize: 14, color: colors.gray[500] }]}>
-                    Asegúrate de tener la última versión de la app instalada
-                  </Text>
+                  <View style={styles.qrWrapper}>
+                    <QRCode
+                      value={qrData}
+                      size={200}
+                      color={colors.dark}
+                      backgroundColor={colors.white}
+                    />
+                  </View>
+                  <View style={styles.qrInfo}>
+                    <Text style={styles.qrTotal}>Total: ${transferAmount}</Text>
+                    <Text style={styles.qrInstructions}>
+                      Escanea este código QR para realizar la transferencia
+                    </Text>
+                    <Text style={[styles.qrInstructions, { marginTop: 8, fontSize: 14, color: colors.gray[500] }]}>
+                      {transferType === 'alias' ? `Alias: ${alias}` : `Cuenta: ${accountNumber}`}
+                    </Text>
+                  </View>
                 </View>
 
                 <View style={styles.modalButtonContainer}>
                   <TouchableOpacity
                     style={[styles.modalButton, styles.modalButtonSecondary]}
-                    onPress={onReset}
+                    onPress={() => setShowQR(false)}
                   >
-                    <MaterialCommunityIcons name="close" size={20} color={colors.gray[700]} />
-                    <Text style={[styles.modalButtonText, styles.modalButtonTextSecondary]}>Cerrar</Text>
+                    <Text style={[styles.modalButtonText, styles.modalButtonTextSecondary]}>
+                      Cerrar
+                    </Text>
                   </TouchableOpacity>
-
                   <TouchableOpacity
                     style={[styles.modalButton, styles.modalButtonPrimary]}
-                    onPress={onReset}
+                    onPress={onConfirmarPago}
                   >
-                    <MaterialCommunityIcons name="check" size={20} color={colors.white} />
                     <Text style={styles.modalButtonText}>Listo</Text>
                   </TouchableOpacity>
                 </View>
@@ -198,3 +213,124 @@ export default function ModalTransferencia({
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    width: '100%',
+    maxWidth: 400,
+    ...shadows.lg,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  modalTitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+    color: colors.dark,
+  },
+  closeButton: {
+    padding: spacing.sm,
+  },
+  transferTypeContainer: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  transferTypeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    gap: spacing.sm,
+  },
+  transferTypeButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  transferTypeText: {
+    fontSize: typography.sizes.base,
+    fontWeight: typography.weights.medium,
+    color: colors.gray[600],
+  },
+  transferTypeTextActive: {
+    color: colors.white,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    fontSize: typography.sizes.base,
+    backgroundColor: colors.white,
+    marginBottom: spacing.md,
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  modalButton: {
+    flex: 1,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    ...shadows.sm,
+  },
+  modalButtonPrimary: {
+    backgroundColor: colors.primary,
+  },
+  modalButtonSecondary: {
+    backgroundColor: colors.gray[100],
+  },
+  modalButtonText: {
+    fontSize: typography.sizes.base,
+    fontWeight: typography.weights.semibold,
+    color: colors.white,
+  },
+  modalButtonTextSecondary: {
+    color: colors.gray[700],
+  },
+  qrContainer: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  qrWrapper: {
+    padding: spacing.lg,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+    ...shadows.sm,
+  },
+  qrInfo: {
+    alignItems: 'center',
+  },
+  qrTotal: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
+    marginBottom: spacing.sm,
+  },
+  qrInstructions: {
+    fontSize: typography.sizes.sm,
+    color: colors.gray[600],
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+});

@@ -2,22 +2,17 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import {
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Text,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { colors } from '../../styles/theme';
-import { styles } from '../main';
+import { borderRadius, colors, shadows, spacing, typography } from '../../styles/theme';
 
 interface Props {
   visible: boolean;
-  qrData: string;
   total: number;
   onClose: () => void;
   onConfirmarPago: () => void;
@@ -25,11 +20,16 @@ interface Props {
 
 export default function ModalQRPago({
   visible,
-  qrData,
   total,
   onClose,
   onConfirmarPago,
 }: Props) {
+  const qrData = JSON.stringify({
+    total: total,
+    timestamp: new Date().toISOString(),
+    tipo: 'pago_mercadopago'
+  });
+
   return (
     <Modal
       visible={visible}
@@ -37,56 +37,129 @@ export default function ModalQRPago({
       transparent={true}
       onRequestClose={onClose}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalContainer}
-        >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Pago con Mercado Pago</Text>
-              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <MaterialCommunityIcons name="close-circle" size={28} color={colors.gray[500]} />
-              </TouchableOpacity>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Pago con Mercado Pago</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <MaterialCommunityIcons name="close" size={24} color={colors.gray[500]} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.qrContainer}>
+            <View style={styles.qrWrapper}>
+              <QRCode
+                value={qrData}
+                size={200}
+                color={colors.dark}
+                backgroundColor={colors.white}
+              />
             </View>
-
-            <View style={styles.qrContainer}>
-              <View style={styles.qrWrapper}>
-                <QRCode
-                  value={qrData}
-                  size={250}
-                  backgroundColor="white"
-                  color="black"
-                />
-              </View>
-              <View style={styles.qrInfo}>
-                <Text style={styles.qrTotal}>Total: ${total}</Text>
-                <Text style={styles.qrInstructions}>
-                  Escanea este código con la app de Mercado Pago para pagar
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.modalButtonContainer}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonSecondary]}
-                onPress={onClose}
-              >
-                <MaterialCommunityIcons name="close" size={20} color={colors.gray[700]} />
-                <Text style={[styles.modalButtonText, styles.modalButtonTextSecondary]}>Cancelar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonPrimary]}
-                onPress={onConfirmarPago}
-              >
-                <MaterialCommunityIcons name="check" size={20} color={colors.white} />
-                <Text style={styles.modalButtonText}>Confirmar</Text>
-              </TouchableOpacity>
+            <View style={styles.qrInfo}>
+              <Text style={styles.qrTotal}>Total: ${total}</Text>
+              <Text style={styles.qrInstructions}>
+                Escanea este código QR con la app de Mercado Pago para realizar el pago
+              </Text>
             </View>
           </View>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
+
+          <View style={styles.modalButtonContainer}>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.modalButtonSecondary]}
+              onPress={onClose}
+            >
+              <Text style={styles.modalButtonText}>Cancelar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.modalButtonPrimary]}
+              onPress={onConfirmarPago}
+            >
+              <Text style={styles.modalButtonText}>Confirmar Pago</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    width: '100%',
+    maxWidth: 400,
+    ...shadows.lg,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  modalTitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+    color: colors.dark,
+  },
+  closeButton: {
+    padding: spacing.sm,
+  },
+  qrContainer: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  qrWrapper: {
+    padding: spacing.lg,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+    ...shadows.sm,
+  },
+  qrInfo: {
+    alignItems: 'center',
+  },
+  qrTotal: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
+    marginBottom: spacing.sm,
+  },
+  qrInstructions: {
+    fontSize: typography.sizes.sm,
+    color: colors.gray[600],
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  modalButton: {
+    flex: 1,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    ...shadows.sm,
+  },
+  modalButtonPrimary: {
+    backgroundColor: colors.primary,
+  },
+  modalButtonSecondary: {
+    backgroundColor: colors.gray[100],
+  },
+  modalButtonText: {
+    fontSize: typography.sizes.base,
+    fontWeight: typography.weights.semibold,
+    color: colors.white,
+  },
+});

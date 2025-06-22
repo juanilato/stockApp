@@ -514,24 +514,36 @@ export const obtenerMateriales = async (callback: (materiales: Material[]) => vo
 
 export const actualizarMaterial = async (material: Material, callback?: () => void) => {
   const { id, nombre, precioCosto, unidad, stock } = material;
+  console.log('📝 Actualizando material en DB:', material);
   try {
-    const dbInstance = getDb();
     if (id === undefined || id === null) {
-      console.error('❌ Error: El ID del material es indefinido o nulo al intentar actualizar.');
       throw new Error('ID del material no puede ser nulo para actualizar.');
     }
+    const dbInstance = getDb();
     const result = await dbInstance.runAsync(
       'UPDATE materiales SET nombre = ?, precioCosto = ?, unidad = ?, stock = ? WHERE id = ?',
       [nombre, precioCosto, unidad, stock, id]
     );
     console.log('✅ Material actualizado en DB exitosamente. Filas afectadas:', result.changes);
-    
-    // Actualizar el costo de todos los productos que usan este material
-    await actualizarCostosProductos();
-    
-    callback?.();
+    if (callback) callback();
   } catch (error) {
-    console.error('❌ Error al actualizar material de DB:', error);
+    console.error('❌ Error al actualizar material en DB:', error);
+    throw error;
+  }
+};
+
+export const eliminarMaterial = async (id: number, callback?: () => void) => {
+  console.log('🗑️ Eliminando material de DB con ID:', id);
+  try {
+    const dbInstance = getDb();
+    const result = await dbInstance.runAsync(
+      'DELETE FROM materiales WHERE id = ?',
+      [id]
+    );
+    console.log('✅ Material eliminado de DB exitosamente. Filas afectadas:', result.changes);
+    if (callback) callback();
+  } catch (error) {
+    console.error('❌ Error al eliminar material de DB:', error);
     throw error;
   }
 };

@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "ventasapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -51,7 +51,8 @@
           "cameraPermission": "Permitir que $(PRODUCT_NAME) acceda a tu cámara para escanear códigos QR.",
           "microphonePermission": "Permitir que $(PRODUCT_NAME) acceda a tu micrófono"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

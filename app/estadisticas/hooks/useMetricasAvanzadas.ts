@@ -444,7 +444,7 @@ const calcularRotacionInventario = async (db: any): Promise<{ promedio: number; 
       LIMIT 10
     `);
     
-    const promedio = productos.reduce((acc, p) => acc + p.diasRotacion, 0) / productos.length;
+    const promedio = productos.reduce((acc: number, p: any) => acc + p.diasRotacion, 0) / productos.length;
     
     return { promedio, productos: productos || [] };
   } catch (error) {
