@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { CameraView } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import CustomToast from '../../../components/CustomToast';
@@ -30,6 +30,13 @@ export default function ScannerModal({ visible, productos, onClose, onAgregarPro
   const animWidth = useRef(new Animated.Value(0)).current;
   const animOpacity = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [permission, requestPermission] = useCameraPermissions();
+
+  useEffect(() => {
+    if (visible && !permission?.granted) {
+      requestPermission();
+    }
+  }, [visible, permission, requestPermission]);
 
   useEffect(() => {
     if (animandoConfirmacion) {
@@ -160,15 +167,24 @@ export default function ScannerModal({ visible, productos, onClose, onAgregarPro
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.container}>
-        <CameraView
-          style={styles.camera}
-          onBarcodeScanned={({ data }) => handleBarcodeScanned(data)}
-          barcodeScannerSettings={{
-            barcodeTypes: ['ean13'],
-          }}
-        >
-          <ScannerOverlay confirmado={animandoConfirmacion} />
-        </CameraView>
+        {!permission?.granted ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+            <MaterialCommunityIcons name="camera-off" size={48} color="#fff" />
+            <Text style={{ color: '#fff', marginTop: 16, fontSize: 16, textAlign: 'center' }}>
+              Se requiere permiso de cámara para escanear códigos de barras.
+            </Text>
+          </View>
+        ) : (
+          <CameraView
+            style={styles.camera}
+            onBarcodeScanned={({ data }) => handleBarcodeScanned(data)}
+            barcodeScannerSettings={{
+              barcodeTypes: ['ean13'],
+            }}
+          >
+            <ScannerOverlay confirmado={animandoConfirmacion} />
+          </CameraView>
+        )}
 
         {/* Header con botones */}
         <View style={styles.header}>

@@ -1,6 +1,8 @@
+import { useClerk, useUser } from '@clerk/clerk-expo';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { obtenerEstadisticas, setupProductosDB } from '../../services/db';
 import { colors, spacing } from '../../styles/theme';
 
@@ -24,9 +26,13 @@ export default function InicioView() {
   const slideAnim = React.useRef(new Animated.Value(0)).current;
   const [isLoading, setIsLoading] = useState(true);
   const [estadisticas, setEstadisticas] = useState<any>(null);
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const [popoverVisible, setPopoverVisible] = useState(false);
+  const router = useRouter();
 
   const usuario: Usuario = {
-    nombre: 'Usuario',
+    nombre: user?.firstName || 'Usuario',
     rol: 'Administrador',
     ultimoAcceso: 'Hace 5 minutos',
   };
@@ -79,14 +85,30 @@ export default function InicioView() {
             <Text style={styles.nombre}>{usuario.nombre}</Text>
             <Text style={styles.subtitulo}>Bienvenido a tu panel de control</Text>
           </View>
-          <View style={styles.avatarContainer}>
+          <Pressable style={styles.avatarContainer} onPress={() => setPopoverVisible(true)}>
             <MaterialCommunityIcons
               name="account-circle"
               size={24}
               color="#ffffff"
             />
-          </View>
+          </Pressable>
         </View>
+        {/* Popover al lado del avatar */}
+        <Modal
+          visible={popoverVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setPopoverVisible(false)}
+        >
+          <Pressable style={styles.popoverOverlay} onPress={() => setPopoverVisible(false)} />
+          <View style={styles.popoverMenu}>
+            <Text style={styles.popoverTitle}>{usuario.nombre}</Text>
+            <Pressable style={styles.popoverItem} onPress={async () => { setPopoverVisible(false); await signOut(); router.replace('/login'); }}>
+              <MaterialCommunityIcons name="logout" size={18} color="#ef4444" style={{ marginRight: 8 }} />
+              <Text style={styles.popoverItemText}>Cerrar sesión</Text>
+            </Pressable>
+          </View>
+        </Modal>
       </View>
 
       <ScrollView 
@@ -193,6 +215,10 @@ export default function InicioView() {
               <MaterialCommunityIcons name="chart-bar" size={28} color={colors.info} />
               <Text style={styles.quickActionText}>Estadísticas</Text>
             </View>
+            <TouchableOpacity style={styles.quickActionCard} onPress={async () => { await signOut(); router.replace('/login'); }}>
+              <MaterialCommunityIcons name="logout" size={28} color={colors.danger} />
+              <Text style={styles.quickActionText}>Cerrar Sesión</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -382,5 +408,35 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginTop: 6,
     textAlign: 'center',
+  },
+  popoverOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  popoverMenu: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 200,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+  },
+  popoverTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 16,
+  },
+  popoverItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+  },
+  popoverItemText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1e293b',
+    marginLeft: 8,
   },
 });
