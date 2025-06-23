@@ -1,14 +1,16 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { setupProductosDB } from '../../services/db';
 import AnalisisInventario from './components/AnalisisInventario';
 import EstadisticasCard from './components/EstadisticasCard';
 import GraficoVentas from './components/GraficoVentas';
 import MetricasFinancieras from './components/MetricasFinancieras';
 import MetricasRendimiento from './components/MetricasRendimiento';
+import ModalConfiguracion from './components/ModalConfiguracion';
 import ModalStockCritico from './components/ModalStockCritico';
 import SelectorGanancias from './components/SelectorGanancias';
+import { useConfiguracionEstadisticas } from './hooks/useConfiguracionEstadisticas';
 import { useEstadisticas } from './hooks/useEstadisticas';
 import { useGanancias } from './hooks/useGanancias';
 import { useMetricasAvanzadas } from './hooks/useMetricasAvanzadas';
@@ -17,6 +19,7 @@ import { useVentasMensuales } from './hooks/useVentasMensuales';
 
 export default function EstadisticasView() {
   const [isLoading, setIsLoading] = useState(true);
+  const [mostrarConfiguracion, setMostrarConfiguracion] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
 
@@ -25,6 +28,7 @@ export default function EstadisticasView() {
   const { ventasMensuales, cargarVentasMensuales } = useVentasMensuales();
   const { productosCriticos, mostrarStockCritico, setMostrarStockCritico, cargarProductosCriticos } = useProductosCriticos();
   const { metricasAvanzadas, cargarMetricasAvanzadas } = useMetricasAvanzadas();
+  const { configuracion, actualizarConfiguracion, restablecerConfiguracion } = useConfiguracionEstadisticas();
 
   useEffect(() => {
     const inicializar = async () => {
@@ -77,8 +81,15 @@ export default function EstadisticasView() {
             <Text style={styles.headerTitle}>Estadísticas</Text>
           </View>
           
-          <View style={styles.headerIcon}>
-            <MaterialCommunityIcons name="chart-line" size={24} color="#ffffff" />
+          <View style={styles.headerActions}>
+            <TouchableOpacity 
+              style={styles.configButton}
+              onPress={() => setMostrarConfiguracion(true)}
+            >
+              <MaterialCommunityIcons name="chart-line" size={20} color="#ffffff" />
+            </TouchableOpacity>
+            
+ 
           </View>
         </View>
       </View>
@@ -87,37 +98,43 @@ export default function EstadisticasView() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Cards de estadísticas básicas */}
         <View style={styles.statsContainer}>
-          <EstadisticasCard
-            icon="warehouse"
-            value={estadisticas.stockTotal.toString()}
-            label="Stock Total"
-            color="#3b82f6"
-          />
-          
-          <EstadisticasCard
-            icon="alert-circle-outline"
-            value={estadisticas.productosStockCritico.toString()}
-            label="Stock Crítico"
-            color="#ef4444"
-            onPress={() => {
-              cargarProductosCriticos();
-              setMostrarStockCritico(true);
-            }}
-          />
-          
-          <EstadisticasCard
-            icon="chart-areaspline"
-            value={`$${ganancias[tipoGanancia].toFixed(2)}`}
-            label={`Ganancia (${tipoGanancia.toUpperCase()})`}
-            color="#10b981"
-          >
-            <SelectorGanancias
-              tipoGanancia={tipoGanancia}
-              onTipoChange={setTipoGanancia}
+          {configuracion.mostrarStockTotal && (
+            <EstadisticasCard
+              icon="warehouse"
+              value={estadisticas.stockTotal.toString()}
+              label="Stock Total"
+              color="#3b82f6"
             />
-          </EstadisticasCard>
+          )}
           
-          {estadisticas.productoMasRentable && (
+          {configuracion.mostrarStockCritico && (
+            <EstadisticasCard
+              icon="alert-circle-outline"
+              value={estadisticas.productosStockCritico.toString()}
+              label="Stock Crítico"
+              color="#ef4444"
+              onPress={() => {
+                cargarProductosCriticos();
+                setMostrarStockCritico(true);
+              }}
+            />
+          )}
+          
+          {configuracion.mostrarGanancias && (
+            <EstadisticasCard
+              icon="chart-areaspline"
+              value={`$${ganancias[tipoGanancia].toFixed(2)}`}
+              label={`Ganancia (${tipoGanancia.toUpperCase()})`}
+              color="#10b981"
+            >
+              <SelectorGanancias
+                tipoGanancia={tipoGanancia}
+                onTipoChange={setTipoGanancia}
+              />
+            </EstadisticasCard>
+          )}
+          
+          {configuracion.mostrarProductoMasRentable && estadisticas.productoMasRentable && (
             <EstadisticasCard
               icon="trophy"
               value={estadisticas.productoMasRentable.nombre}
@@ -128,37 +145,42 @@ export default function EstadisticasView() {
         </View>
 
         {/* Métricas de rendimiento */}
-        {metricasAvanzadas && (
+        {configuracion.mostrarMetricasRendimiento && metricasAvanzadas && (
           <MetricasRendimiento
             ticketPromedio={metricasAvanzadas.rendimientoVentas.ticketPromedio}
             productosPorVenta={metricasAvanzadas.rendimientoVentas.productosPorVenta}
             horariosPico={metricasAvanzadas.rendimientoVentas.horariosPico}
             diasActivos={metricasAvanzadas.rendimientoVentas.diasActivos}
+            configuracion={configuracion}
           />
         )}
 
         {/* Métricas financieras */}
-        {metricasAvanzadas && (
+        {configuracion.mostrarMetricasFinancieras && metricasAvanzadas && (
           <MetricasFinancieras
             margenPromedio={metricasAvanzadas.metricasFinancieras.margenPromedio}
             flujoCaja={metricasAvanzadas.metricasFinancieras.flujoCaja}
             proyeccion={metricasAvanzadas.metricasFinancieras.proyeccion}
+            configuracion={configuracion}
           />
         )}
 
         {/* Análisis de inventario */}
-        {metricasAvanzadas && (
+        {configuracion.mostrarAnalisisInventario && metricasAvanzadas && (
           <AnalisisInventario
             valorTotal={metricasAvanzadas.analisisInventario.valorTotal}
             rotacion={metricasAvanzadas.analisisInventario.rotacion}
+            configuracion={configuracion}
           />
         )}
 
         {/* Gráfico de ventas */}
-        <View style={styles.chartSection}>
-          <Text style={styles.sectionTitle}>Ventas Mensuales</Text>
-          <GraficoVentas data={ventasMensuales} />
-        </View>
+        {configuracion.mostrarGraficoVentas && (
+          <View style={styles.chartSection}>
+            <Text style={styles.sectionTitle}>Ventas Mensuales</Text>
+            <GraficoVentas data={ventasMensuales} />
+          </View>
+        )}
       </ScrollView>
 
       {/* Modal de stock crítico */}
@@ -166,6 +188,15 @@ export default function EstadisticasView() {
         visible={mostrarStockCritico}
         productos={productosCriticos}
         onClose={() => setMostrarStockCritico(false)}
+      />
+
+      {/* Modal de configuración */}
+      <ModalConfiguracion
+        visible={mostrarConfiguracion}
+        configuracion={configuracion}
+        onClose={() => setMostrarConfiguracion(false)}
+        onConfiguracionChange={actualizarConfiguracion}
+        onRestablecer={restablecerConfiguracion}
       />
     </Animated.View>
   );
@@ -219,6 +250,18 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#ffffff',
     letterSpacing: -0.5,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  configButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   headerIcon: {
     backgroundColor: 'rgba(255, 255, 255, 0.15)',

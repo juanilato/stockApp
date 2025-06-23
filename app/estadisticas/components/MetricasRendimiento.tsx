@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { ConfiguracionEstadisticas } from '../types';
 import EstadisticasCard from './EstadisticasCard';
 
 interface MetricasRendimientoProps {
@@ -7,37 +8,55 @@ interface MetricasRendimientoProps {
   productosPorVenta: number;
   horariosPico: { hora: number; ventas: number }[];
   diasActivos: { dia: string; ventas: number }[];
+  configuracion: ConfiguracionEstadisticas;
 }
 
 export default function MetricasRendimiento({ 
   ticketPromedio, 
   productosPorVenta, 
   horariosPico, 
-  diasActivos 
+  diasActivos,
+  configuracion
 }: MetricasRendimientoProps) {
   const horaMasActiva = horariosPico.length > 0 ? horariosPico[0] : null;
   const diaMasActivo = diasActivos.length > 0 ? diasActivos[0] : null;
+
+  // Verificar si hay al menos un elemento configurado para mostrar
+  const elementosVisibles = [
+    configuracion.mostrarTicketPromedio,
+    configuracion.mostrarProductosPorVenta,
+    configuracion.mostrarHorariosPico && horaMasActiva,
+    configuracion.mostrarDiasActivos && diaMasActivo,
+  ].filter(Boolean);
+
+  if (elementosVisibles.length === 0) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Rendimiento de Ventas</Text>
       
       <View style={styles.cardsContainer}>
-        <EstadisticasCard
-          icon="cash-multiple"
-          value={`$${ticketPromedio.toFixed(2)}`}
-          label="Ticket Promedio"
-          color="#10b981"
-        />
+        {configuracion.mostrarTicketPromedio && (
+          <EstadisticasCard
+            icon="cash-multiple"
+            value={`$${ticketPromedio.toFixed(2)}`}
+            label="Ticket Promedio"
+            color="#10b981"
+          />
+        )}
         
-        <EstadisticasCard
-          icon="package-variant"
-          value={productosPorVenta.toFixed(1)}
-          label="Productos por Venta"
-          color="#3b82f6"
-        />
+        {configuracion.mostrarProductosPorVenta && (
+          <EstadisticasCard
+            icon="package-variant"
+            value={productosPorVenta.toFixed(1)}
+            label="Productos por Venta"
+            color="#3b82f6"
+          />
+        )}
         
-        {horaMasActiva && (
+        {configuracion.mostrarHorariosPico && horaMasActiva && (
           <EstadisticasCard
             icon="clock-outline"
             value={`${horaMasActiva.hora}:00`}
@@ -46,7 +65,7 @@ export default function MetricasRendimiento({
           />
         )}
         
-        {diaMasActivo && (
+        {configuracion.mostrarDiasActivos && diaMasActivo && (
           <EstadisticasCard
             icon="calendar-week"
             value={diaMasActivo.dia}

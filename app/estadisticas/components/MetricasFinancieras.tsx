@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { ConfiguracionEstadisticas } from '../types';
 import EstadisticasCard from './EstadisticasCard';
 
 interface MetricasFinancierasProps {
@@ -14,12 +15,14 @@ interface MetricasFinancierasProps {
     proximoTresMeses: number;
     tendencia: string;
   };
+  configuracion: ConfiguracionEstadisticas;
 }
 
 export default function MetricasFinancieras({ 
   margenPromedio, 
   flujoCaja, 
-  proyeccion 
+  proyeccion,
+  configuracion
 }: MetricasFinancierasProps) {
   const getTendenciaColor = (tendencia: string) => {
     switch (tendencia) {
@@ -37,52 +40,73 @@ export default function MetricasFinancieras({
     }
   };
 
+  // Verificar si hay al menos un elemento configurado para mostrar
+  const elementosVisibles = [
+    configuracion.mostrarMargenPromedio,
+    configuracion.mostrarFlujoCaja,
+    configuracion.mostrarProyeccion,
+  ].filter(Boolean);
+
+  if (elementosVisibles.length === 0) {
+    return null;
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Métricas Financieras</Text>
       
       <View style={styles.cardsContainer}>
-        <EstadisticasCard
-          icon="percent"
-          value={`${margenPromedio.toFixed(1)}%`}
-          label="Margen Promedio"
-          color="#3b82f6"
-        />
+        {configuracion.mostrarMargenPromedio && (
+          <EstadisticasCard
+            icon="percent"
+            value={`${margenPromedio.toFixed(1)}%`}
+            label="Margen Promedio"
+            color="#3b82f6"
+          />
+        )}
         
-        <EstadisticasCard
-          icon="cash-plus"
-          value={`$${flujoCaja.entradas.toFixed(2)}`}
-          label="Entradas del Mes"
-          color="#10b981"
-        />
+        {configuracion.mostrarFlujoCaja && (
+          <>
+            <EstadisticasCard
+              icon="cash-plus"
+              value={`$${flujoCaja.entradas.toFixed(2)}`}
+              label="Entradas del Mes"
+              color="#10b981"
+            />
+            
+            <EstadisticasCard
+              icon="cash-minus"
+              value={`$${flujoCaja.salidas.toFixed(2)}`}
+              label="Salidas del Mes"
+              color="#ef4444"
+            />
+            
+            <EstadisticasCard
+              icon="bank"
+              value={`$${flujoCaja.balance.toFixed(2)}`}
+              label="Balance Neto"
+              color={flujoCaja.balance >= 0 ? '#10b981' : '#ef4444'}
+            />
+          </>
+        )}
         
-        <EstadisticasCard
-          icon="cash-minus"
-          value={`$${flujoCaja.salidas.toFixed(2)}`}
-          label="Salidas del Mes"
-          color="#ef4444"
-        />
-        
-        <EstadisticasCard
-          icon="bank"
-          value={`$${flujoCaja.balance.toFixed(2)}`}
-          label="Balance Neto"
-          color={flujoCaja.balance >= 0 ? '#10b981' : '#ef4444'}
-        />
-        
-        <EstadisticasCard
-          icon="chart-line"
-          value={`$${proyeccion.proximoMes.toFixed(2)}`}
-          label="Proyección Próximo Mes"
-          color="#8b5cf6"
-        />
-        
-        <EstadisticasCard
-          icon={getTendenciaIcon(proyeccion.tendencia)}
-          value={proyeccion.tendencia.toUpperCase()}
-          label="Tendencia de Ganancias"
-          color={getTendenciaColor(proyeccion.tendencia)}
-        />
+        {configuracion.mostrarProyeccion && (
+          <>
+            <EstadisticasCard
+              icon="chart-line"
+              value={`$${proyeccion.proximoMes.toFixed(2)}`}
+              label="Proyección Próximo Mes"
+              color="#8b5cf6"
+            />
+            
+            <EstadisticasCard
+              icon={getTendenciaIcon(proyeccion.tendencia)}
+              value={proyeccion.tendencia.toUpperCase()}
+              label="Tendencia de Ganancias"
+              color={getTendenciaColor(proyeccion.tendencia)}
+            />
+          </>
+        )}
       </View>
     </View>
   );

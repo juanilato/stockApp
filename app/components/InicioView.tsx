@@ -12,15 +12,6 @@ interface Usuario {
   ultimoAcceso: string;
 }
 
-interface ResumenVentas {
-  ventasHoy: number;
-  ventasSemana: number;
-  ventasMes: number;
-  gananciaHoy: number;
-  gananciaSemana: number;
-  gananciaMes: number;
-}
-
 export default function InicioView() {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(0)).current;
@@ -28,11 +19,11 @@ export default function InicioView() {
   const [estadisticas, setEstadisticas] = useState<any>(null);
   const { user } = useUser();
   const { signOut } = useClerk();
-  const [popoverVisible, setPopoverVisible] = useState(false);
+  const [perfilVisible, setPerfilVisible] = useState(false);
   const router = useRouter();
 
   const usuario: Usuario = {
-    nombre: user?.firstName || 'Usuario',
+    nombre: user?.username || 'Usuario',
     rol: 'Administrador',
     ultimoAcceso: 'Hace 5 minutos',
   };
@@ -77,7 +68,6 @@ export default function InicioView() {
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      {/* Header moderno con gradiente */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.headerText}>
@@ -85,56 +75,69 @@ export default function InicioView() {
             <Text style={styles.nombre}>{usuario.nombre}</Text>
             <Text style={styles.subtitulo}>Bienvenido a tu panel de control</Text>
           </View>
-          <Pressable style={styles.avatarContainer} onPress={() => setPopoverVisible(true)}>
-            <MaterialCommunityIcons
-              name="account-circle"
-              size={24}
-              color="#ffffff"
-            />
+          <Pressable style={styles.avatarContainer} onPress={() => setPerfilVisible(true)}>
+            <MaterialCommunityIcons name="account-circle" size={24} color="#ffffff" />
           </Pressable>
         </View>
-        {/* Popover al lado del avatar */}
-        <Modal
-          visible={popoverVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setPopoverVisible(false)}
-        >
-          <Pressable style={styles.popoverOverlay} onPress={() => setPopoverVisible(false)} />
-          <View style={styles.popoverMenu}>
-            <Text style={styles.popoverTitle}>{usuario.nombre}</Text>
-            <Pressable style={styles.popoverItem} onPress={async () => { setPopoverVisible(false); await signOut(); router.replace('/login'); }}>
-              <MaterialCommunityIcons name="logout" size={18} color="#ef4444" style={{ marginRight: 8 }} />
-              <Text style={styles.popoverItemText}>Cerrar sesión</Text>
-            </Pressable>
-          </View>
-        </Modal>
       </View>
 
-      <ScrollView 
-        style={styles.content} 
+      <Modal visible={perfilVisible} transparent animationType="slide" onRequestClose={() => setPerfilVisible(false)}>
+        <Pressable style={styles.popoverOverlay} onPress={() => setPerfilVisible(false)} />
+        <View style={styles.modalPerfil}>
+          <Text style={styles.modalTitle}>Perfil de Usuario</Text>
+
+          <Text style={styles.modalLabel}>Correo:</Text>
+          <Text style={styles.modalValue}>{user?.primaryEmailAddress?.emailAddress || 'Sin correo'}</Text>
+
+          <Text style={styles.modalLabel}>Nombre de usuario:</Text>
+          <Text style={styles.modalValue}>{usuario.nombre}</Text>
+
+          <Text style={styles.modalLabel}>Rol:</Text>
+          <Text style={styles.modalValue}>{usuario.rol}</Text>
+
+          <Text style={styles.modalLabel}>Último acceso:</Text>
+          <Text style={styles.modalValue}>{usuario.ultimoAcceso}</Text>
+
+          <TouchableOpacity style={styles.modalButton}>
+            <Text style={styles.modalButtonText}>Cambiar contraseña</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modalButton, { backgroundColor: '#e5e7eb' }]}
+            onPress={async () => {
+              await signOut();
+              setPerfilVisible(false);
+              router.replace('/login');
+            }}
+          >
+            <Text style={[styles.modalButtonText, { color: '#1e293b' }]}>Cerrar sesión</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      <ScrollView
+        style={styles.content}
         contentContainerStyle={{ paddingBottom: spacing['2xl'] }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Resumen general */}
-        <View style={styles.resumenCard}>
-          <View style={styles.resumenHeader}>
-            <MaterialCommunityIcons name="chart-line" size={24} color={colors.primary} />
-            <Text style={styles.resumenTitle}>Resumen General</Text>
+        {/* Resumen General */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="chart-line" size={20} color={colors.primary} />
+            <Text style={styles.sectionTitle}>Resumen General</Text>
           </View>
-          <View style={styles.resumenStats}>
-            <View style={styles.resumenStat}>
-              <Text style={styles.resumenValue}>{estadisticas?.ventasTotales || 0}</Text>
-              <Text style={styles.resumenLabel}>Ventas Totales</Text>
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{estadisticas?.ventasTotales || 0}</Text>
+              <Text style={styles.statLabel}>Ventas Totales</Text>
             </View>
-            <View style={styles.resumenStat}>
-              <Text style={styles.resumenValue}>${(estadisticas?.gananciaTotal || 0).toLocaleString()}</Text>
-              <Text style={styles.resumenLabel}>Ganancia Total</Text>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>${(estadisticas?.gananciaTotal || 0).toLocaleString()}</Text>
+              <Text style={styles.statLabel}>Ganancia Total</Text>
             </View>
           </View>
         </View>
 
-        {/* Sección de Ventas */}
+        {/* Ventas Recientes */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="calendar" size={20} color={colors.primary} />
@@ -142,30 +145,24 @@ export default function InicioView() {
           </View>
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
-              <View style={styles.statIcon}>
-                <MaterialCommunityIcons name="calendar-today" size={18} color="#ffffff" />
-              </View>
+              <MaterialCommunityIcons name="calendar-today" size={18} color={colors.primary} />
               <Text style={styles.statValue}>{estadisticas?.ganancias?.dia || 0}</Text>
               <Text style={styles.statLabel}>Hoy</Text>
             </View>
             <View style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: colors.success }]}>
-                <MaterialCommunityIcons name="calendar-week" size={18} color="#ffffff" />
-              </View>
+              <MaterialCommunityIcons name="calendar-week" size={18} color={colors.success} />
               <Text style={styles.statValue}>{estadisticas?.ganancias?.mes || 0}</Text>
               <Text style={styles.statLabel}>Mes</Text>
             </View>
             <View style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: colors.info }]}>
-                <MaterialCommunityIcons name="calendar-month" size={18} color="#ffffff" />
-              </View>
+              <MaterialCommunityIcons name="calendar-month" size={18} color={colors.info} />
               <Text style={styles.statValue}>{estadisticas?.ganancias?.anio || 0}</Text>
               <Text style={styles.statLabel}>Año</Text>
             </View>
           </View>
         </View>
 
-        {/* Sección de Productos */}
+        {/* Inventario */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="package-variant" size={20} color={colors.success} />
@@ -173,23 +170,17 @@ export default function InicioView() {
           </View>
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
-              <View style={styles.statIcon}>
-                <MaterialCommunityIcons name="package" size={18} color="#ffffff" />
-              </View>
+              <MaterialCommunityIcons name="package" size={18} color={colors.primary} />
               <Text style={styles.statValue}>{estadisticas?.stockTotal || 0}</Text>
               <Text style={styles.statLabel}>Stock Total</Text>
             </View>
             <View style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: colors.warning }]}>
-                <MaterialCommunityIcons name="alert" size={18} color="#ffffff" />
-              </View>
+              <MaterialCommunityIcons name="alert" size={18} color={colors.warning} />
               <Text style={styles.statValue}>{estadisticas?.productosStockCritico || 0}</Text>
               <Text style={styles.statLabel}>Stock Crítico</Text>
             </View>
             <View style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: colors.info }]}>
-                <MaterialCommunityIcons name="cube" size={18} color="#ffffff" />
-              </View>
+              <MaterialCommunityIcons name="cube" size={18} color={colors.info} />
               <Text style={styles.statValue}>{estadisticas?.productosVendidos || 0}</Text>
               <Text style={styles.statLabel}>Productos Vendidos</Text>
             </View>
@@ -202,23 +193,19 @@ export default function InicioView() {
             <MaterialCommunityIcons name="lightning-bolt" size={20} color={colors.warning} />
             <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
           </View>
-          <View style={styles.quickActions}>
-            <View style={styles.quickActionCard}>
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
               <MaterialCommunityIcons name="plus-circle" size={28} color={colors.primary} />
-              <Text style={styles.quickActionText}>Nueva Venta</Text>
+              <Text style={styles.statLabel}>Nueva Venta</Text>
             </View>
-            <View style={styles.quickActionCard}>
+            <View style={styles.statCard}>
               <MaterialCommunityIcons name="package-variant" size={28} color={colors.success} />
-              <Text style={styles.quickActionText}>Productos</Text>
+              <Text style={styles.statLabel}>Productos</Text>
             </View>
-            <View style={styles.quickActionCard}>
+            <View style={styles.statCard}>
               <MaterialCommunityIcons name="chart-bar" size={28} color={colors.info} />
-              <Text style={styles.quickActionText}>Estadísticas</Text>
+              <Text style={styles.statLabel}>Estadísticas</Text>
             </View>
-            <TouchableOpacity style={styles.quickActionCard} onPress={async () => { await signOut(); router.replace('/login'); }}>
-              <MaterialCommunityIcons name="logout" size={28} color={colors.danger} />
-              <Text style={styles.quickActionText}>Cerrar Sesión</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -227,10 +214,7 @@ export default function InicioView() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -292,46 +276,53 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
   },
-  resumenCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  resumenHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  resumenTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginLeft: 8,
-  },
-  resumenStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  resumenStat: {
+  popoverOverlay: {
     flex: 1,
-    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  resumenValue: {
-    fontSize: 24,
+  modalPerfil: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 20,
     fontWeight: '700',
+    marginBottom: 16,
     color: '#1e293b',
-    marginBottom: 4,
   },
-  resumenLabel: {
-    fontSize: 12,
+  modalLabel: {
+    fontSize: 13,
     color: '#64748b',
     fontWeight: '500',
+    marginTop: 8,
+  },
+  modalValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  modalButton: {
+    backgroundColor: '#1e40af',
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 15,
   },
   section: {
     marginBottom: 20,
@@ -364,15 +355,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  statIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
   statValue: {
     fontSize: 16,
     fontWeight: '700',
@@ -384,59 +366,5 @@ const styles = StyleSheet.create({
     color: '#64748b',
     fontWeight: '500',
     textAlign: 'center',
-  },
-  quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  quickActionCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  quickActionText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#64748b',
-    marginTop: 6,
-    textAlign: 'center',
-  },
-  popoverOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  popoverMenu: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 200,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-  },
-  popoverTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 16,
-  },
-  popoverItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 8,
-  },
-  popoverItemText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1e293b',
-    marginLeft: 8,
   },
 });

@@ -151,4 +151,44 @@ export interface MetricasAvanzadas {
     valorPromedio: number;
     productosPopulares: { segmento: string; productos: { nombre: string; ventas: number }[] }[];
   };
-} 
+}
+
+export interface ConfiguracionEstadisticas {
+  mostrarStockTotal: boolean;
+  mostrarStockCritico: boolean;
+  mostrarGanancias: boolean;
+  mostrarProductoMasRentable: boolean;
+  mostrarMetricasRendimiento: boolean;
+  mostrarMetricasFinancieras: boolean;
+  mostrarAnalisisInventario: boolean;
+  mostrarGraficoVentas: boolean;
+  mostrarTicketPromedio: boolean;
+  mostrarProductosPorVenta: boolean;
+  mostrarHorariosPico: boolean;
+  mostrarDiasActivos: boolean;
+  mostrarMargenPromedio: boolean;
+  mostrarFlujoCaja: boolean;
+  mostrarProyeccion: boolean;
+  mostrarValorTotal: boolean;
+  mostrarRotacion: boolean;
+}
+
+export const CONFIGURACION_DEFAULT: ConfiguracionEstadisticas = {
+  mostrarStockTotal: true,
+  mostrarStockCritico: true,
+  mostrarGanancias: true,
+  mostrarProductoMasRentable: true,
+  mostrarMetricasRendimiento: true,
+  mostrarMetricasFinancieras: true,
+  mostrarAnalisisInventario: true,
+  mostrarGraficoVentas: true,
+  mostrarTicketPromedio: true,
+  mostrarProductosPorVenta: true,
+  mostrarHorariosPico: true,
+  mostrarDiasActivos: true,
+  mostrarMargenPromedio: true,
+  mostrarFlujoCaja: true,
+  mostrarProyeccion: true,
+  mostrarValorTotal: true,
+  mostrarRotacion: true,
+}; 

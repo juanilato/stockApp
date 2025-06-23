@@ -1,6 +1,135 @@
-# Módulo de Estadísticas - Versión Completa
+# Módulo de Estadísticas
 
-Este módulo proporciona una interfaz moderna y modularizada para visualizar estadísticas del negocio, incluyendo **métricas avanzadas** que te ayudarán a tomar decisiones informadas sobre tu negocio.
+Este módulo proporciona un dashboard completo de estadísticas para la aplicación de ventas, con funcionalidades avanzadas de análisis y configuración personalizable.
+
+## Características Principales
+
+### 📊 Dashboard de Estadísticas
+- **Estadísticas Básicas**: Stock total, stock crítico, ganancias y producto más rentable
+- **Métricas de Rendimiento**: Ticket promedio, productos por venta, horarios pico y días activos
+- **Métricas Financieras**: Margen promedio, flujo de caja y proyecciones
+- **Análisis de Inventario**: Valor total y rotación de productos
+- **Gráfico de Ventas**: Visualización de ventas mensuales
+
+### ⚙️ Configuración Personalizable
+- **Modal de Configuración**: Interfaz moderna con selectores de encendido/apagado
+- **Almacenamiento Local**: Las configuraciones se guardan automáticamente usando SecureStore
+- **Configuración por Defecto**: Opción para restablecer a valores predeterminados
+- **17 Opciones Configurables**: Control granular sobre cada elemento del dashboard
+
+## Componentes
+
+### Componentes Principales
+- `EstadisticasView` - Componente principal del dashboard
+- `ModalConfiguracion` - Modal para configurar elementos visibles
+- `EstadisticasCard` - Tarjetas de estadísticas individuales
+
+### Componentes de Métricas
+- `MetricasRendimiento` - Métricas de rendimiento de ventas
+- `MetricasFinancieras` - Análisis financiero
+- `AnalisisInventario` - Análisis de inventario
+- `GraficoVentas` - Gráfico de ventas mensuales
+
+### Componentes de Interacción
+- `ModalStockCritico` - Modal para productos con stock crítico
+- `SelectorGanancias` - Selector de período de ganancias
+
+## Hooks
+
+### Hooks de Datos
+- `useEstadisticas` - Estadísticas generales
+- `useGanancias` - Gestión de ganancias por período
+- `useVentasMensuales` - Datos de ventas mensuales
+- `useProductosCriticos` - Productos con stock bajo
+- `useMetricasAvanzadas` - Métricas avanzadas de análisis
+
+### Hooks de Configuración
+- `useConfiguracionEstadisticas` - Gestión de configuración personalizable
+
+## Configuración Disponible
+
+### Estadísticas Básicas
+- `mostrarStockTotal` - Stock total de productos
+- `mostrarStockCritico` - Productos con stock crítico
+- `mostrarGanancias` - Ganancias por período
+- `mostrarProductoMasRentable` - Producto más rentable
+
+### Métricas de Rendimiento
+- `mostrarTicketPromedio` - Valor promedio por venta
+- `mostrarProductosPorVenta` - Cantidad promedio de productos
+- `mostrarHorariosPico` - Horarios de mayor actividad
+- `mostrarDiasActivos` - Días con mayor ventas
+
+### Métricas Financieras
+- `mostrarMargenPromedio` - Margen de ganancia promedio
+- `mostrarFlujoCaja` - Entradas y salidas de caja
+- `mostrarProyeccion` - Proyecciones futuras
+
+### Análisis de Inventario
+- `mostrarValorTotal` - Valor total del inventario
+- `mostrarRotacion` - Rotación de inventario
+
+### Elementos Generales
+- `mostrarMetricasRendimiento` - Sección completa de rendimiento
+- `mostrarMetricasFinancieras` - Sección completa financiera
+- `mostrarAnalisisInventario` - Sección completa de inventario
+- `mostrarGraficoVentas` - Gráfico de ventas mensuales
+
+## Uso
+
+### Acceso a la Configuración
+1. Abrir la pantalla de Estadísticas
+2. Tocar el botón de configuración (ícono de engranaje) en el header
+3. Configurar los elementos deseados usando los selectores
+4. Los cambios se guardan automáticamente
+
+### Restablecer Configuración
+- Usar el botón "Restablecer configuración" en el modal para volver a valores por defecto
+
+## Almacenamiento
+
+La configuración se guarda localmente usando `expo-secure-store` con la clave `estadisticas_configuracion`. Los datos se mantienen entre sesiones y se cargan automáticamente al abrir la aplicación.
+
+## Estructura de Datos
+
+```typescript
+interface ConfiguracionEstadisticas {
+  mostrarStockTotal: boolean;
+  mostrarStockCritico: boolean;
+  mostrarGanancias: boolean;
+  mostrarProductoMasRentable: boolean;
+  mostrarMetricasRendimiento: boolean;
+  mostrarMetricasFinancieras: boolean;
+  mostrarAnalisisInventario: boolean;
+  mostrarGraficoVentas: boolean;
+  mostrarTicketPromedio: boolean;
+  mostrarProductosPorVenta: boolean;
+  mostrarHorariosPico: boolean;
+  mostrarDiasActivos: boolean;
+  mostrarMargenPromedio: boolean;
+  mostrarFlujoCaja: boolean;
+  mostrarProyeccion: boolean;
+  mostrarValorTotal: boolean;
+  mostrarRotacion: boolean;
+}
+```
+
+## Tecnologías Utilizadas
+
+- **React Native** - Framework principal
+- **Expo** - Plataforma de desarrollo
+- **Expo SecureStore** - Almacenamiento seguro de configuración
+- **React Native Chart Kit** - Gráficos de ventas
+- **Material Community Icons** - Iconografía
+- **TypeScript** - Tipado estático
+
+## Características de UX
+
+- **Interfaz Moderna**: Diseño limpio y profesional
+- **Animaciones Suaves**: Transiciones fluidas entre estados
+- **Feedback Visual**: Indicadores claros de estado activo/inactivo
+- **Responsive**: Adaptable a diferentes tamaños de pantalla
+- **Accesibilidad**: Controles fáciles de usar y entender
 
 ## 🚀 **Nuevas Métricas Implementadas**
 
