@@ -95,7 +95,11 @@ export default function EstadisticasView() {
       </View>
 
       {/* Contenido principal */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+<ScrollView
+  style={styles.content}
+  contentContainerStyle={{ paddingBottom: 100 }} 
+  showsVerticalScrollIndicator={false}
+>
         {/* Cards de estadísticas básicas */}
         <View style={styles.statsContainer}>
           {configuracion.mostrarStockTotal && (

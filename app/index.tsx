@@ -1,16 +1,15 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Stack } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, SafeAreaView, StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { RFValue } from "react-native-responsive-fontsize";
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
+import NuevaVentaView from '../app/nueva-venta/main';
 import InicioView from './components/InicioView';
 import EstadisticasView from './estadisticas/main';
 import MaterialesView from './materiales/main';
-
-import NuevaVentaView from '../app/nueva-venta/main';
 
 import ProductosView from '../app/productos/pages/main';
 
@@ -61,7 +60,22 @@ export default function Dashboard() {
   const slideAnim = useRef(new Animated.Value(0)).current;
   const [currentView, setCurrentView] = useState<'dashboard' | 'productos' | 'ventas' | 'estadisticas' | 'materiales'>('dashboard');
   const sonidoSwipe = useRef<Audio.Sound | null>(null);
+  const [menuVisible, setMenuVisible] = useState(true);
 
+  const [viewIndex, setViewIndex] = useState(() => navItems.findIndex(i => i.key === currentView));
+  const fadeSlideAnim = useRef(new Animated.Value(0)).current;
+  const navAnim = useRef(new Animated.Value(0)).current; 
+
+
+
+  const toggleMenu = () => {
+  Animated.timing(navAnim, {
+    toValue: menuVisible ? 100 : 0,
+    duration: 300,
+    useNativeDriver: true,
+  }).start();
+  setMenuVisible(!menuVisible);
+};
   useEffect(() => {
     const cargarSonidos = async () => {
       const [swipe] = await Promise.all([
@@ -93,101 +107,148 @@ export default function Dashboard() {
     ]).start();
   }, []);
 
-  const handleViewChange = (view: 'dashboard' | 'productos' | 'ventas' | 'estadisticas' | 'materiales') => {
-    sonidoSwipe.current?.replayAsync();
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setCurrentView(view);
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 1,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    });
-  };
+const animateToIndex = (newIndex: number) => {
+  if (newIndex === viewIndex) return;
 
-  const renderContent = () => {
-    switch (currentView) {
-      case 'dashboard':
-        return <InicioView />;
-      case 'productos':
-        return <ProductosView />;
-      case 'ventas':
-        return <NuevaVentaView />;
-      case 'estadisticas':
-        return <EstadisticasView />;
-      case 'materiales':
-        return <MaterialesView />;
-      default:
-        return (
-          <Animated.View 
-            style={[
-              styles.main,
-              {
-                opacity: fadeAnim,
-                transform: [
-                  {
-                    translateY: slideAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [50, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <Text style={styles.title}>Panel de Ventas</Text>
-            <LinearGradient
-              colors={['#ffffff', '#f8fafc']}
-              style={styles.card}
-            >
-              <View style={styles.cardContent}>
-                <View style={styles.statContainer}>
-                  <MaterialCommunityIcons name="cash-multiple" size={32} color="#1e293b" />
-                  <Text style={styles.statValue}>$0</Text>
-                  <Text style={styles.statLabel}>Ventas Totales</Text>
-                </View>
-                <View style={styles.statContainer}>
-                  <MaterialCommunityIcons name="trending-up" size={32} color="#1e293b" />
-                  <Text style={styles.statValue}>$0</Text>
-                  <Text style={styles.statLabel}>Ganancia Neta</Text>
-                </View>
-              </View>
-            </LinearGradient>
-          </Animated.View>
-        );
-    }
-  };
+  const direction = newIndex > viewIndex ? -1 : 1;
+
+  // Fase de salida
+  Animated.timing(fadeSlideAnim, {
+    toValue: direction * 1, // 1 o -1 para indicar dirección
+    duration: 250,
+    useNativeDriver: true,
+  }).start(() => {
+    // Cambio de vista
+    setViewIndex(newIndex);
+    setCurrentView(navItems[newIndex].key);
+
+    // Reposicionar instantáneamente en dirección contraria
+    fadeSlideAnim.setValue(-direction * 1);
+
+    // Fase de entrada
+    Animated.timing(fadeSlideAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  });
+
+  // Sonido
+  sonidoSwipe.current?.replayAsync();
+};
+
+const handleSwipe = (dir: 'left' | 'right') => {
+  const newIndex =
+    dir === 'left'
+      ? Math.min(viewIndex + 1, navItems.length - 1)
+      : Math.max(viewIndex - 1, 0);
+
+  animateToIndex(newIndex);
+};
+
+const renderAnimatedContent = () => {
+  let content;
+  switch (currentView) {
+    case 'dashboard':
+      content = <InicioView />;
+      break;
+    case 'productos':
+      content = <ProductosView />;
+      break;
+    case 'ventas':
+      content = <NuevaVentaView />;
+      break;
+    case 'estadisticas':
+      content = <EstadisticasView />;
+      break;
+    case 'materiales':
+      content = <MaterialesView />;
+      break;
+    default:
+      content = <InicioView />;
+  }
+
+  const slideX = fadeSlideAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: [-width, 0, width],
+  });
+
+  const opacity = fadeSlideAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: [0.2, 1, 0.2],
+  });
 
   return (
+    <Animated.View
+      style={{
+        flex: 1,
+        transform: [{ translateX: slideX }],
+        opacity,
+      }}
+    >
+      {content}
+    </Animated.View>
+  );
+};
+
+  return (
+    
     <SafeAreaView style={styles.container}>
+      <TouchableOpacity
+  onPress={toggleMenu}
+  style={{
+    position: 'absolute',
+    bottom: menuVisible ? 74 : 10, 
+    alignSelf: 'center',
+
+    borderRadius: 999,
+    padding: 6,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    zIndex: 10,
+  }}
+>
+  <Animated.View style={{
+    transform: [
+      {
+        rotate: navAnim.interpolate({
+          inputRange: [0, 100],
+          outputRange: ['0deg', '180deg'],
+        }),
+      },
+    ],
+  }}>
+    <MaterialCommunityIcons name="chevron-down" size={24} color="#1e293b" />
+  </Animated.View>
+</TouchableOpacity>
       <Stack.Screen options={{ title: 'Inicio', headerShown: false }} />
 
       {/* Main Content */}
-      <View style={styles.content}>
-        {renderContent()}
-      </View>
+<PanGestureHandler
+  onHandlerStateChange={({ nativeEvent }) => {
+    if (nativeEvent.state === State.END) {
+      const { translationX } = nativeEvent;
+      if (translationX > 50) {
+        handleSwipe('right');
+      } else if (translationX < -50) {
+        handleSwipe('left');
+      }
+    }
+  }}
+>
+<Animated.View style={styles.content}>
+  {renderAnimatedContent()}
+</Animated.View>
+</PanGestureHandler>
 
       {/* Modern Bottom Navigation Bar */}
-      <View style={styles.bottomNavContainer}>
+    <Animated.View style={[
+  styles.bottomNavContainer,
+  { transform: [{ translateY: navAnim }] }
+]}>
         <View style={styles.bottomNav}>
           {navItems.map((item) => {
             const isActive = currentView === item.key;
@@ -195,7 +256,7 @@ export default function Dashboard() {
               <TouchableOpacity 
                 key={item.key}
                 style={[styles.navButton, isActive && styles.navButtonActive]} 
-                onPress={() => handleViewChange(item.key)}
+                onPress={() => animateToIndex(navItems.findIndex(i => i.key === item.key))}
                 activeOpacity={0.8}
               >
                 <Animated.View style={[
@@ -221,7 +282,7 @@ export default function Dashboard() {
             );
           })}
         </View>
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }

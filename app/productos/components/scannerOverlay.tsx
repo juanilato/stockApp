@@ -64,14 +64,14 @@ export default function ScannerOverlay({ confirmado = false }: Props) {
   }, [confirmado]);
 
   // Interpolaciones para efectos visuales
-  const scanLinePosition = scanLineAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 180],
-  });
+const scanLinePosition = scanLineAnim.interpolate({
+  inputRange: [0, 1],
+  outputRange: [-100, 180],
+});
 
   const frameColor = 'rgba(255, 255, 255, 0.6)'; // Blanco semitransparente
   const scanLineColor = '#ffffff';
-  const successColor = '#10b981';
+
   const textColor = '#e5e7eb';
 
   return (
@@ -96,17 +96,60 @@ export default function ScannerOverlay({ confirmado = false }: Props) {
           }}
         >
           {/* Marco principal */}
-          <View
-            style={{
-              width: '100%',
-              height: '100%',
-              borderWidth: 1,
-              borderColor: frameColor,
-              borderRadius: 16,
-            }}
-          />
 
-
+<View
+  style={{
+    width: 280,
+    height: 180,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: frameColor,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  }}
+>
+  {/* Línea de escaneo animada */}
+<Animated.View
+  style={{
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: scanLineColor,
+    opacity: 0.8,
+    transform: [{ translateY: scanLinePosition }],
+  }}
+/>
+  {/* Instrucción al usuario */}
+  <View
+    style={{
+      position: 'absolute',
+      bottom: -50,
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+    }}
+  >
+    <Text
+      style={{
+        color: textColor,
+        fontSize: 16,
+        fontWeight: '600',
+        opacity: 0.9,
+        letterSpacing: 0.5,
+      }}
+    >
+      Escaneá el código de barras
+    </Text>
+  </View>
+</View>
 
           {/* Texto de instrucción */}
           <View
@@ -131,53 +174,67 @@ export default function ScannerOverlay({ confirmado = false }: Props) {
         </View>
       ) : (
         // Estado de confirmación
-        <View
-          style={{
-            width: 280,
-            height: 180,
-            borderRadius: 16,
-            justifyContent: 'center',
-            alignItems: 'center',
-            overflow: 'hidden',
-          }}
-        >
-          {/* Fondo de éxito */}
-          <Animated.View
-            style={{
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-              backgroundColor: successColor,
-              borderRadius: 16,
-              opacity: successBgOpacity,
-            }}
-          />
 
-          {/* Contenido de éxito */}
-          <Animated.View
-            style={{
-              opacity: successContentScale,
-              alignItems: 'center',
-              transform: [{ scale: successContentScale }],
-            }}
-          >
-            <MaterialCommunityIcons 
-              name="check-circle-outline"
-              size={72} 
-              color="#ffffff" 
-            />
-            <Text
-              style={{
-                color: '#ffffff',
-                fontSize: 20,
-                fontWeight: '700',
-                marginTop: 16,
-              }}
-            >
-              Producto Escaneado
-            </Text>
-          </Animated.View>
-        </View>
+<View
+  style={{
+    width: 280,
+    height: 180,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0fdf4',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 6,
+  }}
+>
+  {/* Fondo animado de éxito */}
+  <Animated.View
+    style={{
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      backgroundColor: '#34d399', // verde esmeralda claro
+      borderRadius: 20,
+      opacity: successBgOpacity,
+    }}
+  />
+
+  {/* Contenido animado */}
+  <Animated.View
+    style={{
+      alignItems: 'center',
+      transform: [
+        {
+          scale: successContentScale.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.7, 1],
+          }),
+        },
+      ],
+      opacity: successContentScale,
+    }}
+  >
+    <MaterialCommunityIcons 
+      name="check-circle" 
+      size={76} 
+      color="#ffffff" 
+      style={{ shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 6 }}
+    />
+    <Text
+      style={{
+        color: '#ffffff',
+        fontSize: 22,
+        fontWeight: '700',
+        marginTop: 14,
+      }}
+    >
+      Producto Escaneado
+    </Text>
+  </Animated.View>
+</View>
       )}
     </View>
   );
