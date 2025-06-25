@@ -1,23 +1,20 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-    Animated,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from 'react-native';
-import { RFValue } from 'react-native-responsive-fontsize';
-import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
+import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import FloatingLabelInput from '../../../components/FloatingLabel';
 import { Material } from '../../../services/db';
-import { colors } from '../../../styles/theme';
-
+import { colors } from '../../styles/theme';
 interface ModalMaterialProps {
   visible: boolean;
   material: Material | null;
@@ -31,12 +28,12 @@ export default function ModalMaterial({
   onClose,
   onSubmit,
 }: ModalMaterialProps) {
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const [nombre, setNombre] = React.useState('');
-  const [precioCosto, setPrecioCosto] = React.useState('');
-  const [unidad, setUnidad] = React.useState('');
-  const [stock, setStock] = React.useState('');
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [nombre, setNombre] = useState('');
+  const [precioCosto, setPrecioCosto] = useState('');
+  const [unidad, setUnidad] = useState('');
+  const [stock, setStock] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type?: 'success' | 'error' | 'warning' } | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -51,34 +48,33 @@ export default function ModalMaterial({
         setUnidad('');
         setStock('');
       }
-
-      Animated.timing(slideAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      setToast(null);
     }
   }, [visible, material]);
 
   const handleSubmit = async () => {
     if (!nombre || !precioCosto || !unidad || !stock) {
+      setToast({ message: 'Por favor complete todos los campos' });
       return;
     }
-
+    if (parseFloat(precioCosto) <= 0 || parseFloat(stock) < 0) {
+      setToast({ message: 'No se permiten valores negativos o cero' });
+      return;
+    }
+    if (!Number.isFinite(Number(stock)) || !Number.isFinite(Number(precioCosto))) {
+      setToast({ message: 'Valores inválidos' });
+      return;
+    }
     setIsLoading(true);
     try {
       const result = await onSubmit(nombre, precioCosto, unidad, stock);
       if (result.success) {
         onClose();
+      } else {
+        setToast({ message: result.message || 'Error al guardar', type: 'error' });
       }
     } catch (error) {
-      console.error('Error al guardar:', error);
+      setToast({ message: 'Error al guardar', type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -88,7 +84,7 @@ export default function ModalMaterial({
     <Modal
       visible={visible}
       animationType="slide"
-      transparent={true}
+      transparent
       onRequestClose={onClose}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -101,44 +97,39 @@ export default function ModalMaterial({
               <Text style={styles.modalTitle}>
                 {material ? 'Editar Material' : 'Nuevo Material'}
               </Text>
-              <TouchableOpacity style={styles.closeIcon} onPress={onClose}>
+              <TouchableOpacity onPress={onClose}>
                 <MaterialCommunityIcons name="close" size={24} color={colors.gray[500]} />
               </TouchableOpacity>
             </View>
-
             <View style={styles.modalBody}>
               <FloatingLabelInput
                 label="Nombre del material"
                 value={nombre}
                 onChangeText={setNombre}
-                placeholder="Ej: Madera, Pintura, Herramientas..."
+                placeholder=""
                 autoFocus={true}
               />
-              
               <FloatingLabelInput
                 label="Precio de costo"
                 value={precioCosto}
                 onChangeText={setPrecioCosto}
-                placeholder="0.00"
+                placeholder=""
                 keyboardType="numeric"
               />
-              
               <FloatingLabelInput
                 label="Unidad de medida"
                 value={unidad}
                 onChangeText={setUnidad}
-                placeholder="Ej: metro, unidad, hora..."
+                placeholder=""
               />
-              
               <FloatingLabelInput
                 label="Stock disponible"
                 value={stock}
                 onChangeText={setStock}
-                placeholder="0"
+                placeholder=""
                 keyboardType="numeric"
               />
             </View>
-
             <View style={styles.modalFooter}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonSecondary]}
@@ -146,29 +137,27 @@ export default function ModalMaterial({
                 disabled={isLoading}
               >
                 <MaterialCommunityIcons name="close" size={20} color={colors.gray[700]} />
-                <Text style={[styles.modalButtonText, styles.modalButtonTextSecondary]}>
-                  Cancelar
-                </Text>
+                <Text style={[styles.modalButtonText, styles.modalButtonTextSecondary]}>Cancelar</Text>
               </TouchableOpacity>
-              
               <TouchableOpacity
-                style={[
-                  styles.modalButton,
-                  styles.modalButtonPrimary,
-                  isLoading && styles.modalButtonDisabled,
-                ]}
+                style={[styles.modalButton, styles.modalButtonPrimary, isLoading && styles.modalButtonDisabled]}
                 onPress={handleSubmit}
                 disabled={isLoading}
               >
-                <MaterialCommunityIcons name="check" size={20} color="#ffffff" />
-                <Text style={styles.modalButtonText}>
-                  {isLoading ? 'Guardando...' : 'Guardar'}
-                </Text>
+                <MaterialCommunityIcons name="check" size={20} color={colors.white} />
+                <Text style={styles.modalButtonText}>{isLoading ? 'Guardando...' : 'Guardar'}</Text>
               </TouchableOpacity>
             </View>
           </View>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
+      {toast && (
+        <View style={{ position: 'absolute', bottom: 40, left: 0, right: 0, alignItems: 'center' }}>
+          <View style={{ backgroundColor: toast.type === 'error' ? '#ef4444' : '#2563eb', borderRadius: 8, padding: 12, minWidth: 180 }}>
+            <Text style={{ color: '#fff', textAlign: 'center', fontWeight: '600' }}>{toast.message}</Text>
+          </View>
+        </View>
+      )}
     </Modal>
   );
 }
@@ -176,70 +165,55 @@ export default function ModalMaterial({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: wp('5%'),
   },
+
   modalContent: {
     width: '100%',
     maxWidth: wp('90%'),
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.card,
     borderRadius: wp('6%'),
     overflow: 'hidden',
-    maxHeight: '80%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
   },
   modalHeader: {
-    backgroundColor: '#f0f4ff',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: wp('5%'),
-    paddingVertical: hp('2%'),
-    borderTopLeftRadius: wp('6%'),
-    borderTopRightRadius: wp('6%'),
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: '#f1f5f9',
+    backgroundColor: '#f0f4ff',
   },
   modalTitle: {
-    fontSize: RFValue(18),
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '700' as const,
     color: '#1e293b',
   },
-  closeIcon: {
-    padding: wp('2.5%'),
-    borderRadius: 999,
-    backgroundColor: '#e2e8f0',
-  },
   modalBody: {
-    padding: wp('5%'),
-    backgroundColor: '#ffffff',
+    padding: 24,
+    backgroundColor: '#fff',
   },
   modalFooter: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: wp('4%'),
-    paddingHorizontal: wp('5%'),
-    paddingBottom: hp('2%'),
-    backgroundColor: '#ffffff',
+    flexDirection: 'row' as const,
+    justifyContent: 'flex-end' as const,
+    gap: 16,
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+    backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#f1f5f9',
   },
   modalButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: wp('5%'),
-    paddingVertical: hp('1.5%'),
-    borderRadius: wp('5%'),
-    gap: wp('2%'),
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 16,
+    gap: 8,
   },
   modalButtonPrimary: {
     backgroundColor: '#2563eb',
@@ -253,9 +227,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#94a3b8',
   },
   modalButtonText: {
-    fontSize: RFValue(14),
-    fontWeight: '600',
-    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#fff',
   },
   modalButtonTextSecondary: {
     color: '#64748b',

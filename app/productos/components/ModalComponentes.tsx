@@ -215,7 +215,7 @@ return (
                   const valid = /^\d*[.,]?\d*$/;
                   if (valid.test(text) || text === '') setCantidad(text);
                 }}
-                placeholder={`Cantidad en ${materialSeleccionado.unidad}`}
+                
                 keyboardType="decimal-pad"
               />
             )}

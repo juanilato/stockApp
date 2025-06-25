@@ -73,33 +73,29 @@ export default function EstadisticasView() {
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      {/* Header moderno */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View>
+      <View style={styles.headerWrapper}>
+        <View style={styles.headerContainer}>
+          <View style={{ flex: 1 }}>
             <Text style={styles.headerSectionLabel}>Análisis</Text>
             <Text style={styles.headerTitle}>Estadísticas</Text>
           </View>
-          
-          <View style={styles.headerActions}>
+          <View style={styles.actionsContainer}>
             <TouchableOpacity 
-              style={styles.configButton}
+              style={styles.actionButton}
               onPress={() => setMostrarConfiguracion(true)}
             >
-              <MaterialCommunityIcons name="chart-line" size={20} color="#ffffff" />
+              <MaterialCommunityIcons name="cog-outline" size={22} color="#cbd5e1" />
             </TouchableOpacity>
-            
- 
           </View>
         </View>
       </View>
 
       {/* Contenido principal */}
-<ScrollView
-  style={styles.content}
-  contentContainerStyle={{ paddingBottom: 100 }} 
-  showsVerticalScrollIndicator={false}
->
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 100 }} 
+        showsVerticalScrollIndicator={false}
+      >
         {/* Cards de estadísticas básicas */}
         <View style={styles.statsContainer}>
           {configuracion.mostrarStockTotal && (
@@ -223,56 +219,47 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontWeight: '500',
   },
-  header: {
+  headerWrapper: {
     backgroundColor: '#1e293b',
+    paddingBottom: 8,
+    paddingTop: 10,
+    paddingHorizontal: 16,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
     elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    zIndex: 10,
   },
-  headerContent: {
+  headerContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 24,
+    alignItems: 'center',
+    paddingBottom: 6,
   },
   headerSectionLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#94a3b8',
-    letterSpacing: 1.2,
+    letterSpacing: 1.1,
     textTransform: 'uppercase',
-    marginBottom: 4,
+    marginBottom: 2,
     fontWeight: '600',
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: '700',
     color: '#ffffff',
-    letterSpacing: -0.5,
+    letterSpacing: 0.2,
   },
-  headerActions: {
+  actionsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-  },
-  configButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    padding: 12,
+    backgroundColor: '#334155',
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 4,
   },
-  headerIcon: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+  actionButton: {
+    padding: 8,
   },
   content: {
     flex: 1,

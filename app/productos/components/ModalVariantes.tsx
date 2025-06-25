@@ -4,10 +4,12 @@ import FloatingLabelInput from '@/components/FloatingLabel';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-  Modal,
-  Text,
-  TouchableOpacity,
-  View
+    Keyboard,
+    Modal,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
 import { Producto, VarianteProducto, actualizarVariante, eliminarVariante, getDb, insertarVariante } from '../../../services/db';
 import { styles } from '../styles/modals/ModalVariantes.styles';
@@ -143,67 +145,69 @@ if (parseInt(varianteStock) <= 0) {
 
   return (
  <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-  <View style={styles.overlay}>
-    <View style={styles.sheet}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Variantes de {producto.nombre}</Text>
-        <TouchableOpacity onPress={onClose}>
-          <MaterialCommunityIcons name="close" size={24} color="#334155" />
-        </TouchableOpacity>
-      </View>
+  <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+    <View style={styles.overlay}>
+      <View style={styles.sheet}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Variantes de {producto.nombre}</Text>
+          <TouchableOpacity onPress={onClose}>
+            <MaterialCommunityIcons name="close" size={24} color="#334155" />
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.body}>
-        <FloatingLabelInput
-          style={styles.input}
-          label="Nombre de la variante"
-          placeholder=""
-          value={varianteNombre}
-          onChangeText={setVarianteNombre}
-        />
-        <FloatingLabelInput
-          style={styles.input}
-          label="Stock"
-          placeholder=""
-          value={varianteStock}
-          onChangeText={setVarianteStock}
-          keyboardType="numeric"
-        />
+        <View style={styles.body}>
+          <FloatingLabelInput
+            style={styles.input}
+            label="Nombre de la variante"
+            placeholder=""
+            value={varianteNombre}
+            onChangeText={setVarianteNombre}
+          />
+          <FloatingLabelInput
+            style={styles.input}
+            label="Stock"
+            placeholder=""
+            value={varianteStock}
+            onChangeText={setVarianteStock}
+            keyboardType="numeric"
+          />
 
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={guardarVariante}
-        >
-          <Text style={styles.saveButtonText}>
-            {varianteSeleccionada ? 'Actualizar' : 'Agregar'} Variante
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={guardarVariante}
+          >
+            <Text style={styles.saveButtonText}>
+              {varianteSeleccionada ? 'Actualizar' : 'Agregar'} Variante
+            </Text>
+          </TouchableOpacity>
 
-        <Text style={styles.sectionTitle}>Variantes existentes</Text>
-        {variantes.length === 0 ? (
-          <Text style={styles.emptyText}>No hay variantes registradas</Text>
-        ) : (
-          <View style={styles.variantList}>
-            {variantes.map((item) => (
-              <View key={item.id} style={styles.variantCard}>
-                <View style={styles.variantInfo}>
-                  <Text style={styles.variantName}>{item.nombre}</Text>
-                  <Text style={styles.variantStock}>Stock: {item.stock}</Text>
+          <Text style={styles.sectionTitle}>Variantes existentes</Text>
+          {variantes.length === 0 ? (
+            <Text style={styles.emptyText}>No hay variantes registradas</Text>
+          ) : (
+            <View style={styles.variantList}>
+              {variantes.map((item) => (
+                <View key={item.id} style={styles.variantCard}>
+                  <View style={styles.variantInfo}>
+                    <Text style={styles.variantName}>{item.nombre}</Text>
+                    <Text style={styles.variantStock}>Stock: {item.stock}</Text>
+                  </View>
+                  <View style={styles.variantActions}>
+                    <TouchableOpacity onPress={() => editarVariante(item)}>
+                      <MaterialCommunityIcons name="pencil" size={20} color="#2563eb" />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => confirmarEliminarVariante(item.id!)}>
+                      <MaterialCommunityIcons name="delete" size={20} color="#ef4444" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <View style={styles.variantActions}>
-                  <TouchableOpacity onPress={() => editarVariante(item)}>
-                    <MaterialCommunityIcons name="pencil" size={20} color="#2563eb" />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => confirmarEliminarVariante(item.id!)}>
-                    <MaterialCommunityIcons name="delete" size={20} color="#ef4444" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
+              ))}
+            </View>
+          )}
+        </View>
       </View>
     </View>
-  </View>
+  </TouchableWithoutFeedback>
   {toast && (
   <CustomToast
     message={toast.message}

@@ -220,7 +220,7 @@ export default function ModalPreciosMateriales({
               >
                 <MaterialCommunityIcons name="content-save" size={20} color="#ffffff" />
                 <Text style={styles.modalButtonText}>
-                  {isLoading ? 'Guardando...' : 'Guardar Todos'}
+                  {isLoading ? 'Guardando...' : ''}
                 </Text>
               </TouchableOpacity>
             </View>

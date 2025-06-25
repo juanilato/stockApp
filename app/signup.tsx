@@ -4,17 +4,18 @@ import * as AuthSession from 'expo-auth-session';
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import {
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import FloatingLabelInput from '../components/FloatingLabel';
+import CompletarPerfilModal from './completar-perfil';
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -31,13 +32,17 @@ export default function SignUpScreen() {
   const [loading, setLoading] = React.useState(false);
   const [pendingVerification, setPendingVerification] = React.useState(false);
   const [error, setError] = React.useState('');
+  const [showCompletarPerfil, setShowCompletarPerfil] = React.useState(false);
+  const [signUpPending, setSignUpPending] = React.useState(null);
 
   const onSignUpPress = async () => {
     if (!isLoaded) return;
     setLoading(true);
     setError('');
     try {
-      await signUp.create({ emailAddress, password, username });
+      const payload: any = { emailAddress, username };
+      if (password) payload.password = password;
+      await signUp.create(payload);
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
     } catch (err: any) {
@@ -71,12 +76,15 @@ export default function SignUpScreen() {
     setLoading(true);
     setError('');
     try {
-      const { createdSessionId, setActive } = await startOAuth({ redirectUrl: redirectUri });
+      const result = await startOAuth({ redirectUrl: redirectUri });
+      const { createdSessionId, setActive, signUp } = result;
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
         router.replace('/');
-      } else {
-        setError(`No se pudo registrar con ${provider}`);
+      } else if (signUp) {
+        // Usuario pendiente: pasar signUp y setActive al modal
+        setSignUpPending({ signUp, setActive });
+        setShowCompletarPerfil(true);
       }
     } catch (err: any) {
       if (err?.errors?.[0]?.message?.includes('already')) {
@@ -91,6 +99,9 @@ export default function SignUpScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {showCompletarPerfil && signUpPending && (
+        <CompletarPerfilModal signUp={signUpPending.signUp} setActive={signUpPending.setActive} />
+      )}
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.logoContainer}>
           <Image source={require('../assets/images/icon.png')} style={styles.logo} />
@@ -134,7 +145,7 @@ export default function SignUpScreen() {
 
               <FloatingLabelInput label="Nombre de usuario" value={username} onChangeText={setUsername} autoCapitalize="none" />
               <FloatingLabelInput label="Correo electrónico" value={emailAddress} onChangeText={setEmailAddress} keyboardType="email-address" autoCapitalize="none" />
-              <FloatingLabelInput label="Contraseña" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password-new" />
+              <FloatingLabelInput label="Contraseña (opcional)" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password-new" />
 
               {error ? <Text style={styles.error}>{error}</Text> : null}
 

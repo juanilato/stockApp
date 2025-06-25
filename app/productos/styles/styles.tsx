@@ -33,7 +33,32 @@ export const styles = StyleSheet.create({
     gap: wp('2.5%'),
     flexWrap: 'wrap',
   },
-
+  addListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    marginHorizontal: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  addIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#e0e7ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  addListItemText: {
+    fontSize: 16,
+    color: '#2563eb',
+    fontWeight: '500',
+  },
   tagCompact: {
     backgroundColor: '#f8fafc',
     borderRadius: 12,

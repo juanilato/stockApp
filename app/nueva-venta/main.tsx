@@ -1,3 +1,4 @@
+import { useUser } from '@clerk/clerk-expo';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCameraPermissions } from 'expo-camera';
 import React, { useEffect, useRef, useState } from 'react';
@@ -5,6 +6,7 @@ import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from '
 import { Producto, registrarVenta, Venta } from '../../services/db';
 import { generatePaymentQR, PaymentData } from '../../services/mercadopago';
 import { colors, spacing } from '../../styles/theme';
+import ModalApiKeyMercadoPago from './components/ModalApiKeyMercadoPago';
 import ModalCantidad from './components/modalCantidad';
 import ModalQRPago from './components/modalQRPago';
 import ModalTransferencia from './components/modalTransferencia';
@@ -18,6 +20,7 @@ import { useSeleccionados } from './hooks/useSeleccionados';
 
 export default function NuevaVentaView() {
   const { productos, isLoading } = useProductos();
+  const { user } = useUser();
 
   const guardarVenta = async () => {
     if (productosSeleccionados.length === 0) {
@@ -49,12 +52,19 @@ export default function NuevaVentaView() {
     }
   };
 
+  const [modalApiKeyVisible, setModalApiKeyVisible] = useState(false);
+
   const generarQRPago = async () => {
     if (productosSeleccionados.length === 0) {
       alert('Debe seleccionar al menos un producto');
       return;
     }
-
+    // Verificar si hay apikey guardada en Clerk
+    const apikey = user?.unsafeMetadata?.mercadopago_apikey;
+    if (!apikey) {
+      setModalApiKeyVisible(true);
+      return;
+    }
     try {
       const total = calcularTotal();
       const paymentData: PaymentData = {
@@ -68,8 +78,7 @@ export default function NuevaVentaView() {
         })),
         total_amount: total,
       };
-
-      const qrResponse = await generatePaymentQR(paymentData);
+      const qrResponse = await generatePaymentQR(paymentData, apikey);
       if (qrResponse.qr_code) {
         setQrData(qrResponse.qr_code);
         setQrModalVisible(true);
@@ -161,26 +170,26 @@ export default function NuevaVentaView() {
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      {/* Header moderno */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View>
+      <View style={styles.headerWrapper}>
+        <View style={styles.headerContainer}>
+          <View style={{ flex: 1 }}>
             <Text style={styles.headerSectionLabel}>Ventas</Text>
             <Text style={styles.headerTitle}>Nueva Venta</Text>
           </View>
-          
-          <TouchableOpacity
-            style={styles.scanButton}
-            onPress={() => {
-              if (!permission?.granted) {
-                requestPermission();
-              } else {
-                setScannerVisible(true);
-              }
-            }}
-          >
-            <MaterialCommunityIcons name="barcode-scan" size={24} color="#fff" />
-          </TouchableOpacity>
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => {
+                if (!permission?.granted) {
+                  requestPermission();
+                } else {
+                  setScannerVisible(true);
+                }
+              }}
+            >
+              <MaterialCommunityIcons name="barcode-scan" size={22} color="#cbd5e1" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -234,6 +243,21 @@ export default function NuevaVentaView() {
         onConfirmarPago={handleConfirmarPago}
       />
 
+      <ModalApiKeyMercadoPago
+        visible={modalApiKeyVisible}
+        onClose={() => setModalApiKeyVisible(false)}
+        onSaved={async (apikey: string) => {
+          if (!user) return;
+          try {
+            await user.update({ unsafeMetadata: { ...user.unsafeMetadata, mercadopago_apikey: apikey } });
+            await user.reload();
+            setModalApiKeyVisible(false);
+          } catch (e) {
+            throw new Error('No se pudo guardar el Access Token. Intenta de nuevo.');
+          }
+        }}
+      />
+
       {/* Scanner Modal */}
       <ScannerModal
         visible={scannerVisible}
@@ -268,51 +292,47 @@ export const styles = StyleSheet.create({
     color: '#64748b',
     fontWeight: '500',
   },
-  header: {
+  headerWrapper: {
     backgroundColor: '#1e293b',
+    paddingBottom: 8,
+    paddingTop: 10,
+    paddingHorizontal: 16,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
     elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    zIndex: 10,
   },
-  headerContent: {
+  headerContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    paddingHorizontal: spacing.lg,
-    paddingTop: 60,
-    paddingBottom: 24,
+    alignItems: 'center',
+    paddingBottom: 6,
   },
   headerSectionLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#94a3b8',
-    letterSpacing: 1.2,
+    letterSpacing: 1.1,
     textTransform: 'uppercase',
-    marginBottom: 4,
+    marginBottom: 2,
     fontWeight: '600',
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: '700',
     color: '#ffffff',
-    letterSpacing: -0.5,
+    letterSpacing: 0.2,
   },
-  scanButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    padding: 12,
-    borderRadius: 16,
-    justifyContent: 'center',
+  actionsContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: '#334155',
+    borderRadius: 16,
+    padding: 4,
+  },
+  actionButton: {
+    padding: 8,
   },
   content: {
     flex: 1,

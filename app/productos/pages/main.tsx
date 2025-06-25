@@ -1,8 +1,9 @@
 // productos/views/ProductosView.tsx
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Animated, FlatList,
+  Pressable,
   Text, TouchableOpacity, View
 } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
@@ -20,6 +21,8 @@ import ModalComponentes from '../components/ModalComponentes';
 import ModalProducto from '../components/ModalProducto';
 import ModalScanner from '../components/ModalScanner';
 import ModalVariantes from '../components/ModalVariantes';
+import ProductoItem from '../components/ProductoItem';
+import ProductosHeader from '../components/ProductosHeader';
 
 // Importar funciones separadas
 import {
@@ -45,6 +48,16 @@ export default function ProductosView() {
   const [productoAEliminar, setProductoAEliminar] = useState<Producto | null>(null);
   const [scannerVisible, setScannerVisible] = useState(false);
   const [toast, setToast] = useState<ToastType>(null);
+
+  // Estados para los filtros
+  const [nombreFiltro, setNombreFiltro] = useState('');
+  const [costoDesde, setCostoDesde] = useState('');
+  const [costoHasta, setCostoHasta] = useState('');
+  const [ventaDesde, setVentaDesde] = useState('');
+  const [ventaHasta, setVentaHasta] = useState('');
+  const [stockDesde, setStockDesde] = useState('');
+  const [stockHasta, setStockHasta] = useState('');
+  const [filtrosExpanded, setFiltrosExpanded] = useState(false);
 
   const fadeAnim = new Animated.Value(0);
 
@@ -89,6 +102,7 @@ export default function ProductosView() {
 
   const handleGuardarProducto = async (producto: Producto, esNuevo: boolean) => {
     await manejarGuardarProducto(producto, esNuevo, cargarProductos, setToast);
+    setModalProductoVisible(false);
   };
 
   const handleEliminarProducto = (id: number) => {
@@ -103,6 +117,31 @@ export default function ProductosView() {
       await manejarEliminarProducto(productoAEliminar.id, cargarProductos, setToast, setProductoAEliminar);
     }
   };
+
+  const handleScan = () => {
+    setScannerVisible(true);
+    setFiltrosExpanded(false);
+  };
+
+  const handleAgregarProducto = () => {
+    setProductoSeleccionado(null);
+    setModalProductoVisible(true);
+    setFiltrosExpanded(false);
+  };
+  
+  const productosFiltrados = useMemo(() => {
+    return productos.filter(p => {
+      const nombreMatch = nombreFiltro === '' || p.nombre.toLowerCase().includes(nombreFiltro.toLowerCase());
+      const costoDesdeMatch = costoDesde === '' || (p.precioCosto && p.precioCosto >= parseFloat(costoDesde));
+      const costoHastaMatch = costoHasta === '' || (p.precioCosto && p.precioCosto <= parseFloat(costoHasta));
+      const ventaDesdeMatch = ventaDesde === '' || (p.precioVenta && p.precioVenta >= parseFloat(ventaDesde));
+      const ventaHastaMatch = ventaHasta === '' || (p.precioVenta && p.precioVenta <= parseFloat(ventaHasta));
+      const stockDesdeMatch = stockDesde === '' || (p.stock && p.stock >= parseInt(stockDesde, 10));
+      const stockHastaMatch = stockHasta === '' || (p.stock && p.stock <= parseInt(stockHasta, 10));
+      
+      return nombreMatch && costoDesdeMatch && costoHastaMatch && ventaDesdeMatch && ventaHastaMatch && stockDesdeMatch && stockHastaMatch;
+    });
+  }, [productos, nombreFiltro, costoDesde, costoHasta, ventaDesde, ventaHasta, stockDesde, stockHasta]);
 
   // Componente de acciones de swipe modernizado
   const SwipeActions = ({ item, progress, dragX }: any) => {
@@ -234,70 +273,77 @@ export default function ProductosView() {
     );
   };
 
+  function AddListItem({ onPress, label }: { onPress: () => void; label: string }) {
+    return (
+      <TouchableOpacity style={styles.addListItem} onPress={onPress} activeOpacity={0.85}>
+        <View style={styles.addIconBox}>
+          <MaterialCommunityIcons name="plus" size={22} color="#2563eb" />
+        </View>
+        <Text style={styles.addListItemText}>{label}</Text>
+      </TouchableOpacity>
+    );
+  }
   // Vista principal
   return (
     <PaperProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={commonStyles.container}>
-          {/* Header modernizado */}
-          <View style={styles.headerProductos}>
-            <View style={styles.headerContent}>
-              <View style={styles.headerText}>
-                <Text style={styles.headerSectionLabel}>Catálogo</Text>
-                <Text style={styles.headerTitle}>Mis Productos</Text>
-                <Text style={styles.headerSubtitle}>
-                  {productos.length} productos en inventario
-                </Text>
-              </View>
-              
-              <View style={styles.headerActions}>
-                <TouchableOpacity
-                  style={styles.headerButton}
-                  onPress={() => {
-                    setMenuVisibleOpciones(false);
-                    setScannerVisible(true);
-                  }}
-                >
-                  <MaterialCommunityIcons name="barcode-scan" size={20} color="#ffffff" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          {/* Botón flotante modernizado */}
-          <View style={styles.fabContainer}>
-            <TouchableOpacity
-              style={styles.fab}
-              onPress={() => {
-                setMenuVisibleOpciones(false);
-                setProductoSeleccionado(null);
-                setModalProductoVisible(true);
-              }}
-              activeOpacity={0.8}
-            >
-              <MaterialCommunityIcons name="plus" size={24} color="#ffffff" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Lista de productos */}
-          <FlatList
-            data={productos}
-            keyExtractor={(item) => item.id?.toString() || ''}
-            renderItem={renderProducto}
-            ListEmptyComponent={
-              <View style={commonStyles.emptyState}>
-                <MaterialCommunityIcons name="package-variant" size={64} color="#94a3b8" />
-                <Text style={commonStyles.emptyStateText}>No hay productos</Text>
-                <Text style={styles.emptyStateSubtext}>
-                  Agrega tu primer producto para comenzar
-                </Text>
-              </View>
-            }
-            ListHeaderComponent={<View style={{ height: 16 }} />}
-            contentContainerStyle={{ paddingBottom: 100 }}
-            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-            showsVerticalScrollIndicator={false}
+          <ProductosHeader
+            nombre={nombreFiltro}
+            setNombre={setNombreFiltro}
+            precioCostoDesde={costoDesde}
+            setPrecioCostoDesde={setCostoDesde}
+            precioCostoHasta={costoHasta}
+            setPrecioCostoHasta={setCostoHasta}
+            precioVentaDesde={ventaDesde}
+            setPrecioVentaDesde={setVentaDesde}
+            precioVentaHasta={ventaHasta}
+            setPrecioVentaHasta={setVentaHasta}
+            stockDesde={stockDesde}
+            setStockDesde={setStockDesde}
+            stockHasta={stockHasta}
+            setStockHasta={setStockHasta}
+            onAgregar={handleAgregarProducto}
+            onScan={handleScan}
+            cantidad={productos.length}
+            isExpanded={filtrosExpanded}
+            setExpanded={setFiltrosExpanded}
           />
+
+          <Pressable onPress={() => filtrosExpanded && setFiltrosExpanded(false)} style={{ flex: 1 }}>
+            <FlatList
+              data={productosFiltrados}
+              keyExtractor={(item) => item.id?.toString() || ''}
+              renderItem={({ item }) => (
+                <ProductoItem
+                  producto={item}
+                  onEdit={(prod) => {
+                    setProductoSeleccionado(prod);
+                    setModalProductoVisible(true);
+                  }}
+                  onDelete={(prod) => handleEliminarProducto(prod.id!)}
+                  onComponentes={(prod) => {
+                    setProductoSeleccionado(prod);
+                    setModalComponentesVisible(true);
+                  }}
+                  onVariantes={(prod) => {
+                    setProductoSeleccionado(prod);
+                    setModalVariantesVisible(true);
+                  }}
+                />
+              )}
+              ListEmptyComponent={
+                <View style={commonStyles.emptyState}>
+                  <MaterialCommunityIcons name="package-variant-closed" size={64} color="#94a3b8" />
+                  <Text style={commonStyles.emptyStateText}>No se encontraron productos</Text>
+   
+                </View>
+              }
+              contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }}
+              ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+              showsVerticalScrollIndicator={false}
+            />
+          </Pressable>
 
           {/* MODALES */}
           <ModalProducto

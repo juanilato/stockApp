@@ -2,7 +2,6 @@
 import axios from 'axios';
 
 const MERCADO_PAGO_API = 'https://api.mercadopago.com';
-const ACCESS_TOKEN = 'APP_USR-2664419998121852-051310-4ec1cf5554b3f957067475372cf71ecb-657595364';
 
 export interface PaymentItem {
   id: string;
@@ -25,7 +24,7 @@ export interface TransferData {
   alias?: string;
 }
 
-export const generatePaymentQR = async (paymentData: PaymentData) => {
+export const generatePaymentQR = async (paymentData: PaymentData, accessToken: string) => {
   try {
     // Crear la preferencia de pago
     const preferenceData = {
@@ -58,7 +57,7 @@ export const generatePaymentQR = async (paymentData: PaymentData) => {
       preferenceData,
       {
         headers: {
-          'Authorization': `Bearer ${ACCESS_TOKEN}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         }
       }
@@ -85,13 +84,13 @@ export const generatePaymentQR = async (paymentData: PaymentData) => {
   }
 };
 
-export const checkPaymentStatus = async (paymentId: string) => {
+export const checkPaymentStatus = async (paymentId: string, accessToken: string) => {
   try {
     const response = await axios.get(
       `${MERCADO_PAGO_API}/v1/payments/${paymentId}`,
       {
         headers: {
-          'Authorization': `Bearer ${ACCESS_TOKEN}`
+          'Authorization': `Bearer ${accessToken}`
         }
       }
     );

@@ -3,13 +3,14 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
-import { Material } from '../../../services/db';
+import { Producto } from '../../../services/db';
 
-
-interface MaterialItemProps {
-  material: Material;
-  onEdit?: (material: Material) => void;
-  onDelete?: (material: Material) => void;
+interface ProductoItemProps {
+  producto: Producto;
+  onEdit?: (producto: Producto) => void;
+  onDelete?: (producto: Producto) => void;
+  onComponentes?: (producto: Producto) => void;
+  onVariantes?: (producto: Producto) => void;
 }
 
 function SwipeActions({ item, onEdit, onDelete }: any) {
@@ -33,36 +34,67 @@ function SwipeActions({ item, onEdit, onDelete }: any) {
   );
 }
 
-const MaterialItem: React.FC<MaterialItemProps> = ({ material, onEdit, onDelete }) => {
+function SwipeLeftActions({ item, onComponentes, onVariantes }: any) {
+  return (
+    <View style={styles.quickActionsContainerLeft}>
+      <TouchableOpacity
+        style={[styles.quickAction, styles.quickComponentes]}
+        onPress={() => onComponentes(item)}
+        activeOpacity={0.7}
+      >
+        <MaterialCommunityIcons name="tools" size={22} color="#2563eb" />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.quickAction, styles.quickVariantes]}
+        onPress={() => onVariantes(item)}
+        activeOpacity={0.7}
+      >
+        <MaterialCommunityIcons name="shape-plus" size={22} color="#10b981" />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+export default function ProductoItem({ producto, onEdit, onDelete, onComponentes, onVariantes }: ProductoItemProps) {
+  const margen = producto.precioVenta && producto.precioCosto
+    ? (parseFloat(producto.precioVenta.toString()) - parseFloat(producto.precioCosto.toString())).toFixed(2)
+    : '0.00';
+
   return (
     <View style={styles.productoWrapper}>
       <Swipeable
         renderRightActions={() => (
-          <SwipeActions item={material} onEdit={onEdit} onDelete={onDelete} />
+          <SwipeActions item={producto} onEdit={onEdit} onDelete={onDelete} />
+        )}
+        renderLeftActions={() => (
+          <SwipeLeftActions item={producto} onComponentes={onComponentes} onVariantes={onVariantes} />
         )}
         overshootRight={false}
+        overshootLeft={false}
         friction={2}
         rightThreshold={40}
+        leftThreshold={40}
       >
         <View style={styles.productoCard}>
           <View style={styles.row}>
             <View style={styles.iconBox}>
-              <MaterialCommunityIcons name="cube-outline" size={22} color="#64748b" />
+              <MaterialCommunityIcons name="package-variant" size={22} color="#64748b" />
             </View>
             <View style={styles.infoBox}>
-              <Text style={styles.nombre}>{material.nombre}</Text>
-              <Text style={styles.stock}>Stock: {material.stock} {material.unidad || 'u'}</Text>
+              <Text style={styles.nombre}>{producto.nombre}</Text>
+              <Text style={styles.stock}>Stock: {producto.stock} unidades</Text>
             </View>
             <View style={styles.priceBox}>
-              <Text style={styles.costo}>${material.precioCosto}</Text>
-              <Text style={styles.unidad}>{material.unidad}</Text>
+              <Text style={styles.venta}>${producto.precioVenta}</Text>
+              <Text style={styles.costo}>${producto.precioCosto}</Text>
+              <Text style={styles.margen}>${margen}</Text>
             </View>
           </View>
         </View>
       </Swipeable>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   productoWrapper: {
@@ -108,16 +140,22 @@ const styles = StyleSheet.create({
   },
   priceBox: {
     alignItems: 'flex-end',
-    minWidth: 60,
+    minWidth: 70,
   },
-  costo: {
+  venta: {
     fontSize: wp('4%'),
     fontWeight: '600',
     color: '#0ea5e9',
   },
-  unidad: {
-    fontSize: wp('3.2%'),
+  costo: {
+    fontSize: wp('3.5%'),
     color: '#64748b',
+    fontWeight: '400',
+    marginTop: 2,
+  },
+  margen: {
+    fontSize: wp('3.5%'),
+    color: '#10b981',
     fontWeight: '400',
     marginTop: 2,
   },
@@ -145,6 +183,19 @@ const styles = StyleSheet.create({
   quickDelete: {
     backgroundColor: 'transparent',
   },
-});
-
-export default MaterialItem; 
+  quickActionsContainerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f1f5f9',
+    height: '100%',
+    paddingLeft: 8,
+    borderTopLeftRadius: 14,
+    borderBottomLeftRadius: 14,
+  },
+  quickComponentes: {
+    backgroundColor: 'transparent',
+  },
+  quickVariantes: {
+    backgroundColor: 'transparent',
+  },
+}); 
