@@ -502,9 +502,12 @@ export const insertarMaterial = async (material: Material, callback?: () => void
 
 export const obtenerMateriales = async (callback: (materiales: Material[]) => void) => {
   try {
+    console.log('🔍 obtenerMateriales - Iniciando consulta a la base de datos');
     const dbInstance = getDb();
     const materiales = await dbInstance.getAllAsync<Material>('SELECT * FROM materiales;');
-    console.log('📦 Materiales obtenidos:', materiales);
+    console.log('🔍 obtenerMateriales - Resultado de la consulta:', materiales);
+    console.log('🔍 obtenerMateriales - Cantidad de materiales:', materiales.length);
+    console.log('🔍 obtenerMateriales - Estructura del primer material:', materiales[0]);
     callback(materiales);
   } catch (error) {
     console.error('❌ Error al obtener materiales de DB:', error);

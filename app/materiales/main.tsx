@@ -5,6 +5,8 @@ import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler'
 import CustomToast from '../../components/CustomToast';
 import { setupProductosDB } from '../../services/db';
 import ModalMaterial from './components/ModalMaterial';
+import ModalPreciosMateriales from './components/ModalPreciosMateriales';
+import { useActualizacionPrecios } from './hooks/useActualizacionPrecios';
 import { useAnimaciones } from './hooks/useAnimaciones';
 import { useMateriales } from './hooks/useMateriales';
 import { useModalMaterial } from './hooks/useModalMaterial';
@@ -13,6 +15,7 @@ import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-nat
 
 export default function MaterialesView() {
   const [isLoading, setIsLoading] = useState(true);
+  const [modalPreciosVisible, setModalPreciosVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
 
@@ -33,6 +36,7 @@ export default function MaterialesView() {
     setToast,
     mostrarToast 
   } = useAnimaciones();
+  const { actualizarPreciosMateriales } = useActualizacionPrecios();
 
   useEffect(() => {
     const inicializar = async () => {
@@ -78,6 +82,17 @@ export default function MaterialesView() {
     } else if (result?.message !== 'Operación cancelada') {
       mostrarToast(result?.message || 'Error al eliminar', 'error');
     }
+  };
+
+  const handleGuardarPrecios = async (materialesActualizados: any[]) => {
+    const result = await actualizarPreciosMateriales(materialesActualizados);
+    if (result.success) {
+      await cargarMateriales(); // Recargar materiales para mostrar los nuevos precios
+      mostrarToast(result.message, 'success');
+    } else {
+      mostrarToast(result.message, 'error');
+    }
+    return result;
   };
 
   if (isLoading) {
@@ -178,9 +193,16 @@ export default function MaterialesView() {
               <Text style={styles.headerTitle}>Materiales</Text>
             </View>
             
-            <View style={styles.headerIcon}>
+            <TouchableOpacity 
+              style={styles.headerIcon}
+              onPress={() => {
+
+                setModalPreciosVisible(true);
+              }}
+              activeOpacity={0.8}
+            >
               <MaterialCommunityIcons name="basket" size={24} color="#ffffff" />
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -195,6 +217,7 @@ export default function MaterialesView() {
           </TouchableOpacity>
         </View>
 
+       
         {/* Lista de materiales */}
         <FlatList
           data={materiales}
@@ -222,6 +245,16 @@ export default function MaterialesView() {
           onClose={cerrarModal}
           onSubmit={handleGuardarMaterial}
         />
+
+        {/* Modal de precios de materiales */}
+        <ModalPreciosMateriales
+          visible={modalPreciosVisible}
+          materiales={materiales}
+          onClose={() => setModalPreciosVisible(false)}
+          onGuardar={handleGuardarPrecios}
+        />
+        
+
 
         {/* Toast notifications */}
         {toast && !modalVisible && (
