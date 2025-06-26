@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import FloatingLabelInput from '../components/FloatingLabel';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface CompletarPerfilModalProps {
   signUp: any;
@@ -42,11 +41,29 @@ const CompletarPerfilModal: React.FC<CompletarPerfilModalProps> = ({ signUp, set
       <View style={styles.overlay}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
           <View style={styles.modalBox}>
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <Text style={styles.title}>Completa tu perfil</Text>
               <Text style={styles.subtitle}>Para continuar, ingresa un nombre de usuario y una contraseña</Text>
-              <FloatingLabelInput label="Nombre de usuario" value={username} onChangeText={setUsername} autoCapitalize="none" />
-              <FloatingLabelInput label="Contraseña" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password-new" />
+              <TextInput
+                style={styles.input}
+                value={username}
+                onChangeText={setUsername}
+                placeholder="Nombre de usuario"
+                autoCapitalize="none"
+                placeholderTextColor="#94a3b8"
+                autoCorrect={false}
+                returnKeyType="next"
+              />
+              <TextInput
+                style={styles.input}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Contraseña"
+                secureTextEntry
+                autoComplete="password-new"
+                placeholderTextColor="#94a3b8"
+                returnKeyType="done"
+              />
               {error ? <Text style={styles.error}>{error}</Text> : null}
               {success ? <Text style={styles.success}>¡Perfil actualizado!</Text> : null}
               <TouchableOpacity
@@ -68,7 +85,7 @@ const CompletarPerfilModal: React.FC<CompletarPerfilModalProps> = ({ signUp, set
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(30,41,59,0.55)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -79,68 +96,100 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalBox: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 24,
-    width: '94%',
-    maxWidth: 400,
+    backgroundColor: '#f8fafc',
+    borderRadius: 24,
+    padding: 32,
+    width: '98%',
+    maxWidth: 420,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 16,
     position: 'relative',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   scrollContent: {
     alignItems: 'center',
     width: '100%',
+    paddingHorizontal: 8,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '800',
     color: '#1e293b',
     marginBottom: 8,
     marginTop: 4,
     textAlign: 'center',
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#64748b',
+    marginBottom: 22,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    fontSize: 17,
+    backgroundColor: '#fff',
+    color: '#0f172a',
     marginBottom: 18,
+    width: 320,
+    maxWidth: '100%',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
     textAlign: 'center',
   },
   error: {
     color: '#b91c1c',
-    fontSize: 14,
+    fontSize: 15,
     backgroundColor: '#fee2e2',
     borderRadius: 8,
     padding: 10,
     marginTop: 10,
     textAlign: 'center',
+    fontWeight: '500',
   },
   success: {
     color: '#10b981',
-    fontSize: 15,
+    fontSize: 16,
     marginTop: 10,
     textAlign: 'center',
     fontWeight: '600',
   },
   button: {
-    backgroundColor: '#111827',
-    paddingVertical: 14,
-    borderRadius: 12,
+    backgroundColor: '#2563eb',
+    paddingVertical: 16,
+    borderRadius: 14,
     marginTop: 18,
     alignItems: 'center',
-    width: '100%',
+    width: 320,
+    maxWidth: '100%',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 8,
   },
   disabled: {
     opacity: 0.6,
   },
   buttonText: {
     color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
+    fontWeight: '700',
+    fontSize: 17,
+    letterSpacing: 0.2,
   },
 });
 

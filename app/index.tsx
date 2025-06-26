@@ -64,18 +64,32 @@ export default function Dashboard() {
 
   const [viewIndex, setViewIndex] = useState(() => navItems.findIndex(i => i.key === currentView));
   const fadeSlideAnim = useRef(new Animated.Value(0)).current;
-  const navAnim = useRef(new Animated.Value(0)).current; 
-
-
+  const navAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const rotationAnim = useRef(new Animated.Value(0)).current;
 
   const toggleMenu = () => {
-  Animated.timing(navAnim, {
-    toValue: menuVisible ? 100 : 0,
-    duration: 300,
-    useNativeDriver: true,
-  }).start();
-  setMenuVisible(!menuVisible);
-};
+    Animated.parallel([
+      Animated.timing(navAnim, {
+        toValue: menuVisible ? 100 : 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: menuVisible ? 0.8 : 1,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      Animated.timing(rotationAnim, {
+        toValue: menuVisible ? 1 : 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    setMenuVisible(!menuVisible);
+  };
+
   useEffect(() => {
     const cargarSonidos = async () => {
       const [swipe] = await Promise.all([
@@ -95,160 +109,192 @@ export default function Dashboard() {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: 1200,
         useNativeDriver: true,
       }),
       Animated.spring(slideAnim, {
         toValue: 1,
-        tension: 50,
-        friction: 7,
+        tension: 40,
+        friction: 8,
         useNativeDriver: true,
       }),
     ]).start();
   }, []);
 
-const animateToIndex = (newIndex: number) => {
-  if (newIndex === viewIndex) return;
+  const animateToIndex = (newIndex: number) => {
+    if (newIndex === viewIndex) return;
 
-  const direction = newIndex > viewIndex ? -1 : 1;
+    const direction = newIndex > viewIndex ? -1 : 1;
 
-  // Fase de salida
-  Animated.timing(fadeSlideAnim, {
-    toValue: direction * 1, // 1 o -1 para indicar dirección
-    duration: 250,
-    useNativeDriver: true,
-  }).start(() => {
-    // Cambio de vista
-    setViewIndex(newIndex);
-    setCurrentView(navItems[newIndex].key);
+    // Animación de escala para feedback visual
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-    // Reposicionar instantáneamente en dirección contraria
-    fadeSlideAnim.setValue(-direction * 1);
+    // Fase de salida con efecto de desvanecimiento
+    Animated.parallel([
+      Animated.timing(fadeSlideAnim, {
+        toValue: direction * 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 0.3,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Cambio de vista
+      setViewIndex(newIndex);
+      setCurrentView(navItems[newIndex].key);
 
-    // Fase de entrada
-    Animated.timing(fadeSlideAnim, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }).start();
-  });
+      // Reposicionar instantáneamente en dirección contraria
+      fadeSlideAnim.setValue(-direction * 1);
 
-  // Sonido
-  sonidoSwipe.current?.replayAsync();
-};
-
-const handleSwipe = (dir: 'left' | 'right') => {
-  const newIndex =
-    dir === 'left'
-      ? Math.min(viewIndex + 1, navItems.length - 1)
-      : Math.max(viewIndex - 1, 0);
-
-  animateToIndex(newIndex);
-};
-
-const renderAnimatedContent = () => {
-  let content;
-  switch (currentView) {
-    case 'dashboard':
-      content = <InicioView />;
-      break;
-    case 'productos':
-      content = <ProductosView />;
-      break;
-    case 'ventas':
-      content = <NuevaVentaView />;
-      break;
-    case 'estadisticas':
-      content = <EstadisticasView />;
-      break;
-    case 'materiales':
-      content = <MaterialesView />;
-      break;
-    default:
-      content = <InicioView />;
-  }
-
-  const slideX = fadeSlideAnim.interpolate({
-    inputRange: [-1, 0, 1],
-    outputRange: [-width, 0, width],
-  });
-
-  const opacity = fadeSlideAnim.interpolate({
-    inputRange: [-1, 0, 1],
-    outputRange: [0.2, 1, 0.2],
-  });
-
-  return (
-    <Animated.View
-      style={{
-        flex: 1,
-        transform: [{ translateX: slideX }],
-        opacity,
-      }}
-    >
-      {content}
-    </Animated.View>
-  );
-};
-
-  return (
-    
-    <SafeAreaView style={styles.container}>
-      <TouchableOpacity
-  onPress={toggleMenu}
-  style={{
-    position: 'absolute',
-    bottom: menuVisible ? 74 : 10, 
-    alignSelf: 'center',
-
-    borderRadius: 999,
-    padding: 6,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    zIndex: 10,
-  }}
->
-  <Animated.View style={{
-    transform: [
-      {
-        rotate: navAnim.interpolate({
-          inputRange: [0, 100],
-          outputRange: ['0deg', '180deg'],
+      // Fase de entrada con efecto de aparición
+      Animated.parallel([
+        Animated.timing(fadeSlideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
         }),
-      },
-    ],
-  }}>
-    <MaterialCommunityIcons name="chevron-down" size={24} color="#1e293b" />
-  </Animated.View>
-</TouchableOpacity>
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    });
+
+    // Sonido
+    sonidoSwipe.current?.replayAsync();
+  };
+
+  const handleSwipe = (dir: 'left' | 'right') => {
+    const newIndex =
+      dir === 'left'
+        ? Math.min(viewIndex + 1, navItems.length - 1)
+        : Math.max(viewIndex - 1, 0);
+
+    animateToIndex(newIndex);
+  };
+
+  const renderAnimatedContent = () => {
+    let content;
+    switch (currentView) {
+      case 'dashboard':
+        content = <InicioView />;
+        break;
+      case 'productos':
+        content = <ProductosView />;
+        break;
+      case 'ventas':
+        content = <NuevaVentaView />;
+        break;
+      case 'estadisticas':
+        content = <EstadisticasView />;
+        break;
+      case 'materiales':
+        content = <MaterialesView />;
+        break;
+      default:
+        content = <InicioView />;
+    }
+
+    const slideX = fadeSlideAnim.interpolate({
+      inputRange: [-1, 0, 1],
+      outputRange: [-width * 0.3, 0, width * 0.3],
+    });
+
+    const opacity = fadeSlideAnim.interpolate({
+      inputRange: [-1, 0, 1],
+      outputRange: [0.1, 1, 0.1],
+    });
+
+    const scale = fadeSlideAnim.interpolate({
+      inputRange: [-1, 0, 1],
+      outputRange: [0.8, 1, 0.8],
+    });
+
+    return (
+      <Animated.View
+        style={{
+          flex: 1,
+          transform: [{ translateX: slideX }, { scale }],
+          opacity,
+        }}
+      >
+        {content}
+      </Animated.View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* Botón de toggle modernizado */}
+      <Animated.View
+        style={[
+          styles.toggleButton,
+          {
+            transform: [
+              { scale: scaleAnim },
+              {
+                rotate: rotationAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0deg', '180deg'],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={toggleMenu}
+          style={styles.toggleButtonInner}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons 
+            name="chevron-down" 
+            size={20} 
+            color="#1e293b" 
+          />
+        </TouchableOpacity>
+      </Animated.View>
+
       <Stack.Screen options={{ title: 'Inicio', headerShown: false }} />
 
-      {/* Main Content */}
-<PanGestureHandler
-  onHandlerStateChange={({ nativeEvent }) => {
-    if (nativeEvent.state === State.END) {
-      const { translationX } = nativeEvent;
-      if (translationX > 50) {
-        handleSwipe('right');
-      } else if (translationX < -50) {
-        handleSwipe('left');
-      }
-    }
-  }}
->
-<Animated.View style={styles.content}>
-  {renderAnimatedContent()}
-</Animated.View>
-</PanGestureHandler>
+      {/* Main Content con animación mejorada */}
+      <PanGestureHandler
+        onHandlerStateChange={({ nativeEvent }) => {
+          if (nativeEvent.state === State.END) {
+            const { translationX } = nativeEvent;
+            if (translationX > 50) {
+              handleSwipe('right');
+            } else if (translationX < -50) {
+              handleSwipe('left');
+            }
+          }
+        }}
+      >
+        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+          {renderAnimatedContent()}
+        </Animated.View>
+      </PanGestureHandler>
 
-      {/* Modern Bottom Navigation Bar */}
-    <Animated.View style={[
-  styles.bottomNavContainer,
-  { transform: [{ translateY: navAnim }] }
-]}>
+      {/* Bottom Navigation Bar */}
+      <Animated.View style={[
+        styles.bottomNavContainer,
+        { transform: [{ translateY: navAnim }] }
+      ]}>
         <View style={styles.bottomNav}>
           {navItems.map((item) => {
             const isActive = currentView === item.key;
@@ -304,6 +350,8 @@ const styles = StyleSheet.create<{
   statValue: TextStyle;
   statLabel: TextStyle;
   main: ViewStyle;
+  toggleButton: ViewStyle;
+  toggleButtonInner: ViewStyle;
 }>({
   container: {
     flex: 1,
@@ -317,7 +365,6 @@ const styles = StyleSheet.create<{
     bottom: 0,
     left: 0,
     right: 0,
-
     paddingHorizontal: wp('4%'),
   },
   bottomNav: {
@@ -350,7 +397,6 @@ const styles = StyleSheet.create<{
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-
   },
   navLabel: {
     fontSize: RFValue(10, height),
@@ -405,6 +451,23 @@ const styles = StyleSheet.create<{
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f8fafc',
+  },
+  toggleButton: {
+    position: 'absolute',
+    bottom: 74,
+    alignSelf: 'center',
+    borderRadius: 999,
+    padding: 6,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    zIndex: 10,
+  },
+  toggleButtonInner: {
+    borderRadius: 999,
+    padding: 6,
   },
 });
 

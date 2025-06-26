@@ -24,9 +24,8 @@ export interface TransferData {
   alias?: string;
 }
 
-export const generatePaymentQR = async (paymentData: PaymentData, accessToken: string) => {
+export const generatePaymentQR = async (paymentData: PaymentData, accessToken: string): Promise<string> => {
   try {
-    // Crear la preferencia de pago
     const preferenceData = {
       items: paymentData.items.map(item => ({
         id: item.id,
@@ -62,22 +61,7 @@ export const generatePaymentQR = async (paymentData: PaymentData, accessToken: s
         }
       }
     );
-
-    // Generar el código QR para la preferencia
-    const qrData = {
-      external_id: paymentData.external_reference,
-      amount: paymentData.total_amount,
-      description: `Venta ${paymentData.external_reference}`,
-      items: paymentData.items
-    };
-
-    // En este punto, deberías hacer una llamada a la API de Mercado Pago para generar el QR
-    // Por ahora, usaremos la URL de la preferencia como código QR
-    return {
-      qr_code: response.data.init_point,
-      qr_code_base64: response.data.init_point,
-      preference_id: response.data.id
-    };
+    return response.data.init_point;
   } catch (error) {
     console.error('Error al generar QR de pago:', error);
     throw error;
@@ -160,4 +144,38 @@ export const generateTransferQR = (transfer: TransferData) => {
     amount,
     alias
   };
+};
+
+export const generateDynamicQR = async ({
+  userId,
+  posId,
+  accessToken,
+  total,
+  items,
+  externalReference,
+  description,
+}: {
+  userId: string;
+  posId: string;
+  accessToken: string;
+  total: number;
+  items: any[];
+  externalReference: string;
+  description: string;
+}) => {
+  const url = `https://api.mercadopago.com/instore/orders/qr/seller/collectors/${userId}/pos/${posId}/qrs`;
+  const body = {
+    title: 'Venta en tienda',
+    description,
+    external_reference: externalReference,
+    items,
+    total_amount: total,
+  };
+  const response = await axios.post(url, body, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  return response.data.qr_data;
 };

@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react';
 import {
-  Animated,
-  StyleSheet,
-  TextInput,
-  TextInputProps,
-  View,
+    Animated,
+    StyleSheet,
+    TextInput,
+    TextInputProps,
+    View,
 } from 'react-native';
 
 import { RFValue } from 'react-native-responsive-fontsize';
@@ -14,12 +14,14 @@ interface Props extends TextInputProps {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
+  style?: any;
 }
 
 export default function FloatingLabelInput({
   label,
   value,
   onChangeText,
+  style,
   ...props
 }: Props) {
   const [isFocused, setIsFocused] = useState(false);
@@ -55,12 +57,12 @@ const labelStyle = {
 
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style && { width: style.width || '100%' }]}>
       <Animated.Text  style={labelStyle} pointerEvents="none">{label}</Animated.Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
-        style={[styles.input, isFocused && styles.inputFocused]}
+        style={[styles.input, isFocused && styles.inputFocused, style]}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         {...props}

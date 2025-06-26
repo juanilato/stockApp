@@ -54,13 +54,14 @@ export default function NuevaVentaView() {
 
   const [modalApiKeyVisible, setModalApiKeyVisible] = useState(false);
 
+  // Leer los datos de clerk
+  const apikey = user?.unsafeMetadata?.mercadopago_apikey;
+
   const generarQRPago = async () => {
     if (productosSeleccionados.length === 0) {
       alert('Debe seleccionar al menos un producto');
       return;
     }
-    // Verificar si hay apikey guardada en Clerk
-    const apikey = user?.unsafeMetadata?.mercadopago_apikey;
     if (!apikey) {
       setModalApiKeyVisible(true);
       return;
@@ -78,16 +79,12 @@ export default function NuevaVentaView() {
         })),
         total_amount: total,
       };
-      const qrResponse = await generatePaymentQR(paymentData, apikey);
-      if (qrResponse.qr_code) {
-        setQrData(qrResponse.qr_code);
-        setQrModalVisible(true);
-      } else {
-        throw new Error('No se pudo generar el código QR');
-      }
+      const qrUrl = await generatePaymentQR(paymentData, apikey);
+      setQrData(qrUrl);
+      setQrModalVisible(true);
     } catch (error) {
       console.error('Error al generar QR de pago:', error);
-      alert('No se pudo generar el código QR de pago');
+      alert('No se pudo generar el QR de pago');
     }
   };
 
@@ -232,6 +229,7 @@ export default function NuevaVentaView() {
       <ModalQRPago
         visible={qrModalVisible}
         total={calcularTotal()}
+        qrData={qrData}
         onClose={() => setQrModalVisible(false)}
         onConfirmarPago={handleConfirmarPago}
       />
@@ -256,6 +254,7 @@ export default function NuevaVentaView() {
             throw new Error('No se pudo guardar el Access Token. Intenta de nuevo.');
           }
         }}
+        apikey={apikey}
       />
 
       {/* Scanner Modal */}
@@ -297,8 +296,7 @@ export const styles = StyleSheet.create({
     paddingBottom: 8,
     paddingTop: 10,
     paddingHorizontal: 16,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+
     elevation: 8,
     shadowColor: '#000',
     shadowOpacity: 0.2,

@@ -224,8 +224,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     paddingTop: 10,
     paddingHorizontal: 16,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+
     elevation: 8,
     shadowColor: '#000',
     shadowOpacity: 0.2,

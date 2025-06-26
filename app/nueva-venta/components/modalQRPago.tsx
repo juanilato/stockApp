@@ -2,11 +2,11 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import {
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { borderRadius, colors, shadows, spacing, typography } from '../../styles/theme';
@@ -14,6 +14,7 @@ import { borderRadius, colors, shadows, spacing, typography } from '../../styles
 interface Props {
   visible: boolean;
   total: number;
+  qrData: string;
   onClose: () => void;
   onConfirmarPago: () => void;
 }
@@ -21,15 +22,10 @@ interface Props {
 export default function ModalQRPago({
   visible,
   total,
+  qrData,
   onClose,
   onConfirmarPago,
 }: Props) {
-  const qrData = JSON.stringify({
-    total: total,
-    timestamp: new Date().toISOString(),
-    tipo: 'pago_mercadopago'
-  });
-
   return (
     <Modal
       visible={visible}

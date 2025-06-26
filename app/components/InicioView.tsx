@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { Animated, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { obtenerEstadisticas, setupProductosDB } from '../../services/db';
 import { colors, spacing } from '../../styles/theme';
+import ModalApiKeyMercadoPago from '../nueva-venta/components/ModalApiKeyMercadoPago';
 import ModalCambiarPassword from './ModalCambiarPassword';
 import ModalEditarNombre from './ModalEditarNombre';
 
@@ -34,6 +35,12 @@ export default function InicioView() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [modalNombreVisible, setModalNombreVisible] = useState(false);
   const [modalPasswordVisible, setModalPasswordVisible] = useState(false);
+  const [modalApiKeyVisible, setModalApiKeyVisible] = useState(false);
+
+  // Animaciones para el menú
+  const menuAnim = React.useRef(new Animated.Value(0)).current;
+  const iconRotateAnim = React.useRef(new Animated.Value(0)).current;
+  const optionsAnim = React.useRef(new Animated.Value(0)).current;
 
   const usuario: Usuario = {
     nombre: user?.username || 'Usuario',
@@ -70,6 +77,31 @@ export default function InicioView() {
     ]).start();
   }, []);
 
+  // Animación del menú
+  const toggleMenu = () => {
+    const toValue = menuVisible ? 0 : 1;
+    setMenuVisible(!menuVisible);
+    
+    Animated.parallel([
+      Animated.timing(menuAnim, {
+        toValue,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(iconRotateAnim, {
+        toValue,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(optionsAnim, {
+        toValue,
+        duration: 300,
+        delay: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
   // Guardar nombre de usuario
   const handleGuardarNombre = async (nuevoNombre: string) => {
     setNombreFeedback('');
@@ -98,6 +130,18 @@ export default function InicioView() {
     }
   };
 
+  // Guardar token de MercadoPago
+  const handleGuardarApiKey = async (apikey: string) => {
+    if (!user) return;
+    try {
+      await user.update({ unsafeMetadata: { ...user.unsafeMetadata, mercadopago_apikey: apikey } });
+      await user.reload();
+      setModalApiKeyVisible(false);
+    } catch (e) {
+      throw new Error('No se pudo guardar el Access Token. Intenta de nuevo.');
+    }
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -115,49 +159,89 @@ export default function InicioView() {
             <Text style={styles.saludo}>¡Hola de nuevo!</Text>
             <Text style={styles.nombre}>{usuario.nombre}</Text>
           </View>
-          <View style={styles.actionsContainer}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => setMenuVisible(true)}
+          
+          {/* Opciones del menú animadas */}
+          <Animated.View 
+            style={[
+              styles.optionsContainer,
+              {
+                opacity: optionsAnim,
+                transform: [{ scale: optionsAnim }],
+              }
+            ]}
+          >
+            {menuVisible && (
+              <>
+                <TouchableOpacity 
+                  style={styles.optionButton}
+                  onPress={() => { toggleMenu(); setModalNombreVisible(true); }}
+                  activeOpacity={0.7}
+                >
+                  <MaterialCommunityIcons name="account-edit" size={20} color="#60a5fa" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.optionButton}
+                  onPress={() => { toggleMenu(); setModalPasswordVisible(true); }}
+                  activeOpacity={0.7}
+                >
+                  <MaterialCommunityIcons name="lock-reset" size={20} color="#60a5fa" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.optionButton}
+                  onPress={() => { toggleMenu(); setModalApiKeyVisible(true); }}
+                  activeOpacity={0.7}
+                >
+                  <MaterialCommunityIcons name="credit-card-outline" size={20} color="#60a5fa" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.optionButton, { backgroundColor: 'rgba(248, 113, 113, 0.1)', borderColor: 'rgba(248, 113, 113, 0.2)' }]}
+                  onPress={async () => {
+                    toggleMenu();
+                    await signOut();
+                    router.replace('/login');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <MaterialCommunityIcons name="logout" size={20} color="#f87171" />
+                </TouchableOpacity>
+              </>
+            )}
+          </Animated.View>
+
+          {/* Botón que se transforma en X */}
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={toggleMenu}
+            activeOpacity={0.8}
+          >
+            <Animated.View 
+              style={{
+                transform: [{
+                  rotate: iconRotateAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0deg', '90deg']
+                  })
+                }]
+              }}
             >
-              <View style={{ position: 'relative' }}>
-                <MaterialCommunityIcons name="account-circle-outline" size={24} color="#cbd5e1" />
-                {(
-                  (!user?.username || user.username.trim() === '') ||
-                  (user && typeof user.passwordEnabled !== 'undefined' && !user.passwordEnabled)
-                ) && (
-                  <View style={styles.pendingIconWrapper}>
-                    <MaterialCommunityIcons name="clock-outline" size={15} color="#f59e0b" />
-                  </View>
-                )}
+              <MaterialCommunityIcons 
+                name={menuVisible ? "close" : "account-circle-outline"} 
+                size={24} 
+                color="#cbd5e1" 
+              />
+            </Animated.View>
+            {(
+              (!user?.username || user.username.trim() === '') ||
+              (user && typeof user.passwordEnabled !== 'undefined' && !user.passwordEnabled)
+            ) && !menuVisible && (
+              <View style={styles.pendingIconWrapper}>
+                <MaterialCommunityIcons name="clock-outline" size={15} color="#f59e0b" />
               </View>
-            </TouchableOpacity>
-          </View>
+            )}
+          </TouchableOpacity>
         </View>
-        {/* Menú contextual */}
-        {menuVisible && (
-          <Pressable style={styles.menuOverlay} onPress={() => setMenuVisible(false)}>
-            <View style={styles.menuBox}>
-              <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); setModalNombreVisible(true); }}>
-                <MaterialCommunityIcons name="account-edit" size={20} color="#2563eb" style={{ marginRight: 8 }} />
-                <Text style={styles.menuText}>Cambiar nombre de usuario</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); setModalPasswordVisible(true); }}>
-                <MaterialCommunityIcons name="lock-reset" size={20} color="#2563eb" style={{ marginRight: 8 }} />
-                <Text style={styles.menuText}>Cambiar contraseña</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.menuItem} onPress={async () => {
-                setMenuVisible(false);
-                await signOut();
-                router.replace('/login');
-              }}>
-                <MaterialCommunityIcons name="logout" size={20} color="#ef4444" style={{ marginRight: 8 }} />
-                <Text style={[styles.menuText, { color: '#ef4444' }]}>Cerrar sesión</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        )}
       </View>
+
       {/* Modales independientes */}
       <ModalEditarNombre
         visible={modalNombreVisible}
@@ -171,6 +255,12 @@ export default function InicioView() {
         onClose={() => setModalPasswordVisible(false)}
         onSave={handleGuardarPassword}
         feedback={passwordFeedback}
+      />
+      <ModalApiKeyMercadoPago
+        visible={modalApiKeyVisible}
+        onClose={() => setModalApiKeyVisible(false)}
+        onSaved={handleGuardarApiKey}
+        apikey={user?.unsafeMetadata?.mercadopago_apikey as string | undefined}
       />
 
       <Modal visible={perfilVisible} transparent animationType="slide" onRequestClose={() => setPerfilVisible(false)}>
@@ -367,8 +457,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     paddingTop: 16,
     paddingHorizontal: 16,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+
     elevation: 8,
     shadowColor: '#000',
     shadowOpacity: 0.2,
@@ -389,15 +478,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#ffffff',
   },
-  actionsContainer: {
+  optionsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#334155',
-    borderRadius: 16,
-    padding: 4,
+    marginRight: 12,
+    gap: 8,
+  },
+  optionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(96, 165, 250, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(96, 165, 250, 0.2)',
   },
   actionButton: {
     padding: 8,
+    position: 'relative',
   },
   content: {
     paddingHorizontal: 16,
@@ -517,43 +616,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 2,
     textAlign: 'center',
-  },
-  menuOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.08)',
-    zIndex: 100,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
-  },
-  menuBox: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginTop: 54,
-    marginRight: 18,
-    paddingVertical: 8,
-    paddingHorizontal: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.10,
-    shadowRadius: 8,
-    elevation: 8,
-    minWidth: 210,
-    minHeight: 100,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-  },
-  menuText: {
-    fontSize: 15,
-    color: '#1e293b',
-    fontWeight: '500',
   },
   pendingIconWrapper: {
     position: 'absolute',

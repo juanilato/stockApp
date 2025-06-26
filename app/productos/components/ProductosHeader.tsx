@@ -42,9 +42,19 @@ const ProductosHeader: React.FC<ProductosHeaderProps> = ({
   isExpanded,
   setExpanded
 }) => {
+  const reset = () => {
+    setNombre("");
+    setPrecioCostoDesde("");
+    setPrecioCostoHasta("");
+    setPrecioVentaDesde("");
+    setPrecioVentaHasta("");
+    setStockDesde("");
+    setStockHasta("");
+  }
   const toggleExpand = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpanded(!isExpanded);
+
   };
 
   return (
@@ -69,13 +79,22 @@ const ProductosHeader: React.FC<ProductosHeaderProps> = ({
 
       {isExpanded && (
         <View style={styles.filtersContainer}>
-          <TextInput
-            style={styles.inputNombre}
-            placeholder="Buscar por nombre..."
-            placeholderTextColor="#64748b"
-            value={nombre}
-            onChangeText={setNombre}
-          />
+          <View style={styles.filtersHeader}>
+            <TextInput
+              style={styles.inputNombre}
+              placeholder="Buscar por nombre..."
+              placeholderTextColor="#64748b"
+              value={nombre}
+              onChangeText={setNombre}
+            />
+            <TouchableOpacity 
+              style={styles.resetButton} 
+              onPress={reset}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons name="refresh" size={16} color="#94a3b8" />
+            </TouchableOpacity>
+          </View>
           <View style={styles.rowFiltros}>
             <View style={styles.filtroGroup}>
               <Text style={styles.filtroLabel}>Costo</Text>
@@ -105,8 +124,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     paddingTop: 16,
     paddingHorizontal: 16,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+
     elevation: 8,
     shadowColor: '#000',
     shadowOpacity: 0.2,
@@ -140,6 +158,12 @@ const styles = StyleSheet.create({
   filtersContainer: {
     paddingTop: 14,
   },
+  filtersHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
   inputNombre: {
     backgroundColor: '#334155',
     borderRadius: 12,
@@ -147,7 +171,17 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 16,
     color: '#f1f5f9',
-    marginBottom: 12,
+    flex: 1,
+  },
+  resetButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#334155',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#475569',
   },
   rowFiltros: {
     flexDirection: 'row',

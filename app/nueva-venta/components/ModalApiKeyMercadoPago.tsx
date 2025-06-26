@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface ModalApiKeyMercadoPagoProps {
   visible: boolean;
   onClose: () => void;
   onSaved: (apikey: string) => void;
+  apikey?: string;
 }
 
-const ModalApiKeyMercadoPago: React.FC<ModalApiKeyMercadoPagoProps> = ({ visible, onClose, onSaved }) => {
-  const [apikey, setApikey] = useState('');
+const ModalApiKeyMercadoPago: React.FC<ModalApiKeyMercadoPagoProps> = ({ visible, onClose, onSaved, apikey: propsApikey }) => {
+  const [apikey, setApikey] = useState(propsApikey || '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setApikey(propsApikey || '');
+    }
+  }, [visible, propsApikey]);
 
   const handleSave = () => {
     if (!apikey.trim()) {
@@ -36,16 +43,15 @@ const ModalApiKeyMercadoPago: React.FC<ModalApiKeyMercadoPagoProps> = ({ visible
                 {'\n'}
                 1. Ingresa a <Text style={styles.link} onPress={() => Linking.openURL('https://www.mercadopago.com.ar/developers/panel/credentials')}>https://www.mercadopago.com.ar/developers/panel/credentials</Text>{'\n'}
                 2. Inicia sesión con tu cuenta de MercadoPago.{"\n"}
-                3. Haz clic en tu aplicación o crea una nueva.{"\n"}
-                4. Ve a la sección <Text style={{ fontWeight: 'bold' }}>'Credenciales de producción'</Text>.{"\n"}
-                5. Copia el campo <Text style={{ fontWeight: 'bold' }}>'Access token'</Text> (NO la Public Key).{"\n"}
-                6. Pega el Access Token aquí abajo y presiona Guardar.{"\n"}
+                3. Ve a la sección <Text style={{ fontWeight: 'bold' }}>'Credenciales de producción'</Text>.{"\n"}
+                4. Copia el campo <Text style={{ fontWeight: 'bold' }}>'Access token'</Text> (NO la Public Key).{"\n"}
+                5. Pega el Access Token aquí abajo y presiona Guardar.{"\n"}
                 {'\n'}
                 <Text style={{ color: '#ef4444', fontWeight: 'bold' }}>Nunca compartas tu Access Token con nadie.</Text>
               </Text>
               <TextInput
                 style={styles.input}
-                placeholder="Access token de MercadoPago"
+                placeholder="Access Token de MercadoPago"
                 value={apikey}
                 onChangeText={setApikey}
                 autoCapitalize="none"
@@ -61,7 +67,7 @@ const ModalApiKeyMercadoPago: React.FC<ModalApiKeyMercadoPagoProps> = ({ visible
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.button, loading && styles.disabled]} onPress={async () => {
                   if (!apikey.trim()) {
-                    setError('La API Key es obligatoria');
+                    setError('El Access Token es obligatorio');
                     return;
                   }
                   setError('');
