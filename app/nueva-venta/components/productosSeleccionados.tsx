@@ -11,7 +11,7 @@ interface ProductoSeleccionado extends Producto {
     id: number;
     nombre: string;
     stock: number;
-  };
+  } | null;
 }
 
 interface Props {
@@ -76,7 +76,7 @@ export default function ProductosSeleccionados({
         <FlatList
           data={productosSeleccionados}
           renderItem={renderItem}
-          keyExtractor={item => item.id?.toString() || ''}
+          keyExtractor={item => `${item.id}-${item.varianteSeleccionada?.id || 'base'}`}
           style={styles.lista}
           showsVerticalScrollIndicator={false}
           scrollEnabled={false}

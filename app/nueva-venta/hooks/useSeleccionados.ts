@@ -5,14 +5,14 @@ import { Producto, VarianteProducto } from '../../../services/db';
 
 export interface ProductoSeleccionado extends Producto {
   cantidad: number;
-  varianteSeleccionada?: VarianteProducto;
+  varianteSeleccionada?: VarianteProducto | null;
 }
 
 export const useSeleccionados = (productos: Producto[]) => {
   const [productosSeleccionados, setProductosSeleccionados] = useState<ProductoSeleccionado[]>([]);
 
-  const agregarProducto = (producto: Producto, cantidad: number = 1, variante?: VarianteProducto) => {
-    if ((producto.variantes && producto.variantes.length > 0) && !variante) {
+  const agregarProducto = (producto: Producto, cantidad: number = 1, variante?: VarianteProducto | null) => {
+    if ((producto.variantes && producto.variantes.length > 0) && variante === undefined) {
       Alert.alert('Error', 'Este producto solo se puede vender por variante');
       return;
     }

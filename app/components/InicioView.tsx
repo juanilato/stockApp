@@ -5,9 +5,12 @@ import React, { useEffect, useState } from 'react';
 import { Animated, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { obtenerEstadisticas, setupProductosDB } from '../../services/db';
 import { colors, spacing } from '../../styles/theme';
+import { useNavigation } from '../context/NavigationContext';
 import ModalApiKeyMercadoPago from '../nueva-venta/components/ModalApiKeyMercadoPago';
 import ModalCambiarPassword from './ModalCambiarPassword';
 import ModalEditarNombre from './ModalEditarNombre';
+import ModalEstadisticasDestacadas from './ModalEstadisticasDestacadas';
+import ModalGestionProductos from './ModalGestionProductos';
 
 interface Usuario {
   nombre: string;
@@ -36,6 +39,11 @@ export default function InicioView() {
   const [modalNombreVisible, setModalNombreVisible] = useState(false);
   const [modalPasswordVisible, setModalPasswordVisible] = useState(false);
   const [modalApiKeyVisible, setModalApiKeyVisible] = useState(false);
+  const [modalEstadisticasVisible, setModalEstadisticasVisible] = useState(false);
+  const [modalProductosVisible, setModalProductosVisible] = useState(false);
+  
+  // Usar el contexto de navegación
+  const { forceNavigateToTab, triggerScanner, openModal, activeModal, closeModal } = useNavigation();
 
   // Animaciones para el menú
   const menuAnim = React.useRef(new Animated.Value(0)).current;
@@ -140,6 +148,24 @@ export default function InicioView() {
     } catch (e) {
       throw new Error('No se pudo guardar el Access Token. Intenta de nuevo.');
     }
+  };
+
+  // Función para manejar nueva venta
+  const handleNuevaVenta = () => {
+    console.log('🚀 Iniciando nueva venta desde acciones rápidas...');
+    forceNavigateToTab('ventas');
+    triggerScanner();
+    console.log('✅ Scanner activado');
+  };
+
+  // Función para manejar estadísticas
+  const handleEstadisticas = () => {
+    setModalEstadisticasVisible(true);
+  };
+
+  // Función para manejar productos
+  const handleProductos = () => {
+    setModalProductosVisible(true);
   };
 
   if (isLoading) {
@@ -261,6 +287,14 @@ export default function InicioView() {
         onClose={() => setModalApiKeyVisible(false)}
         onSaved={handleGuardarApiKey}
         apikey={user?.unsafeMetadata?.mercadopago_apikey as string | undefined}
+      />
+      <ModalEstadisticasDestacadas
+        visible={modalEstadisticasVisible}
+        onClose={() => setModalEstadisticasVisible(false)}
+      />
+      <ModalGestionProductos
+        visible={modalProductosVisible}
+        onClose={() => setModalProductosVisible(false)}
       />
 
       <Modal visible={perfilVisible} transparent animationType="slide" onRequestClose={() => setPerfilVisible(false)}>
@@ -419,18 +453,30 @@ export default function InicioView() {
             <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
           </View>
           <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
+            <TouchableOpacity 
+              style={styles.statCard}
+              onPress={handleNuevaVenta}
+              activeOpacity={0.7}
+            >
               <MaterialCommunityIcons name="plus-circle" size={28} color={colors.primary} />
               <Text style={styles.statLabel}>Nueva Venta</Text>
-            </View>
-            <View style={styles.statCard}>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.statCard}
+              onPress={handleProductos}
+              activeOpacity={0.7}
+            >
               <MaterialCommunityIcons name="package-variant" size={28} color={colors.success} />
               <Text style={styles.statLabel}>Productos</Text>
-            </View>
-            <View style={styles.statCard}>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.statCard}
+              onPress={handleEstadisticas}
+              activeOpacity={0.7}
+            >
               <MaterialCommunityIcons name="chart-bar" size={28} color={colors.info} />
               <Text style={styles.statLabel}>Estadísticas</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>

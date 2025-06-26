@@ -119,7 +119,7 @@ export default function ModalPreciosMateriales({
   };
 
   const renderMaterialItem = ({ item }: { item: MaterialConPrecio }) => {
-    console.log('🔍 Renderizando material:', item);
+    const editado = item.precioCostoEditado !== item.precioCosto.toString();
     return (
       <View style={styles.materialItem}>
         <View style={styles.materialInfo}>
@@ -130,8 +130,8 @@ export default function ModalPreciosMateriales({
             <Text style={styles.materialNombre}>{item.nombre}</Text>
             <Text style={styles.materialUnidad}>{item.unidad}</Text>
           </View>
+
         </View>
-        
         <View style={styles.precioContainer}>
           <FloatingLabelInput
             label="Precio"
@@ -140,7 +140,13 @@ export default function ModalPreciosMateriales({
             placeholder="0.00"
             keyboardType="numeric"
           />
+          
         </View>
+        {editado && (
+            <View style={styles.editIconContainer}>
+              <MaterialCommunityIcons name="square-edit-outline" size={18} color="#f59e0b" />
+            </View>
+          )}
       </View>
     );
   };
@@ -204,9 +210,7 @@ export default function ModalPreciosMateriales({
                 disabled={isLoading}
               >
                 <MaterialCommunityIcons name="close" size={20} color={colors.gray[700]} />
-                <Text style={[styles.modalButtonText, styles.modalButtonTextSecondary]}>
-                  Cancelar
-                </Text>
+       
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -218,7 +222,7 @@ export default function ModalPreciosMateriales({
                 onPress={handleGuardar}
                 disabled={isLoading}
               >
-                <MaterialCommunityIcons name="content-save" size={20} color="#ffffff" />
+                <MaterialCommunityIcons name="check-bold" size={20} color="#ffffff" />
                 <Text style={styles.modalButtonText}>
                   {isLoading ? 'Guardando...' : ''}
                 </Text>
@@ -242,36 +246,38 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '100%',
     maxWidth: wp('90%'),
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4f6fa',
     borderRadius: wp('6%'),
     overflow: 'hidden',
     maxHeight: '85%',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 8,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 16,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingHorizontal: 28,
+    paddingVertical: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: '#e2e8f0',
+    backgroundColor: '#fff',
   },
   headerInfo: {
     flex: 1,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
     color: '#1e293b',
-    marginBottom: 4,
+    marginBottom: 2,
+    letterSpacing: 0.2,
   },
   modalSubtitle: {
     fontSize: 14,
@@ -281,35 +287,28 @@ const styles = StyleSheet.create({
   closeIcon: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: '#f8fafc',
-  },
-  modalBody: {
-    flex: 1,
-    backgroundColor: 'red',
-    paddingHorizontal: 24,
-  },
-  debugContainer: {
-    backgroundColor: '#fef3c7',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  debugText: {
-    fontSize: 12,
-    color: '#92400e',
-    fontWeight: '500',
+    backgroundColor: '#f1f5f9',
   },
   listContainer: {
-    paddingVertical: 16,
-
+    paddingVertical: 18,
+    gap: 10,
   },
   materialItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
   },
   materialInfo: {
     flex: 1,
@@ -324,6 +323,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#fde68a',
   },
   materialDetails: {
     flex: 1,
@@ -344,7 +345,19 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   separator: {
-    height: 8,
+    height: 10,
+  },
+  editIconContainer: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: '#fff7ed',
+    borderRadius: 12,
+    padding: 4,
+    zIndex: 2,
+    borderWidth: 1,
+    borderColor: '#fde68a',
+    elevation: 2,
   },
   emptyContainer: {
     padding: 40,
@@ -363,11 +376,12 @@ const styles = StyleSheet.create({
   },
   modalFooter: {
     flexDirection: 'row',
-    paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingHorizontal: 28,
+    paddingVertical: 18,
     borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
+    borderTopColor: '#e2e8f0',
     gap: 12,
+    backgroundColor: '#fff',
   },
   modalButton: {
     flex: 1,

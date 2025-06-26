@@ -6,6 +6,7 @@ import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from '
 import { Producto, registrarVenta, Venta } from '../../services/db';
 import { generatePaymentQR, PaymentData } from '../../services/mercadopago';
 import { colors, spacing } from '../../styles/theme';
+import { useNavigation } from '../context/NavigationContext';
 import ModalApiKeyMercadoPago from './components/ModalApiKeyMercadoPago';
 import ModalCantidad from './components/modalCantidad';
 import ModalQRPago from './components/modalQRPago';
@@ -21,6 +22,10 @@ import { useSeleccionados } from './hooks/useSeleccionados';
 export default function NuevaVentaView() {
   const { productos, isLoading } = useProductos();
   const { user } = useUser();
+  const apikey = user?.unsafeMetadata?.mercadopago_apikey as string | undefined;
+  
+  // Usar el contexto de navegación
+  const { scannerTrigger, resetScannerTrigger } = useNavigation();
 
   const guardarVenta = async () => {
     if (productosSeleccionados.length === 0) {
@@ -53,9 +58,6 @@ export default function NuevaVentaView() {
   };
 
   const [modalApiKeyVisible, setModalApiKeyVisible] = useState(false);
-
-  // Leer los datos de clerk
-  const apikey = user?.unsafeMetadata?.mercadopago_apikey;
 
   const generarQRPago = async () => {
     if (productosSeleccionados.length === 0) {
@@ -106,6 +108,7 @@ export default function NuevaVentaView() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const [permission, requestPermission] = useCameraPermissions();
+  const lastHandledTriggerRef = useRef<string | null>(null);
 
   const closeModal = () => {
     setModalCantidadVisible(false);
@@ -139,6 +142,22 @@ export default function NuevaVentaView() {
       }),
     ]).start();
   }, []);
+
+  // Efecto para abrir el scanner automáticamente cuando se solicita desde InicioView
+  useEffect(() => {
+    // Solo actuar si es un nuevo trigger válido
+    if (scannerTrigger && scannerTrigger !== lastHandledTriggerRef.current) {
+      if (permission?.granted) {
+        console.log('✅ Permiso concedido, abriendo scanner...');
+        setScannerVisible(true);
+        lastHandledTriggerRef.current = scannerTrigger;
+        resetScannerTrigger();
+      } else {
+        console.log('📱 Solicitando permiso de cámara...');
+        requestPermission();
+      }
+    }
+  }, [scannerTrigger, permission?.granted, requestPermission, resetScannerTrigger]);
 
   const {
     productosSeleccionados,
@@ -194,7 +213,14 @@ export default function NuevaVentaView() {
       <View style={styles.content}>
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <View style={styles.productsGrid}>
-            <ProductosDisponibles productos={productos} onAgregar={agregarProducto} />
+            <ProductosDisponibles
+              productos={productos}
+              onAgregar={(producto) => agregarProducto(producto, 1)}
+              onSeleccionarProducto={(producto) => {
+                setProductoParaVariante(producto);
+                setModalVarianteVisible(true);
+              }}
+            />
 
             <ProductosSeleccionados
               productosSeleccionados={productosSeleccionados}

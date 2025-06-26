@@ -7,13 +7,20 @@ import { Producto } from '../../../services/db';
 interface Props {
   productos: Producto[];
   onAgregar: (producto: Producto) => void;
+  onSeleccionarProducto?: (producto: Producto) => void;
 }
 
-export default function ProductosDisponibles({ productos, onAgregar }: Props) {
+export default function ProductosDisponibles({ productos, onAgregar, onSeleccionarProducto }: Props) {
   const renderItem = ({ item }: { item: Producto }) => (
     <TouchableOpacity
       style={styles.productoItem}
-      onPress={() => onAgregar(item)}
+      onPress={() => {
+        if (onSeleccionarProducto && item.variantes && item.variantes.length > 0) {
+          onSeleccionarProducto(item);
+        } else {
+          onAgregar(item);
+        }
+      }}
       activeOpacity={0.7}
     >
       <View style={styles.productoInfo}>

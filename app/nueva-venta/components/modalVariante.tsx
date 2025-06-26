@@ -15,7 +15,7 @@ interface Props {
   visible: boolean;
   producto: Producto | null;
   onClose: () => void;
-  onSelectVariante: (producto: Producto, variante: VarianteProducto) => void;
+  onSelectVariante: (producto: Producto, variante: VarianteProducto | null) => void;
 }
 
 export default function ModalVariante({
@@ -24,7 +24,32 @@ export default function ModalVariante({
   onClose,
   onSelectVariante,
 }: Props) {
-  if (!producto || !producto.variantes) return null;
+  if (!producto) return null;
+
+  // Opciones: base primero si tiene stock, luego variantes con stock
+  const opciones: Array<{ tipo: 'base' | 'variante'; nombre: string; stock: number; id: string | number; variante?: VarianteProducto | null }> = [];
+  if (producto.stock > 0) {
+    opciones.push({
+      tipo: 'base',
+      nombre: producto.nombre + ' (Producto base)',
+      stock: producto.stock,
+      id: 'base',
+      variante: null,
+    });
+  }
+  if (producto.variantes) {
+    producto.variantes.forEach((variante) => {
+      if (variante.stock > 0) {
+        opciones.push({
+          tipo: 'variante',
+          nombre: variante.nombre,
+          stock: variante.stock,
+          id: variante.id,
+          variante,
+        });
+      }
+    });
+  }
 
   return (
     <Modal
@@ -45,18 +70,24 @@ export default function ModalVariante({
           </View>
 
           <View style={styles.modalBody}>
-            {producto.variantes.map((variante) => (
+            {opciones.length === 0 && (
+              <Text style={{ color: colors.gray[500], textAlign: 'center', marginTop: 24 }}>No hay stock disponible</Text>
+            )}
+            {opciones.map((opcion) => (
               <TouchableOpacity
-                key={variante.id}
-                style={styles.varianteItem}
+                key={opcion.id}
+                style={[
+                  styles.varianteItem,
+                  opcion.tipo === 'base' && styles.baseItemDestacado,
+                ]}
                 onPress={() => {
-                  onSelectVariante(producto, variante);
+                  onSelectVariante(producto, opcion.variante || null);
                   onClose();
                 }}
               >
                 <View style={styles.varianteInfo}>
-                  <Text style={styles.varianteNombre}>{variante.nombre}</Text>
-                  <Text style={styles.varianteStock}>Stock: {variante.stock}</Text>
+                  <Text style={[styles.varianteNombre, opcion.tipo === 'base' && styles.baseNombre]}>{opcion.nombre}</Text>
+                  <Text style={styles.varianteStock}>Stock: {opcion.stock}</Text>
                 </View>
                 <MaterialCommunityIcons name="chevron-right" size={24} color={colors.gray[400]} />
               </TouchableOpacity>
@@ -72,14 +103,15 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContent: {
     backgroundColor: colors.white,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
+    borderRadius: borderRadius.xl,
     padding: spacing.lg,
-    maxHeight: '80%',
+    width: '94%',
+    maxWidth: 400,
     ...shadows.lg,
   },
   modalHeader: {
@@ -98,7 +130,8 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   modalBody: {
-    flex: 1,
+    // Eliminar flex: 1 para evitar que estire el modal
+    // Dejar vacío o solo margin si se requiere
   },
   varianteItem: {
     flexDirection: 'row',
@@ -120,5 +153,14 @@ const styles = StyleSheet.create({
   varianteStock: {
     fontSize: typography.sizes.sm,
     color: colors.gray[600],
+  },
+  baseItemDestacado: {
+    backgroundColor: '#fef9c3',
+    borderWidth: 2,
+    borderColor: '#facc15',
+  },
+  baseNombre: {
+    color: '#b45309',
+    fontWeight: 'bold',
   },
 });

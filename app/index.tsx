@@ -7,11 +7,11 @@ import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { RFValue } from "react-native-responsive-fontsize";
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import NuevaVentaView from '../app/nueva-venta/main';
+import ProductosView from '../app/productos/pages/main';
 import InicioView from './components/InicioView';
+import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import EstadisticasView from './estadisticas/main';
 import MaterialesView from './materiales/main';
-
-import ProductosView from '../app/productos/pages/main';
 
 const { width, height } = Dimensions.get('window');
 
@@ -55,7 +55,7 @@ const navItems: NavItem[] = [
   }
 ];
 
-export default function Dashboard() {
+function DashboardContent() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const [currentView, setCurrentView] = useState<'dashboard' | 'productos' | 'ventas' | 'estadisticas' | 'materiales'>('dashboard');
@@ -67,6 +67,29 @@ export default function Dashboard() {
   const navAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const rotationAnim = useRef(new Animated.Value(0)).current;
+
+  // Usar el contexto de navegación
+  const { currentTab, shouldOpenScanner, setShouldOpenScanner, activeModal, closeModal } = useNavigation();
+
+  // Efecto para sincronizar el tab actual con el contexto
+  useEffect(() => {
+    if (currentTab !== currentView) {
+      console.log(`🔄 Cambiando de tab: ${currentView} -> ${currentTab}`);
+      const newIndex = navItems.findIndex(i => i.key === currentTab);
+      if (newIndex !== -1) {
+        animateToIndex(newIndex);
+      }
+    }
+  }, [currentTab]);
+
+  // Efecto para manejar la apertura automática del scanner
+  useEffect(() => {
+    if (shouldOpenScanner && currentView === 'ventas') {
+      console.log('🎯 Scanner solicitado en tab de ventas');
+      // El scanner se activará automáticamente en NuevaVentaView
+      setShouldOpenScanner(false);
+    }
+  }, [shouldOpenScanner, currentView]);
 
   const toggleMenu = () => {
     Animated.parallel([
@@ -330,6 +353,14 @@ export default function Dashboard() {
         </View>
       </Animated.View>
     </SafeAreaView>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <NavigationProvider>
+      <DashboardContent />
+    </NavigationProvider>
   );
 }
 

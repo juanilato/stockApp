@@ -23,6 +23,7 @@ interface ProductosHeaderProps {
   setStockHasta: (v: string) => void;
   onAgregar: () => void;
   onScan: () => void;
+  onPrice: () => void;
   cantidad: number;
   isExpanded: boolean;
   setExpanded: (expanded: boolean) => void;
@@ -38,6 +39,7 @@ const ProductosHeader: React.FC<ProductosHeaderProps> = ({
   stockHasta, setStockHasta,
   onAgregar,
   onScan,
+  onPrice,
   cantidad,
   isExpanded,
   setExpanded
@@ -65,6 +67,9 @@ const ProductosHeader: React.FC<ProductosHeaderProps> = ({
           <Text style={styles.headerSubtitle}>{cantidad} productos en inventario</Text>
         </View>
         <View style={styles.actionsContainer}>
+        <TouchableOpacity style={styles.actionButton} onPress={onPrice}>
+            <MaterialCommunityIcons name="currency-usd" size={22} color="#cbd5e1" />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={onScan}>
             <MaterialCommunityIcons name="barcode-scan" size={22} color="#cbd5e1" />
           </TouchableOpacity>

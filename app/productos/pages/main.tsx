@@ -25,6 +25,7 @@ import ProductoItem from '../components/ProductoItem';
 import ProductosHeader from '../components/ProductosHeader';
 
 // Importar funciones separadas
+import ModalGestionProductos from '@/app/components/ModalGestionProductos';
 import {
   generarCodigoBarrasPayload,
   manejarEliminarProducto,
@@ -48,7 +49,7 @@ export default function ProductosView() {
   const [productoAEliminar, setProductoAEliminar] = useState<Producto | null>(null);
   const [scannerVisible, setScannerVisible] = useState(false);
   const [toast, setToast] = useState<ToastType>(null);
-
+  const [produdctoPriceVisible,setProductoPriceVisible] = useState(false);
   // Estados para los filtros
   const [nombreFiltro, setNombreFiltro] = useState('');
   const [costoDesde, setCostoDesde] = useState('');
@@ -123,6 +124,10 @@ export default function ProductosView() {
     setFiltrosExpanded(false);
   };
 
+
+  const handlePriceChange = () =>{
+    setProductoPriceVisible(true);
+  }
   const handleAgregarProducto = () => {
     setProductoSeleccionado(null);
     setModalProductoVisible(true);
@@ -305,6 +310,7 @@ export default function ProductosView() {
             setStockHasta={setStockHasta}
             onAgregar={handleAgregarProducto}
             onScan={handleScan}
+            onPrice={handlePriceChange}
             cantidad={productos.length}
             isExpanded={filtrosExpanded}
             setExpanded={setFiltrosExpanded}
@@ -351,6 +357,10 @@ export default function ProductosView() {
             onClose={() => setModalProductoVisible(false)}
             onSubmit={handleGuardarProducto}
             productoEditado={productoSeleccionado}
+          />
+          <ModalGestionProductos
+          visible={produdctoPriceVisible}
+          onClose={() => setProductoPriceVisible(false)}
           />
 
           {modalVariantesVisible && productoSeleccionado && (
