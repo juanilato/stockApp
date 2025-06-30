@@ -12,8 +12,11 @@ import InicioView from './components/InicioView';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import EstadisticasView from './estadisticas/main';
 import MaterialesView from './materiales/main';
-
+import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const { width, height } = Dimensions.get('window');
+import * as NavigationBar from 'expo-navigation-bar';
 
 interface NavItem {
   key: 'dashboard' | 'productos' | 'ventas' | 'estadisticas' | 'materiales';
@@ -264,34 +267,25 @@ function DashboardContent() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Botón de toggle modernizado */}
-      <Animated.View
-        style={[
-          styles.toggleButton,
-          {
-            transform: [
-              { scale: scaleAnim },
-              {
-                rotate: rotationAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0deg', '180deg'],
-                }),
-              },
-            ],
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={toggleMenu}
-          style={styles.toggleButtonInner}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons 
-            name="chevron-down" 
-            size={20} 
-            color="#1e293b" 
-          />
-        </TouchableOpacity>
-      </Animated.View>
+<Animated.View
+  style={[
+    styles.toggleButton,
+    {
+      transform: [
+        { translateY: navAnim }, 
+        { scale: scaleAnim },
+      ],
+    },
+  ]}
+>
+  <TouchableOpacity
+    onPress={toggleMenu}
+    style={styles.toggleButtonInner}
+    activeOpacity={0.8}
+  >
+    <View style={styles.handleBar} />
+  </TouchableOpacity>
+</Animated.View>
 
       <Stack.Screen options={{ title: 'Inicio', headerShown: false }} />
 
@@ -357,9 +351,20 @@ function DashboardContent() {
 }
 
 export default function Dashboard() {
+  const insets = useSafeAreaInsets();
+
+
+useEffect(() => {
+  NavigationBar.setVisibilityAsync("hidden");
+  NavigationBar.setBehaviorAsync('overlay-swipe'); 
+}, []);
+
   return (
     <NavigationProvider>
+  <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar style="light" translucent backgroundColor="transparent" />
       <DashboardContent />
+</View>
     </NavigationProvider>
   );
 }
@@ -383,11 +388,18 @@ const styles = StyleSheet.create<{
   main: ViewStyle;
   toggleButton: ViewStyle;
   toggleButtonInner: ViewStyle;
+  handleBar: ViewStyle;
 }>({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
+container: {
+  flex: 1,
+  backgroundColor: '#f8fafc',
+},
+handleBar: {
+  width: 40,
+  height: 4,
+  borderRadius: 2,
+  backgroundColor: '#cbd5e1',
+},
   content: {
     flex: 1,
   },
@@ -483,19 +495,14 @@ const styles = StyleSheet.create<{
     alignItems: 'center',
     backgroundColor: '#f8fafc',
   },
-  toggleButton: {
-    position: 'absolute',
-    bottom: 74,
-    alignSelf: 'center',
-    borderRadius: 999,
-    padding: 6,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    zIndex: 10,
-  },
+toggleButton: {
+  position: 'absolute',
+  bottom: hp('11.5%'), 
+  alignSelf: 'center',
+  borderRadius: 999,
+  padding: 4,
+  zIndex: 12,
+},
   toggleButtonInner: {
     borderRadius: 999,
     padding: 6,

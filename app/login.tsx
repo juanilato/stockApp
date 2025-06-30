@@ -21,7 +21,8 @@ export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const { startOAuthFlow: startGoogleOAuth } = useOAuth({ strategy: 'oauth_google' });
   const { startOAuthFlow: startAppleOAuth } = useOAuth({ strategy: 'oauth_apple' });
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'ventasapp' });
+  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'ventasapp', path: 'oauth/callback' });
+
 
   const [emailAddress, setEmailAddress] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -47,11 +48,13 @@ export default function SignInScreen() {
 
   const handleOAuth = async (startOAuth: any, provider: string) => {
     if (!isLoaded) return;
+    
     setLoading(true);
     setError('');
     try {
       const { createdSessionId, setActive } = await startOAuth({ redirectUrl: redirectUri });
       if (createdSessionId && setActive) {
+
         await setActive({ session: createdSessionId });
         router.replace('/');
       } else {
