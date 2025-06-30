@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
     Animated,
+    Keyboard,
     StyleSheet,
     TextInput,
     TextInputProps,
@@ -63,7 +64,12 @@ const labelStyle = {
         value={value}
         onChangeText={onChangeText}
         style={[styles.input, isFocused && styles.inputFocused, style]}
-        onFocus={() => setIsFocused(true)}
+      onFocus={() => {
+        Keyboard.dismiss();
+        setTimeout(() => {
+          setIsFocused(true);
+        }, 50);
+      }}
         onBlur={() => setIsFocused(false)}
         {...props}
       />
