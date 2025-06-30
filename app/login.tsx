@@ -14,9 +14,39 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import FloatingLabelInput from '../components/FloatingLabel';
+import FloatingLabelInput from '../components/FloatingLabelLogin';
+import { useBiometricAuth } from '../hooks/useBiometricAuth';
 
 export default function SignInScreen() {
+  const { authenticate, getStoredCredentials, enableBiometricAuth } = useBiometricAuth();
+const onBiometricLogin = async () => {
+  const success = await authenticate();
+  console.log("🔐 Autenticación biométrica:", success);
+
+  if (success) {
+    const creds = await getStoredCredentials();
+    console.log("📦 Credenciales guardadas:", creds);
+
+    if (creds && signIn) {
+      try {
+        const result = await signIn.create({
+          identifier: creds.email,
+          password: creds.password,
+        });
+        await setActive({ session: result.createdSessionId });
+        router.replace('/');
+      } catch (error) {
+        console.error("❌ Error al ingresar con biometría:", error);
+        setError("No se pudo ingresar con biometría");
+      }
+    } else {
+      setError('No hay credenciales guardadas');
+    }
+  } else {
+    setError('Autenticación biométrica fallida');
+  }
+};
+
   const router = useRouter();
   const { signIn, setActive, isLoaded } = useSignIn();
   const { startOAuthFlow: startGoogleOAuth } = useOAuth({ strategy: 'oauth_google' });
@@ -29,22 +59,32 @@ export default function SignInScreen() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
 
-  const onSignInPress = async () => {
-    if (!isLoaded) return;
-    setLoading(true);
-    setError('');
-    try {
-      const completeSignIn = await signIn.create({
-        identifier: emailAddress,
-        password,
-      });
+const onSignInPress = async () => {
+  if (!isLoaded) return;
+  setLoading(true);
+  setError('');
+  try {
+    const completeSignIn = await signIn.create({
+      identifier: emailAddress,
+      password,
+    });
+
+    if (completeSignIn.status === 'complete') {
       await setActive({ session: completeSignIn.createdSessionId });
-    } catch (err: any) {
-      setError(err.errors?.[0]?.message || 'Error al iniciar sesión');
-    } finally {
-      setLoading(false);
+
+      // 💾 Guardar credenciales reales
+      await enableBiometricAuth(emailAddress, password);
+
+      router.replace('/');
+    } else {
+      setError(`Inicio incompleto. Estado: ${completeSignIn.status}`);
     }
-  };
+  } catch (err: any) {
+    setError(err.errors?.[0]?.message || 'Error al iniciar sesión');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleOAuth = async (startOAuth: any, provider: string) => {
     if (!isLoaded) return;
@@ -100,6 +140,9 @@ export default function SignInScreen() {
                 <Text style={[styles.socialText, styles.appleText]}>Continuar con Apple</Text>
               </TouchableOpacity>
             )}
+                      <TouchableOpacity onPress={onBiometricLogin} style={styles.button}>
+            <Text style={styles.buttonText}>Ingresar con biometría</Text>
+          </TouchableOpacity>
           </View>
 
           <View style={styles.dividerContainer}>

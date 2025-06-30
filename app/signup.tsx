@@ -14,7 +14,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import FloatingLabelInput from '../components/FloatingLabel';
+import FloatingLabelInput from '../components/FloatingLabelLogin';
 import CompletarPerfilModal from './completar-perfil';
 
 export default function SignUpScreen() {

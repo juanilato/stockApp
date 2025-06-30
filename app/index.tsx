@@ -102,7 +102,7 @@ function DashboardContent() {
         useNativeDriver: true,
       }),
       Animated.spring(scaleAnim, {
-        toValue: menuVisible ? 0.8 : 1,
+        toValue: menuVisible ? 0.6 : 1,
         tension: 100,
         friction: 8,
         useNativeDriver: true,
