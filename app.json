@@ -15,24 +15,25 @@
         "NSFaceIDUsageDescription": "Usamos Face ID para ingresar de forma segura."
       }
     },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true,
-      "statusBar": {
-        "barStyle": "light-content",
-        "backgroundColor": "#00000000",
-        "translucent": true
-      },
-      "permissions": [
-        "CAMERA",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
-      ],
-      "package": "com.anonymous.ventasapp"
-    },
+"android": {
+  "adaptiveIcon": {
+    "foregroundImage": "./assets/images/adaptive-icon.png",
+    "backgroundColor": "#ffffff"
+  },
+  "edgeToEdgeEnabled": true,
+  "statusBar": {
+    "barStyle": "light-content",
+    "backgroundColor": "#00000000",
+    "translucent": true
+  },
+  "permissions": [
+    "CAMERA",
+    "android.permission.CAMERA",
+    "android.permission.RECORD_AUDIO"
+  ],
+  "package": "com.anonymous.ventasapp",
+  "versionCode": 2
+},
     "web": {
       "bundler": "metro",
       "output": "static",
