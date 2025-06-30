@@ -1,182 +1,150 @@
 import { useUser } from '@clerk/clerk-expo';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCameraPermissions } from 'expo-camera';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Producto, registrarVenta, Venta } from '../../services/db';
-import { generatePaymentQR, PaymentData } from '../../services/mercadopago';
+import { Alert, Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Toast from 'react-native-toast-message';
+import { obtenerProductoPorCodigo, registrarVenta, setupProductosDB, Venta } from '../../services/db';
 import { colors, spacing } from '../../styles/theme';
 import { useNavigation } from '../context/NavigationContext';
 import ModalApiKeyMercadoPago from './components/ModalApiKeyMercadoPago';
 import ModalCantidad from './components/modalCantidad';
-import ModalQRPago from './components/modalQRPago';
-import ModalTransferencia from './components/modalTransferencia';
 import ModalVariante from './components/modalVariante';
 import ProductosDisponibles from './components/productosDisponibles';
 import ProductosSeleccionados from './components/productosSeleccionados';
 import ScannerModal from './components/scannerModal';
+import VentasHeader from './components/VentasHeader';
 import { useMensajeFlotante } from './hooks/useMensajeFlotante';
 import { useProductos } from './hooks/useProductos';
 import { useSeleccionados } from './hooks/useSeleccionados';
+import { useSonidos } from './hooks/useSonidos';
 
 export default function NuevaVentaView() {
-  const { productos, isLoading } = useProductos();
+  const { productos, isLoading: isLoadingProductos } = useProductos();
   const { user } = useUser();
+  const { reproducirCompra } = useSonidos();
   const apikey = user?.unsafeMetadata?.mercadopago_apikey as string | undefined;
-  
-  // Usar el contexto de navegación
-  const { scannerTrigger, resetScannerTrigger } = useNavigation();
 
-  const guardarVenta = async () => {
-    if (productosSeleccionados.length === 0) {
-      alert('Debe seleccionar al menos un producto');
-      return;
-    }
-
-    const venta: Venta = {
-      fecha: new Date().toISOString(),
-      totalProductos: productosSeleccionados.reduce((total, p) => total + p.cantidad, 0),
-      precioTotal: calcularTotal(),
-      ganancia: calcularGanancia(),
-      productos: productosSeleccionados.map(p => ({
-        productoId: p.id!,
-        cantidad: p.cantidad,
-        precioUnitario: p.precioVenta,
-        ganancia: (p.precioVenta - p.precioCosto) * p.cantidad,
-        varianteId: p.varianteSeleccionada?.id
-      }))
-    };
-
-    try {
-      await registrarVenta(venta);
-      resetSeleccionados();
-      mostrarMensajeFlotante('✅ Venta guardada');
-    } catch (error) {
-      console.error('Error al guardar la venta:', error);
-      alert('No se pudo guardar la venta');
-    }
-  };
-
-  const [modalApiKeyVisible, setModalApiKeyVisible] = useState(false);
-
-  const generarQRPago = async () => {
-    if (productosSeleccionados.length === 0) {
-      alert('Debe seleccionar al menos un producto');
-      return;
-    }
-    if (!apikey) {
-      setModalApiKeyVisible(true);
-      return;
-    }
-    try {
-      const total = calcularTotal();
-      const paymentData: PaymentData = {
-        external_reference: `VENTA_${Date.now()}`,
-        items: productosSeleccionados.map(p => ({
-          id: p.id?.toString() || '',
-          title: p.nombre,
-          quantity: p.cantidad,
-          unit_price: p.precioVenta,
-          currency_id: 'ARS',
-        })),
-        total_amount: total,
-      };
-      const qrUrl = await generatePaymentQR(paymentData, apikey);
-      setQrData(qrUrl);
-      setQrModalVisible(true);
-    } catch (error) {
-      console.error('Error al generar QR de pago:', error);
-      alert('No se pudo generar el QR de pago');
-    }
-  };
-
-  const [scannerVisible, setScannerVisible] = useState(false);
-  const [modalCantidadVisible, setModalCantidadVisible] = useState(false);
-  const [modalVarianteVisible, setModalVarianteVisible] = useState(false);
-  const [productoParaVariante, setProductoParaVariante] = useState<Producto | null>(null);
-  const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
-  const [cantidad, setCantidad] = useState('1');
-  const [qrModalVisible, setQrModalVisible] = useState(false);
-  const [qrData, setQrData] = useState('');
-  const [transferModalVisible, setTransferModalVisible] = useState(false);
-  const [transferAmount, setTransferAmount] = useState('');
-  const [transferAlias, setTransferAlias] = useState('');
-  const [transferAccountId, setTransferAccountId] = useState('');
-  const [transferQRData, setTransferQRData] = useState('');
-  const [transferType, setTransferType] = useState<'alias' | 'account'>('alias');
-  
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const [permission, requestPermission] = useCameraPermissions();
-  const lastHandledTriggerRef = useRef<string | null>(null);
-
-  const closeModal = () => {
-    setModalCantidadVisible(false);
-    setCantidad('1');
-    setProductoSeleccionado(null);
-  };
-
-  const handleConfirmarPago = () => {
-    // Lógica para guardar venta y cerrar QR modal
-  };
-
-  const agregarProductoEscaneado = () => {
-    // Lógica para agregar productoSeleccionado con cantidad
-  };
-
-  const generarQRTransferencia = () => {
-    // Lógica de validación y generación de QR con alias o cuenta ID
-  };
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
-
-  // Efecto para abrir el scanner automáticamente cuando se solicita desde InicioView
-  useEffect(() => {
-    // Solo actuar si es un nuevo trigger válido
-    if (scannerTrigger && scannerTrigger !== lastHandledTriggerRef.current) {
-      if (permission?.granted) {
-        console.log('✅ Permiso concedido, abriendo scanner...');
-        setScannerVisible(true);
-        lastHandledTriggerRef.current = scannerTrigger;
-        resetScannerTrigger();
-      } else {
-        console.log('📱 Solicitando permiso de cámara...');
-        requestPermission();
-      }
-    }
-  }, [scannerTrigger, permission?.granted, requestPermission, resetScannerTrigger]);
+  const { shouldOpenScanner, setShouldOpenScanner } = useNavigation();
 
   const {
     productosSeleccionados,
     agregarProducto,
+    eliminarProducto,
     actualizarCantidad,
-    quitarProducto,
-    calcularTotal,
+    limpiarVenta,
+    total,
     calcularGanancia,
-    resetSeleccionados,
   } = useSeleccionados(productos);
 
   const {
     mensaje,
     visible: visibleMensajeFlotante,
     anim: mensajeAnim,
-    mostrarMensaje: mostrarMensajeFlotante
+    mostrarMensaje: mostrarMensajeFlotante,
   } = useMensajeFlotante();
 
-  if (isLoading) {
+  const [permission, requestPermission] = useCameraPermissions();
+  const [scannerVisible, setScannerVisible] = useState(false);
+  const [scannedData, setScannedData] = useState<string | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [productoSeleccionado, setProductoSeleccionado] = useState<any>(null);
+  const [varianteModalVisible, setVarianteModalVisible] = useState(false);
+  const [productoConVariantes, setProductoConVariantes] = useState<any>(null);
+  const [modalApiKeyVisible, setModalApiKeyVisible] = useState(false);
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    setupProductosDB();
+  }, []);
+
+  useEffect(() => {
+    if (scannedData) {
+      handleBarCodeScanned({ data: scannedData });
+      setScannedData(null);
+    }
+  }, [scannedData]);
+
+  const handleBarCodeScanned = async ({ data }: { data: string }) => {
+    setScannerVisible(false);
+    const producto = await obtenerProductoPorCodigo(data);
+
+    if (producto) {
+      if (producto.variantes && producto.variantes.length > 0) {
+        setProductoConVariantes(producto);
+        setVarianteModalVisible(true);
+      } else {
+        agregarProducto(producto, 1);
+      }
+    } else {
+      Alert.alert('Producto no encontrado', 'El código de barras no corresponde a ningún producto.');
+    }
+  };
+
+  const mostrarModalCantidad = (producto: any) => {
+    setProductoSeleccionado(producto);
+    setModalVisible(true);
+  };
+
+  const guardarVenta = async () => {
+    if (productosSeleccionados.length === 0) return;
+
+    const venta: Venta = {
+      fecha: new Date().toISOString(),
+      totalProductos: productosSeleccionados.reduce((sum, p) => sum + p.cantidad, 0),
+      precioTotal: total,
+      ganancia: calcularGanancia(),
+      productos: productosSeleccionados.map((p) => ({
+        productoId: p.id!,
+        cantidad: p.cantidad,
+        precioUnitario: p.precioVenta,
+        ganancia: (p.precioVenta - p.precioCosto) * p.cantidad,
+        varianteId: p.varianteSeleccionada?.id,
+      })),
+    };
+
+    try {
+      await registrarVenta(venta);
+      mostrarMensajeFlotante('Venta guardada con éxito');
+      reproducirCompra();
+      limpiarVenta();
+    } catch (error) {
+      console.error('Error al guardar la venta:', error);
+      Alert.alert('Error', 'No se pudo guardar la venta.');
+    }
+  };
+
+  const handleGuardarApiKey = async (apikey: string) => {
+    if (!user) return;
+    try {
+      await user.update({ unsafeMetadata: { ...user.unsafeMetadata, mercadopago_apikey: apikey } });
+      await user.reload();
+      setModalApiKeyVisible(false);
+    } catch (e) {
+      throw new Error('No se pudo guardar el Access Token. Intenta de nuevo.');
+    }
+  };
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  useEffect(() => {
+    if (shouldOpenScanner) {
+      if (permission?.granted) {
+        setScannerVisible(true);
+      } else {
+        requestPermission();
+      }
+      setShouldOpenScanner(false);
+    }
+  }, [shouldOpenScanner, permission?.granted, requestPermission, setShouldOpenScanner]);
+
+  if (isLoadingProductos) {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Cargando productos...</Text>
@@ -186,117 +154,81 @@ export default function NuevaVentaView() {
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <View style={styles.headerWrapper}>
-        <View style={styles.headerContainer}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerSectionLabel}>Ventas</Text>
-            <Text style={styles.headerTitle}>Nueva Venta</Text>
-          </View>
-          <View style={styles.actionsContainer}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => {
-                if (!permission?.granted) {
-                  requestPermission();
-                } else {
-                  setScannerVisible(true);
-                }
-              }}
-            >
-              <MaterialCommunityIcons name="barcode-scan" size={22} color="#cbd5e1" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-
-      {/* Contenido principal */}
-      <View style={styles.content}>
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.productsGrid}>
-            <ProductosDisponibles
-              productos={productos}
-              onAgregar={(producto) => agregarProducto(producto, 1)}
-              onSeleccionarProducto={(producto) => {
-                setProductoParaVariante(producto);
-                setModalVarianteVisible(true);
-              }}
-            />
-
-            <ProductosSeleccionados
-              productosSeleccionados={productosSeleccionados}
-              actualizarCantidad={actualizarCantidad}
-              quitarProducto={quitarProducto}
-              calcularTotal={calcularTotal}
-              calcularGanancia={calcularGanancia}
-              onGuardar={guardarVenta}
-              onQR={generarQRPago}
-            />
-          </View>
-        </ScrollView>
-      </View>
-
-      {/* Modales */}
-      <ModalCantidad
-        visible={modalCantidadVisible}
-        cantidad={cantidad}
-        setCantidad={setCantidad}
-        onAgregar={agregarProductoEscaneado}
-        onClose={closeModal}
-        slideAnim={slideAnim}
-      />
-
-      <ModalVariante
-        visible={modalVarianteVisible}
-        producto={productoParaVariante}
-        onClose={() => setModalVarianteVisible(false)}
-        onSelectVariante={(producto, variante) => agregarProducto(producto, 1, variante)}
-      />
-
-      <ModalQRPago
-        visible={qrModalVisible}
-        total={calcularTotal()}
-        qrData={qrData}
-        onClose={() => setQrModalVisible(false)}
-        onConfirmarPago={handleConfirmarPago}
-      />
-
-      <ModalTransferencia
-        visible={transferModalVisible}
-        total={calcularTotal()}
-        onClose={() => setTransferModalVisible(false)}
-        onConfirmarPago={handleConfirmarPago}
-      />
-
-      <ModalApiKeyMercadoPago
-        visible={modalApiKeyVisible}
-        onClose={() => setModalApiKeyVisible(false)}
-        onSaved={async (apikey: string) => {
-          if (!user) return;
-          try {
-            await user.update({ unsafeMetadata: { ...user.unsafeMetadata, mercadopago_apikey: apikey } });
-            await user.reload();
-            setModalApiKeyVisible(false);
-          } catch (e) {
-            throw new Error('No se pudo guardar el Access Token. Intenta de nuevo.');
+      <VentasHeader
+        onScan={() => {
+          if (!permission?.granted) {
+            requestPermission();
+          } else {
+            setScannerVisible(true);
           }
         }}
-        apikey={apikey}
+        onVerVentas={() => {}}
       />
-
-      {/* Scanner Modal */}
+      <View style={styles.content}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+          <ProductosDisponibles
+            productos={productos}
+            onAgregar={(producto) => agregarProducto(producto, 1)}
+            onSeleccionarProducto={(producto) => {
+              setProductoConVariantes(producto);
+              setVarianteModalVisible(true);
+            }}
+          />
+          <ProductosSeleccionados
+            productosSeleccionados={productosSeleccionados}
+            actualizarCantidad={actualizarCantidad}
+            quitarProducto={eliminarProducto}
+            calcularTotal={() => total}
+            calcularGanancia={calcularGanancia}
+            onGuardar={guardarVenta}
+            onQR={() => {}}
+          />
+        </ScrollView>
+      </View>
+      <ModalCantidad
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        producto={productoSeleccionado}
+        onUpdateCantidad={(p, c) => {
+          if (p.id) {
+            actualizarCantidad(p.id, c, p.varianteSeleccionada?.id);
+          }
+          setModalVisible(false);
+        }}
+        onDelete={(p) => {
+          if (p.id) {
+            eliminarProducto(p.id, p.varianteSeleccionada?.id);
+          }
+          setModalVisible(false);
+        }}
+      />
+      <ModalVariante
+        visible={varianteModalVisible}
+        onClose={() => setVarianteModalVisible(false)}
+        producto={productoConVariantes}
+        onSelectVariante={(producto, variante) => {
+          agregarProducto(producto, 1, variante);
+          setVarianteModalVisible(false);
+        }}
+      />
       <ScannerModal
         visible={scannerVisible}
         productos={productos}
         onClose={() => setScannerVisible(false)}
-        onAgregarProducto={agregarProducto}
+        onBarCodeScanned={handleBarCodeScanned}
       />
-
-      {/* Mensaje flotante */}
+      <ModalApiKeyMercadoPago
+        visible={modalApiKeyVisible}
+        onClose={() => setModalApiKeyVisible(false)}
+        onSaved={handleGuardarApiKey}
+        currentApiKey={apikey}
+      />
       {visibleMensajeFlotante && (
         <Animated.View style={[styles.mensajeFlotante, { transform: [{ translateY: mensajeAnim }] }]}>
           <Text style={styles.mensajeFlotanteText}>{mensaje}</Text>
         </Animated.View>
       )}
+      <Toast />
     </Animated.View>
   );
 }
@@ -317,47 +249,6 @@ export const styles = StyleSheet.create({
     color: '#64748b',
     fontWeight: '500',
   },
-  headerWrapper: {
-    backgroundColor: '#1e293b',
-    paddingBottom: 8,
-    paddingTop: 10,
-    paddingHorizontal: 16,
-
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    zIndex: 10,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingBottom: 6,
-  },
-  headerSectionLabel: {
-    fontSize: 12,
-    color: '#94a3b8',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    marginBottom: 2,
-    fontWeight: '600',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: 0.2,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#334155',
-    borderRadius: 16,
-    padding: 4,
-  },
-  actionButton: {
-    padding: 8,
-  },
   content: {
     flex: 1,
     padding: spacing.md,
@@ -365,11 +256,14 @@ export const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  productsGrid: {
-    flex: 1,
-    flexDirection: 'column',
-    gap: spacing.md,
+  scrollContent: {
     paddingBottom: 80,
+  },
+  footer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    backgroundColor: '#fff',
   },
   productsList: {
     flex: 0.6,

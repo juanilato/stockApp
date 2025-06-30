@@ -1,5 +1,5 @@
 // hooks/useNuevaVenta/useSeleccionados.ts
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { Producto, VarianteProducto } from '../../../services/db';
 
@@ -78,7 +78,7 @@ export const useSeleccionados = (productos: Producto[]) => {
     }
 
     if (nuevaCantidad < 1) {
-      quitarProducto(productoId, varianteId);
+      eliminarProducto(productoId, varianteId);
       return;
     }
 
@@ -93,7 +93,7 @@ export const useSeleccionados = (productos: Producto[]) => {
     );
   };
 
-  const quitarProducto = (productoId: number, varianteId?: number) => {
+  const eliminarProducto = (productoId: number, varianteId?: number) => {
     setProductosSeleccionados(prev =>
       prev.filter(p =>
         !(p.id === productoId &&
@@ -112,14 +112,26 @@ export const useSeleccionados = (productos: Producto[]) => {
 
   const resetSeleccionados = () => setProductosSeleccionados([]);
 
+  const limpiarVenta = () => {
+    setProductosSeleccionados([]);
+  };
+
+  const total = useMemo(() => {
+    return productosSeleccionados.reduce((sum, p) => sum + p.precioVenta * p.cantidad, 0);
+  }, [productosSeleccionados]);
+
   return {
     productosSeleccionados,
     agregarProducto,
     actualizarCantidad,
-    quitarProducto,
+    eliminarProducto,
     calcularTotal,
     calcularGanancia,
     resetSeleccionados,
+    limpiarVenta,
+    total,
     setProductosSeleccionados,
   };
 };
+
+export default useSeleccionados;

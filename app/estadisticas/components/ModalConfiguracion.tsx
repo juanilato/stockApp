@@ -192,7 +192,7 @@ export default function ModalConfiguracion({
             </View>
             
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <MaterialCommunityIcons name="close" size={24} color="#ffffff" />
+              <MaterialCommunityIcons name="close" size={24} color="#64748b" />
             </TouchableOpacity>
           </View>
         </View>
@@ -222,7 +222,7 @@ export default function ModalConfiguracion({
           {/* Botón de restablecer */}
           <View style={styles.resetSection}>
             <TouchableOpacity style={styles.resetButton} onPress={onRestablecer}>
-              <MaterialCommunityIcons name="refresh" size={20} color="#ef4444" />
+              <MaterialCommunityIcons name="refresh" size={20} color="#64748b" />
               <Text style={styles.resetButtonText}>Restablecer configuración</Text>
             </TouchableOpacity>
           </View>
@@ -238,22 +238,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   header: {
-    backgroundColor: '#1e293b',
+    backgroundColor: '#fff',
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 24,
+    paddingTop: 40,
+    paddingBottom: 20,
   },
   headerSectionLabel: {
     fontSize: 14,
@@ -264,17 +264,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '800',
-    color: '#ffffff',
+    color: '#1e293b',
     letterSpacing: -0.5,
   },
   closeButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    padding: 12,
-    borderRadius: 16,
+    backgroundColor: '#f1f5f9',
+    padding: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: '#e2e8f0',
   },
   content: {
     flex: 1,
@@ -295,13 +295,13 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   selectorsContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#fff',
     borderRadius: 20,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 12,
+    shadowRadius: 8,
     elevation: 4,
   },
   selectorItem: {
@@ -379,14 +379,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
-    backgroundColor: '#fef2f2',
+    backgroundColor: '#f1f5f9',
     borderWidth: 1,
-    borderColor: '#fecaca',
+    borderColor: '#e2e8f0',
   },
   resetButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#ef4444',
+    color: '#64748b',
     marginLeft: 8,
   },
 }); 

@@ -1,25 +1,35 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { Stack } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, SafeAreaView, StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import { StatusBar } from 'expo-status-bar';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  Dimensions,
+  FlatList,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+  ViewToken,
+} from 'react-native';
 import { RFValue } from "react-native-responsive-fontsize";
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NuevaVentaView from '../app/nueva-venta/main';
 import ProductosView from '../app/productos/pages/main';
 import InicioView from './components/InicioView';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import EstadisticasView from './estadisticas/main';
 import MaterialesView from './materiales/main';
-import { StatusBar } from 'expo-status-bar';
-import * as SystemUI from 'expo-system-ui';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-const { width, height } = Dimensions.get('window');
-import * as NavigationBar from 'expo-navigation-bar';
+
+const { width } = Dimensions.get('window');
 
 interface NavItem {
-  key: 'dashboard' | 'productos' | 'ventas' | 'estadisticas' | 'materiales';
+  key: 'materiales' | 'productos' | 'dashboard' | 'ventas' | 'estadisticas';
   icon: string;
   label: string;
   color: string;
@@ -58,313 +68,172 @@ const navItems: NavItem[] = [
   }
 ];
 
+const initialViewIndex = navItems.findIndex(i => i.key === 'dashboard');
+
 function DashboardContent() {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const [currentView, setCurrentView] = useState<'dashboard' | 'productos' | 'ventas' | 'estadisticas' | 'materiales'>('dashboard');
+  const { setCurrentTab, shouldOpenScanner, setShouldOpenScanner } = useNavigation();
+  const [viewIndex, setViewIndex] = useState(initialViewIndex);
   const sonidoSwipe = useRef<Audio.Sound | null>(null);
-  const [menuVisible, setMenuVisible] = useState(true);
+  const flatListRef = useRef<FlatList>(null);
+  const navIndicatorAnim = useRef(new Animated.Value(viewIndex)).current;
 
-  const [viewIndex, setViewIndex] = useState(() => navItems.findIndex(i => i.key === currentView));
-  const fadeSlideAnim = useRef(new Animated.Value(0)).current;
-  const navAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const rotationAnim = useRef(new Animated.Value(0)).current;
-
-  // Usar el contexto de navegación
-  const { currentTab, shouldOpenScanner, setShouldOpenScanner, activeModal, closeModal } = useNavigation();
-
-  // Efecto para sincronizar el tab actual con el contexto
   useEffect(() => {
-    if (currentTab !== currentView) {
-      console.log(`🔄 Cambiando de tab: ${currentView} -> ${currentTab}`);
-      const newIndex = navItems.findIndex(i => i.key === currentTab);
-      if (newIndex !== -1) {
-        animateToIndex(newIndex);
+    if (shouldOpenScanner) {
+      const ventasIndex = navItems.findIndex(item => item.key === 'ventas');
+      if (ventasIndex !== -1) {
+        handleTabPress(ventasIndex);
       }
-    }
-  }, [currentTab]);
-
-  // Efecto para manejar la apertura automática del scanner
-  useEffect(() => {
-    if (shouldOpenScanner && currentView === 'ventas') {
-      console.log('🎯 Scanner solicitado en tab de ventas');
-      // El scanner se activará automáticamente en NuevaVentaView
       setShouldOpenScanner(false);
     }
-  }, [shouldOpenScanner, currentView]);
-
-  const toggleMenu = () => {
-    Animated.parallel([
-      Animated.timing(navAnim, {
-        toValue: menuVisible ? 100 : 0,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: menuVisible ? 0.6 : 1,
-        tension: 100,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-      Animated.timing(rotationAnim, {
-        toValue: menuVisible ? 1 : 0,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    setMenuVisible(!menuVisible);
-  };
-
+  }, [shouldOpenScanner]);
+  
   useEffect(() => {
     const cargarSonidos = async () => {
-      const [swipe] = await Promise.all([
-        Audio.Sound.createAsync(require('../assets/sounds/swipe.mp3'))
-      ]);
-      sonidoSwipe.current = swipe.sound;
+      try {
+        const { sound } = await Audio.Sound.createAsync(require('../assets/sounds/swipe.mp3'));
+        sonidoSwipe.current = sound;
+      } catch (error) {
+        console.error("Error al cargar el sonido:", error);
+      }
     };
-
     cargarSonidos();
-
     return () => {
       sonidoSwipe.current?.unloadAsync();
     };
   }, []);
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1200,
-        useNativeDriver: true,
-      }),
-      Animated.spring(slideAnim, {
-        toValue: 1,
-        tension: 40,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
-
-  const animateToIndex = (newIndex: number) => {
-    if (newIndex === viewIndex) return;
-
-    const direction = newIndex > viewIndex ? -1 : 1;
-
-    // Animación de escala para feedback visual
-    Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Fase de salida con efecto de desvanecimiento
-    Animated.parallel([
-      Animated.timing(fadeSlideAnim, {
-        toValue: direction * 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 0.3,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // Cambio de vista
-      setViewIndex(newIndex);
-      setCurrentView(navItems[newIndex].key);
-
-      // Reposicionar instantáneamente en dirección contraria
-      fadeSlideAnim.setValue(-direction * 1);
-
-      // Fase de entrada con efecto de aparición
-      Animated.parallel([
-        Animated.timing(fadeSlideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    });
-
-    // Sonido
+  const handleTabPress = (index: number) => {
+    if (index === viewIndex) return;
+    flatListRef.current?.scrollToIndex({ index, animated: true });
     sonidoSwipe.current?.replayAsync();
   };
 
-  const handleSwipe = (dir: 'left' | 'right') => {
-    const newIndex =
-      dir === 'left'
-        ? Math.min(viewIndex + 1, navItems.length - 1)
-        : Math.max(viewIndex - 1, 0);
-
-    animateToIndex(newIndex);
-  };
-
-  const renderAnimatedContent = () => {
-    let content;
-    switch (currentView) {
-      case 'dashboard':
-        content = <InicioView />;
-        break;
-      case 'productos':
-        content = <ProductosView />;
-        break;
-      case 'ventas':
-        content = <NuevaVentaView />;
-        break;
-      case 'estadisticas':
-        content = <EstadisticasView />;
-        break;
-      case 'materiales':
-        content = <MaterialesView />;
-        break;
-      default:
-        content = <InicioView />;
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      if (viewableItems.length > 0 && viewableItems[0].index !== null) {
+        const newIndex = viewableItems[0].index;
+        setViewIndex(newIndex);
+        setCurrentTab(navItems[newIndex].key);
+        Animated.spring(navIndicatorAnim, {
+          toValue: newIndex,
+          useNativeDriver: false,
+        }).start();
+      }
     }
+  ).current;
 
-    const slideX = fadeSlideAnim.interpolate({
-      inputRange: [-1, 0, 1],
-      outputRange: [-width * 0.3, 0, width * 0.3],
-    });
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-    const opacity = fadeSlideAnim.interpolate({
-      inputRange: [-1, 0, 1],
-      outputRange: [0.1, 1, 0.1],
-    });
-
-    const scale = fadeSlideAnim.interpolate({
-      inputRange: [-1, 0, 1],
-      outputRange: [0.8, 1, 0.8],
-    });
-
+  const renderItem = useCallback(({ item }: { item: NavItem }) => {
+    let content;
+    switch (item.key) {
+      case 'dashboard': content = <InicioView />; break;
+      case 'productos': content = <ProductosView />; break;
+      case 'ventas': content = <NuevaVentaView />; break;
+      case 'estadisticas': content = <EstadisticasView />; break;
+      case 'materiales': content = <MaterialesView />; break;
+      default: content = null;
+    }
     return (
-      <Animated.View
-        style={{
-          flex: 1,
-          transform: [{ translateX: slideX }, { scale }],
-          opacity,
-        }}
-      >
-        {content}
-      </Animated.View>
-    );
-  };
+      <View style={styles.pageContainer}>
+        <View style={styles.pageContent}>
+          {content}
+        </View>
+      </View>
+    )
+  }, []);
+
+  const getItemLayout = useCallback(
+    (_: any, index: number) => ({
+      length: width,
+      offset: width * index,
+      index,
+    }),
+    []
+  );
+
+  const navContainerHorizontalPadding = wp('4%');
+  const navHorizontalPadding = wp('2%');
+  const navContentWidth = width - (navContainerHorizontalPadding * 2) - (navHorizontalPadding * 2);
+  const navItemWidth = navContentWidth / navItems.length;
+
+  const indicatorTranslateX = navIndicatorAnim.interpolate({
+    inputRange: navItems.map((_, i) => i),
+    outputRange: navItems.map((_, i) => i * navItemWidth),
+  });
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Botón de toggle modernizado */}
-<Animated.View
-  style={[
-    styles.toggleButton,
-    {
-      transform: [
-        { translateY: navAnim }, 
-        { scale: scaleAnim },
-      ],
-    },
-  ]}
->
-  <TouchableOpacity
-    onPress={toggleMenu}
-    style={styles.toggleButtonInner}
-    activeOpacity={0.8}
-  >
-    <View style={styles.handleBar} />
-  </TouchableOpacity>
-</Animated.View>
-
       <Stack.Screen options={{ title: 'Inicio', headerShown: false }} />
+      
+      <FlatList
+        ref={flatListRef}
+        data={navItems}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.key}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        initialScrollIndex={initialViewIndex}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        getItemLayout={getItemLayout}
+        style={styles.content}
+      />
 
-      {/* Main Content con animación mejorada */}
-      <PanGestureHandler
-        onHandlerStateChange={({ nativeEvent }) => {
-          if (nativeEvent.state === State.END) {
-            const { translationX } = nativeEvent;
-            if (translationX > 50) {
-              handleSwipe('right');
-            } else if (translationX < -50) {
-              handleSwipe('left');
-            }
-          }
-        }}
-      >
-        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-          {renderAnimatedContent()}
-        </Animated.View>
-      </PanGestureHandler>
-
-      {/* Bottom Navigation Bar */}
-      <Animated.View style={[
-        styles.bottomNavContainer,
-        { transform: [{ translateY: navAnim }] }
-      ]}>
+      <View style={styles.bottomNavContainer}>
         <View style={styles.bottomNav}>
-          {navItems.map((item) => {
-            const isActive = currentView === item.key;
+          <Animated.View
+            style={[
+              styles.navIndicator,
+              {
+                width: navItemWidth,
+                left: navHorizontalPadding,
+                transform: [{ translateX: indicatorTranslateX }],
+              },
+            ]}
+          />
+          {navItems.map((item, index) => {
+            const isActive = viewIndex === index;
             return (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={item.key}
-                style={[styles.navButton, isActive && styles.navButtonActive]} 
-                onPress={() => animateToIndex(navItems.findIndex(i => i.key === item.key))}
-                activeOpacity={0.8}
+                style={styles.navButton}
+                onPress={() => handleTabPress(index)}
+                activeOpacity={0.7}
               >
-                <Animated.View style={[
-                  styles.iconContainer,
-                  isActive && { backgroundColor: `${item.color}15` }
-                ]}>
-                  <MaterialCommunityIcons 
-                    name={item.icon as any} 
-                    size={24} 
-                    color={isActive ? item.color : '#94a3b8'} 
-                  />
-                </Animated.View>
-                <Text style={[
-                  styles.navLabel, 
-                  isActive && { color: item.color, fontWeight: '600' }
-                ]}>
+                <MaterialCommunityIcons
+                  name={item.icon as any}
+                  size={24}
+                  color={isActive ? item.color : '#94a3b8'}
+                />
+                <Text
+                  style={[
+                    styles.navLabel,
+                    isActive && { color: item.color, fontWeight: '700' },
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {item.label}
                 </Text>
-                {isActive && (
-                  <View style={[{ backgroundColor: item.color }]} />
-                )}
               </TouchableOpacity>
             );
           })}
         </View>
-      </Animated.View>
+      </View>
     </SafeAreaView>
   );
 }
 
 export default function Dashboard() {
   const insets = useSafeAreaInsets();
-
-
-useEffect(() => {
-  NavigationBar.setVisibilityAsync("hidden");
-  NavigationBar.setBehaviorAsync('overlay-swipe'); 
-}, []);
-
   return (
     <NavigationProvider>
-  <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar style="light" translucent backgroundColor="transparent" />
-      <DashboardContent />
-</View>
+      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <StatusBar style="dark" translucent backgroundColor="transparent" />
+        <DashboardContent />
+      </View>
     </NavigationProvider>
   );
 }
@@ -374,138 +243,75 @@ const styles = StyleSheet.create<{
   content: ViewStyle;
   bottomNavContainer: ViewStyle;
   bottomNav: ViewStyle;
+  navIndicator: ViewStyle;
   navButton: ViewStyle;
-  navButtonActive: ViewStyle;
-  iconContainer: ViewStyle;
   navLabel: TextStyle;
-  activeIndicator: ViewStyle;
-  title: TextStyle;
-  card: ViewStyle;
-  cardContent: ViewStyle;
-  statContainer: ViewStyle;
-  statValue: TextStyle;
-  statLabel: TextStyle;
-  main: ViewStyle;
-  toggleButton: ViewStyle;
-  toggleButtonInner: ViewStyle;
-  handleBar: ViewStyle;
+  pageContainer: ViewStyle;
+  pageContent: ViewStyle;
 }>({
-container: {
-  flex: 1,
-  backgroundColor: '#f8fafc',
-},
-handleBar: {
-  width: 40,
-  height: 4,
-  borderRadius: 2,
-  backgroundColor: '#cbd5e1',
-},
+  container: {
+    flex: 1,
+    backgroundColor: '#f1f5f9',
+  },
   content: {
     flex: 1,
   },
+  pageContainer: {
+    width: width,
+    height: '100%',
+    paddingHorizontal: 8,
+    paddingTop: 8,
+  },
+  pageContent: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
   bottomNavContainer: {
+    paddingHorizontal: wp('4%'),
+    paddingBottom: hp('1%'),
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: wp('4%'),
   },
   bottomNav: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 30,
     paddingVertical: hp('1.5%'),
     paddingHorizontal: wp('2%'),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
     elevation: 15,
     borderWidth: 1,
-    borderColor: '#f1f5f9',
+    borderColor: '#e2e8f0',
+    overflow: 'hidden',
+  },
+  navIndicator: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(100, 116, 139, 0.08)',
+    borderRadius: 24,
+    zIndex: 0,
   },
   navButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: hp('1%'),
-    position: 'relative',
-  },
-  navButtonActive: {
-    transform: [{ scale: 1.05 }],
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    zIndex: 1,
+    paddingVertical: hp('0.5%'),
   },
   navLabel: {
-    fontSize: RFValue(10, height),
-    color: '#94a3b8',
+    fontSize: RFValue(10),
+    color: '#64748b',
     fontWeight: '500',
-    textAlign: 'center',
-  },
-  activeIndicator: {
-    position: 'absolute',
-    bottom: hp('0.5%'),
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-  },
-  title: {
-    fontSize: RFValue(18, height),
-    fontWeight: '700',
-    color: '#1e293b',
-    textAlign: 'center',
-    marginBottom: hp('2%'),
-  },
-  card: {
-    borderRadius: wp('4%'),
-    padding: wp('5%'),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    backgroundColor: '#fff',
-    elevation: 6,
-  },
-  cardContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statContainer: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: RFValue(18, height),
-    fontWeight: '700',
-    color: '#1e293b',
-    marginTop: hp('1%'),
-  },
-  statLabel: {
-    fontSize: RFValue(12, height),
-    color: '#6b7280',
-    marginTop: hp('0.5%'),
-  },
-  main: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-  },
-toggleButton: {
-  position: 'absolute',
-  bottom: hp('11.5%'), 
-  alignSelf: 'center',
-  borderRadius: 999,
-  padding: 4,
-  zIndex: 12,
-},
-  toggleButtonInner: {
-    borderRadius: 999,
-    padding: 6,
+    marginTop: 4,
   },
 });
 

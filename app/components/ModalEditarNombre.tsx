@@ -1,17 +1,28 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-interface Props {
+interface ModalEditarNombreProps {
   visible: boolean;
   onClose: () => void;
-  currentName: string;
-  onSave: (newName: string) => void;
-  feedback?: string;
+  onSave: (nombre: string) => void;
+  initialName: string;
 }
 
-const ModalEditarNombre: React.FC<Props> = ({ visible, onClose, currentName, onSave, feedback }) => {
-  const [nombre, setNombre] = useState(currentName);
+const ModalEditarNombre: React.FC<ModalEditarNombreProps> = ({ visible, onClose, onSave, initialName }) => {
+  const [nombre, setNombre] = useState(initialName);
+  const [feedback, setFeedback] = useState('');
+
+  useEffect(() => {
+    if (visible) {
+      setNombre(initialName);
+      setFeedback('');
+    }
+  }, [visible, initialName]);
+
+  const handleSave = () => {
+    onSave(nombre);
+  };
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -30,7 +41,7 @@ const ModalEditarNombre: React.FC<Props> = ({ visible, onClose, currentName, onS
                 placeholder="Nuevo nombre de usuario"
                 autoCapitalize="none"
               />
-              <TouchableOpacity style={styles.saveButton} onPress={() => onSave(nombre)}>
+              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                 <Text style={styles.saveButtonText}>Guardar</Text>
               </TouchableOpacity>
               {!!feedback && <Text style={styles.feedback}>{feedback}</Text>}

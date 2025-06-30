@@ -1,9 +1,10 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { setupProductosDB } from '../../services/db';
 import AnalisisInventario from './components/AnalisisInventario';
 import EstadisticasCard from './components/EstadisticasCard';
+import EstadisticasHeader from './components/EstadisticasHeader';
 import GraficoVentas from './components/GraficoVentas';
 import MetricasFinancieras from './components/MetricasFinancieras';
 import MetricasRendimiento from './components/MetricasRendimiento';
@@ -73,22 +74,7 @@ export default function EstadisticasView() {
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <View style={styles.headerWrapper}>
-        <View style={styles.headerContainer}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerSectionLabel}>Análisis</Text>
-            <Text style={styles.headerTitle}>Estadísticas</Text>
-          </View>
-          <View style={styles.actionsContainer}>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => setMostrarConfiguracion(true)}
-            >
-              <MaterialCommunityIcons name="cog-outline" size={22} color="#cbd5e1" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <EstadisticasHeader onConfigurar={() => setMostrarConfiguracion(true)} />
 
       {/* Contenido principal */}
       <ScrollView
@@ -96,7 +82,6 @@ export default function EstadisticasView() {
         contentContainerStyle={{ paddingBottom: 100 }} 
         showsVerticalScrollIndicator={false}
       >
-        {/* Cards de estadísticas básicas */}
         <View style={styles.statsContainer}>
           {configuracion.mostrarStockTotal && (
             <EstadisticasCard
@@ -218,47 +203,6 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginTop: 16,
     fontWeight: '500',
-  },
-  headerWrapper: {
-    backgroundColor: '#1e293b',
-    paddingBottom: 8,
-    paddingTop: 10,
-    paddingHorizontal: 16,
-
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    zIndex: 10,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingBottom: 6,
-  },
-  headerSectionLabel: {
-    fontSize: 12,
-    color: '#94a3b8',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    marginBottom: 2,
-    fontWeight: '600',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: 0.2,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#334155',
-    borderRadius: 16,
-    padding: 4,
-  },
-  actionButton: {
-    padding: 8,
   },
   content: {
     flex: 1,

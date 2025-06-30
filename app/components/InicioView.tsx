@@ -1,12 +1,13 @@
-import { useClerk, useSignIn, useUser } from '@clerk/clerk-expo';
+import { useClerk, useUser } from '@clerk/clerk-expo';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Animated, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { obtenerEstadisticas, setupProductosDB } from '../../services/db';
-import { colors, spacing } from '../../styles/theme';
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Material, actualizarMaterial, obtenerEstadisticas, obtenerMateriales, setupProductosDB } from '../../services/db';
 import { useNavigation } from '../context/NavigationContext';
+import ModalPreciosMateriales from '../materiales/components/ModalPreciosMateriales';
 import ModalApiKeyMercadoPago from '../nueva-venta/components/ModalApiKeyMercadoPago';
+import MetricasHoy from './MetricasHoy';
 import ModalCambiarPassword from './ModalCambiarPassword';
 import ModalEditarNombre from './ModalEditarNombre';
 import ModalEstadisticasDestacadas from './ModalEstadisticasDestacadas';
@@ -20,35 +21,20 @@ interface Usuario {
 
 export default function InicioView() {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
-  const slideAnim = React.useRef(new Animated.Value(0)).current;
   const [isLoading, setIsLoading] = useState(true);
   const [estadisticas, setEstadisticas] = useState<any>(null);
   const { user } = useUser();
   const { signOut } = useClerk();
-  const { isLoaded, signIn } = useSignIn();
-  const [perfilVisible, setPerfilVisible] = useState(false);
-  const [editNombre, setEditNombre] = useState(user?.username || '');
-  const [nombreFeedback, setNombreFeedback] = useState('');
-  const [showPasswordFields, setShowPasswordFields] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [repeatPassword, setRepeatPassword] = useState('');
-  const [passwordFeedback, setPasswordFeedback] = useState('');
   const router = useRouter();
-  const [menuVisible, setMenuVisible] = useState(false);
   const [modalNombreVisible, setModalNombreVisible] = useState(false);
   const [modalPasswordVisible, setModalPasswordVisible] = useState(false);
   const [modalApiKeyVisible, setModalApiKeyVisible] = useState(false);
-  const [modalEstadisticasVisible, setModalEstadisticasVisible] = useState(false);
   const [modalProductosVisible, setModalProductosVisible] = useState(false);
+  const [modalEstadisticasVisible, setModalEstadisticasVisible] = useState(false);
+  const [modalMaterialesVisible, setModalMaterialesVisible] = useState(false);
+  const [materiales, setMateriales] = useState<Material[]>([]);
   
-  // Usar el contexto de navegación
-  const { forceNavigateToTab, triggerScanner, openModal, activeModal, closeModal } = useNavigation();
-
-  // Animaciones para el menú
-  const menuAnim = React.useRef(new Animated.Value(0)).current;
-  const iconRotateAnim = React.useRef(new Animated.Value(0)).current;
-  const optionsAnim = React.useRef(new Animated.Value(0)).current;
+  const { navigateToTab, setShouldOpenScanner } = useNavigation();
 
   const usuario: Usuario = {
     nombre: user?.username || 'Usuario',
@@ -62,6 +48,7 @@ export default function InicioView() {
         await setupProductosDB();
         const stats = await obtenerEstadisticas();
         setEstadisticas(stats);
+        obtenerMateriales(setMateriales);
       } catch (error) {
         console.error('Error al cargar estadísticas:', error);
       } finally {
@@ -71,74 +58,31 @@ export default function InicioView() {
 
     cargarDatos();
 
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
-  // Animación del menú
-  const toggleMenu = () => {
-    const toValue = menuVisible ? 0 : 1;
-    setMenuVisible(!menuVisible);
-    
-    Animated.parallel([
-      Animated.timing(menuAnim, {
-        toValue,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(iconRotateAnim, {
-        toValue,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(optionsAnim, {
-        toValue,
-        duration: 300,
-        delay: 150,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  // Guardar nombre de usuario
   const handleGuardarNombre = async (nuevoNombre: string) => {
-    setNombreFeedback('');
     try {
       await user?.update({ username: nuevoNombre });
-      setNombreFeedback('Nombre de usuario actualizado');
       setModalNombreVisible(false);
     } catch (e) {
-      setNombreFeedback('Error al actualizar el nombre');
+      console.error('Error al actualizar el nombre', e);
     }
   };
 
-  // Guardar contraseña
-  const handleGuardarPassword = async (current: string, nueva: string, repetir: string) => {
-    setPasswordFeedback('');
-    if (nueva !== repetir) {
-      setPasswordFeedback('Las contraseñas no coinciden');
-      return;
-    }
+  const handleGuardarPassword = async (current: string, nueva: string) => {
     try {
       await user?.updatePassword({ newPassword: nueva, currentPassword: current });
-      setPasswordFeedback('Contraseña actualizada');
       setModalPasswordVisible(false);
     } catch (e) {
-      setPasswordFeedback('Error al actualizar la contraseña');
+        console.error('Error al actualizar contraseña', e);
     }
   };
 
-  // Guardar token de MercadoPago
   const handleGuardarApiKey = async (apikey: string) => {
     if (!user) return;
     try {
@@ -150,22 +94,22 @@ export default function InicioView() {
     }
   };
 
-  // Función para manejar nueva venta
+  const handleGuardarPrecios = async (materialesActualizados: Material[]): Promise<{ success: boolean; message: string }> => {
+    try {
+      for (const material of materialesActualizados) {
+        await actualizarMaterial(material);
+      }
+      obtenerMateriales(setMateriales);
+      return { success: true, message: 'Precios actualizados con éxito' };
+    } catch (e) {
+      console.error("Error al guardar precios:", e);
+      return { success: false, message: 'Hubo un error al guardar los precios' };
+    }
+  };
+
   const handleNuevaVenta = () => {
-    console.log('🚀 Iniciando nueva venta desde acciones rápidas...');
-    forceNavigateToTab('ventas');
-    triggerScanner();
-    console.log('✅ Scanner activado');
-  };
-
-  // Función para manejar estadísticas
-  const handleEstadisticas = () => {
-    setModalEstadisticasVisible(true);
-  };
-
-  // Función para manejar productos
-  const handleProductos = () => {
-    setModalProductosVisible(true);
+    navigateToTab('ventas');
+    setShouldOpenScanner(true);
   };
 
   if (isLoading) {
@@ -179,114 +123,91 @@ export default function InicioView() {
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+      {/* Header */}
       <View style={styles.headerWrapper}>
-        <View style={styles.headerContainer}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.saludo}>¡Hola de nuevo!</Text>
-            <Text style={styles.nombre}>{usuario.nombre}</Text>
-          </View>
-          
-          {/* Opciones del menú animadas */}
-          <Animated.View 
-            style={[
-              styles.optionsContainer,
-              {
-                opacity: optionsAnim,
-                transform: [{ scale: optionsAnim }],
-              }
-            ]}
+        <View>
+          <Text style={styles.saludo}>¡Hola de nuevo!</Text>
+          <Text style={styles.nombreUsuario}>{usuario.nombre}</Text>
+        </View>
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => setModalNombreVisible(true)}>
+            <MaterialCommunityIcons name="account-edit" size={22} color="#475569" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton} onPress={() => setModalPasswordVisible(true)}>
+            <MaterialCommunityIcons name="lock-reset" size={22} color="#475569" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton} onPress={() => setModalApiKeyVisible(true)}>
+            <MaterialCommunityIcons name="credit-card-outline" size={22} color="#475569" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.actionButtonDestacado]} 
+            onPress={async () => {
+              await signOut();
+              router.replace('/login');
+            }}
           >
-            {menuVisible && (
-              <>
-                <TouchableOpacity 
-                  style={styles.optionButton}
-                  onPress={() => { toggleMenu(); setModalNombreVisible(true); }}
-                  activeOpacity={0.7}
-                >
-                  <MaterialCommunityIcons name="account-edit" size={20} color="#60a5fa" />
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.optionButton}
-                  onPress={() => { toggleMenu(); setModalPasswordVisible(true); }}
-                  activeOpacity={0.7}
-                >
-                  <MaterialCommunityIcons name="lock-reset" size={20} color="#60a5fa" />
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.optionButton}
-                  onPress={() => { toggleMenu(); setModalApiKeyVisible(true); }}
-                  activeOpacity={0.7}
-                >
-                  <MaterialCommunityIcons name="credit-card-outline" size={20} color="#60a5fa" />
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.optionButton, { backgroundColor: 'rgba(248, 113, 113, 0.1)', borderColor: 'rgba(248, 113, 113, 0.2)' }]}
-                  onPress={async () => {
-                    toggleMenu();
-                    await signOut();
-                    router.replace('/login');
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <MaterialCommunityIcons name="logout" size={20} color="#f87171" />
-                </TouchableOpacity>
-              </>
-            )}
-          </Animated.View>
-
-          {/* Botón que se transforma en X */}
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={toggleMenu}
-            activeOpacity={0.8}
-          >
-            <Animated.View 
-              style={{
-                transform: [{
-                  rotate: iconRotateAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0deg', '90deg']
-                  })
-                }]
-              }}
-            >
-              <MaterialCommunityIcons 
-                name={menuVisible ? "close" : "account-circle-outline"} 
-                size={24} 
-                color="#cbd5e1" 
-              />
-            </Animated.View>
-            {(
-              (!user?.username || user.username.trim() === '') ||
-              (user && typeof user.passwordEnabled !== 'undefined' && !user.passwordEnabled)
-            ) && !menuVisible && (
-              <View style={styles.pendingIconWrapper}>
-                <MaterialCommunityIcons name="clock-outline" size={15} color="#f59e0b" />
-              </View>
-            )}
+            <MaterialCommunityIcons name="logout" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Modales independientes */}
+      {/* Contenido principal */}
+      <ScrollView contentContainerStyle={styles.mainContent}>
+        {estadisticas && (
+          <MetricasHoy 
+            gananciaHoy={estadisticas.gananciaHoy || 0} 
+            ventasHoy={estadisticas.ventasHoy || 0} 
+          />
+        )}
+
+        {/* Acciones Rápidas */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
+          <View style={styles.accionesGrid}>
+            <TouchableOpacity style={styles.accionCard} onPress={handleNuevaVenta}>
+              <MaterialCommunityIcons name="plus-circle-outline" size={28} color="#3b82f6" />
+              <Text style={styles.accionLabel}>Nueva Venta</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.accionCard} onPress={() => setModalEstadisticasVisible(true)}>
+              <MaterialCommunityIcons name="chart-bar" size={28} color="#8b5cf6" />
+              <Text style={styles.accionLabel}>Estadísticas</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.accionCard} onPress={() => setModalProductosVisible(true)}>
+              <MaterialCommunityIcons name="package-variant-closed" size={28} color="#10b981" />
+              <Text style={styles.accionLabel}>Productos</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.accionCard} onPress={() => setModalMaterialesVisible(true)}>
+              <MaterialCommunityIcons name="basket-outline" size={28} color="#f59e0b" />
+              <Text style={styles.accionLabel}>Materiales</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Últimos Movimientos */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Últimos Movimientos</Text>
+          <View style={styles.emptyMovimientos}>
+            <Text style={styles.emptyMovimientosText}>Aún no hay movimientos recientes.</Text>
+          </View>
+        </View>
+      </ScrollView>
+
       <ModalEditarNombre
         visible={modalNombreVisible}
         onClose={() => setModalNombreVisible(false)}
-        currentName={user?.username || ''}
         onSave={handleGuardarNombre}
-        feedback={nombreFeedback}
+        initialName={user?.username || ''}
       />
       <ModalCambiarPassword
         visible={modalPasswordVisible}
         onClose={() => setModalPasswordVisible(false)}
         onSave={handleGuardarPassword}
-        feedback={passwordFeedback}
       />
-      <ModalApiKeyMercadoPago
+       <ModalApiKeyMercadoPago
         visible={modalApiKeyVisible}
         onClose={() => setModalApiKeyVisible(false)}
         onSaved={handleGuardarApiKey}
-        apikey={user?.unsafeMetadata?.mercadopago_apikey as string | undefined}
+        currentApiKey={user?.unsafeMetadata?.mercadopago_apikey as string || ''}
       />
       <ModalEstadisticasDestacadas
         visible={modalEstadisticasVisible}
@@ -296,196 +217,106 @@ export default function InicioView() {
         visible={modalProductosVisible}
         onClose={() => setModalProductosVisible(false)}
       />
-
-      <Modal visible={perfilVisible} transparent animationType="slide" onRequestClose={() => setPerfilVisible(false)}>
-        <Pressable style={styles.popoverOverlay} onPress={() => setPerfilVisible(false)} />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'position' : 'position'}
-          style={{ flex: 1 }}
-        >
-          <View style={styles.modalPerfil}>
-            <TouchableOpacity style={styles.closeButton} onPress={() => setPerfilVisible(false)}>
-              <MaterialCommunityIcons name="close" size={26} color="#1e293b" />
-            </TouchableOpacity>
-            <ScrollView contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
-              <Text style={styles.modalTitle}>Perfil de Usuario</Text>
-
-              <Text style={styles.modalLabel}>Correo:</Text>
-              <Text style={styles.modalValue}>{user?.primaryEmailAddress?.emailAddress || 'Sin correo'}</Text>
-
-              <Text style={styles.modalLabel}>Nombre de usuario:</Text>
-              <TextInput
-                style={styles.inputEditable}
-                value={editNombre}
-                onChangeText={setEditNombre}
-                placeholder="Nombre de usuario"
-                autoCapitalize="none"
-              />
-              <TouchableOpacity style={styles.modalButton} onPress={() => setShowPasswordFields((v) => !v)}>
-                <Text style={styles.modalButtonText}>Cambiar contraseña</Text>
-              </TouchableOpacity>
-
-              {showPasswordFields && (
-                <View style={{ marginTop: 10 }}>
-                  <Text style={styles.modalLabel}>Contraseña actual:</Text>
-                  <TextInput
-                    style={styles.inputEditable}
-                    value={currentPassword}
-                    onChangeText={setCurrentPassword}
-                    placeholder="Contraseña actual"
-                    secureTextEntry
-                  />
-                  <Text style={styles.modalLabel}>Nueva contraseña:</Text>
-                  <TextInput
-                    style={styles.inputEditable}
-                    value={newPassword}
-                    onChangeText={setNewPassword}
-                    placeholder="Nueva contraseña"
-                    secureTextEntry
-                  />
-                  <Text style={styles.modalLabel}>Repetir nueva contraseña:</Text>
-                  <TextInput
-                    style={styles.inputEditable}
-                    value={repeatPassword}
-                    onChangeText={setRepeatPassword}
-                    placeholder="Repetir nueva contraseña"
-                    secureTextEntry
-                  />
-                  <TouchableOpacity style={styles.modalButton} onPress={() => setShowPasswordFields(false)}>
-                    <Text style={styles.modalButtonText}>Guardar contraseña</Text>
-                  </TouchableOpacity>
-                  {!!passwordFeedback && <Text style={styles.feedbackText}>{passwordFeedback}</Text>}
-                </View>
-              )}
-
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: '#e5e7eb' }]}
-                onPress={async () => {
-                  await signOut();
-                  setPerfilVisible(false);
-                  router.replace('/login');
-                }}
-              >
-                <Text style={[styles.modalButtonText, { color: '#1e293b' }]}>Cerrar sesión</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={{ paddingBottom: spacing['2xl'] }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Resumen General */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="chart-line" size={20} color={colors.primary} />
-            <Text style={styles.sectionTitle}>Resumen General</Text>
-          </View>
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{estadisticas?.ventasTotales || 0}</Text>
-              <Text style={styles.statLabel}>Ventas Totales</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>${(estadisticas?.gananciaTotal || 0).toLocaleString()}</Text>
-              <Text style={styles.statLabel}>Ganancia Total</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Ventas Recientes */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="calendar" size={20} color={colors.primary} />
-            <Text style={styles.sectionTitle}>Ventas Recientes</Text>
-          </View>
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <MaterialCommunityIcons name="calendar-today" size={18} color={colors.primary} />
-              <Text style={styles.statValue}>{estadisticas?.ganancias?.dia || 0}</Text>
-              <Text style={styles.statLabel}>Hoy</Text>
-            </View>
-            <View style={styles.statCard}>
-              <MaterialCommunityIcons name="calendar-week" size={18} color={colors.success} />
-              <Text style={styles.statValue}>{estadisticas?.ganancias?.mes || 0}</Text>
-              <Text style={styles.statLabel}>Mes</Text>
-            </View>
-            <View style={styles.statCard}>
-              <MaterialCommunityIcons name="calendar-month" size={18} color={colors.info} />
-              <Text style={styles.statValue}>{estadisticas?.ganancias?.anio || 0}</Text>
-              <Text style={styles.statLabel}>Año</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Inventario */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="package-variant" size={20} color={colors.success} />
-            <Text style={styles.sectionTitle}>Inventario</Text>
-          </View>
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <MaterialCommunityIcons name="package" size={18} color={colors.primary} />
-              <Text style={styles.statValue}>{estadisticas?.stockTotal || 0}</Text>
-              <Text style={styles.statLabel}>Stock Total</Text>
-            </View>
-            <View style={styles.statCard}>
-              <MaterialCommunityIcons name="alert" size={18} color={colors.warning} />
-              <Text style={styles.statValue}>{estadisticas?.productosStockCritico || 0}</Text>
-              <Text style={styles.statLabel}>Stock Crítico</Text>
-            </View>
-            <View style={styles.statCard}>
-              <MaterialCommunityIcons name="cube" size={18} color={colors.info} />
-              <Text style={styles.statValue}>{estadisticas?.productosVendidos || 0}</Text>
-              <Text style={styles.statLabel}>Productos Vendidos</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Acciones Rápidas */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="lightning-bolt" size={20} color={colors.warning} />
-            <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
-          </View>
-          <View style={styles.statsGrid}>
-            <TouchableOpacity 
-              style={styles.statCard}
-              onPress={handleNuevaVenta}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons name="plus-circle" size={28} color={colors.primary} />
-              <Text style={styles.statLabel}>Nueva Venta</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.statCard}
-              onPress={handleProductos}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons name="package-variant" size={28} color={colors.success} />
-              <Text style={styles.statLabel}>Productos</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.statCard}
-              onPress={handleEstadisticas}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons name="chart-bar" size={28} color={colors.info} />
-              <Text style={styles.statLabel}>Estadísticas</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
+      <ModalPreciosMateriales
+        visible={modalMaterialesVisible}
+        onClose={() => setModalMaterialesVisible(false)}
+        materiales={materiales}
+        onGuardar={handleGuardarPrecios}
+      />
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
+  container: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  headerWrapper: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    height: 92,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  saludo: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#64748b',
+  },
+  nombreUsuario: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1e293b',
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 99,
+    padding: 4,
+  },
+  actionButton: {
+    padding: 8,
+    borderRadius: 99,
+  },
+  actionButtonDestacado: {
+    backgroundColor: '#ef4444',
+  },
+  mainContent: {
+    paddingBottom: 24,
+  },
+  section: {
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#334155',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  accionesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+  },
+  accionCard: {
+    width: '48%',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  accionLabel: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  movimientosContainer: {},
+  emptyMovimientos: {
+    marginHorizontal: 20,
+    backgroundColor: '#fff',
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  emptyMovimientosText: {
+    fontSize: 14,
+    color: '#64748b',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -493,190 +324,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   loadingText: {
+    marginTop: 12,
     fontSize: 16,
     color: '#64748b',
-    marginTop: 16,
-    fontWeight: '500',
-  },
-  headerWrapper: {
-    backgroundColor: '#1e293b',
-    paddingBottom: 12,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    zIndex: 10,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  saludo: {
-    fontSize: 14,
-    color: '#94a3b8',
-    marginBottom: 2,
-  },
-  nombre: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-  optionsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 12,
-    gap: 8,
-  },
-  optionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(96, 165, 250, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(96, 165, 250, 0.2)',
-  },
-  actionButton: {
-    padding: 8,
-    position: 'relative',
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  popoverOverlay: {
-    flex: 1,
-  },
-  modalPerfil: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 24,
-    alignSelf: 'center',
-    width: '92%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 10,
-    maxHeight: '85%',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    zIndex: 10,
-    backgroundColor: '#f1f5f9',
-    borderRadius: 16,
-    padding: 4,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 16,
-    color: '#1e293b',
-  },
-  modalLabel: {
-    fontSize: 13,
-    color: '#64748b',
-    fontWeight: '500',
-    marginTop: 8,
-  },
-  modalValue: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1e293b',
-  },
-  modalButton: {
-    backgroundColor: '#1e40af',
-    paddingVertical: 12,
-    borderRadius: 10,
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  modalButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginLeft: 8,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 2,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#64748b',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  inputEditable: {
-    backgroundColor: '#f1f5f9',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 15,
-    color: '#1e293b',
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  feedbackText: {
-    color: '#10b981',
-    fontSize: 13,
-    marginBottom: 8,
-    marginTop: 2,
-    textAlign: 'center',
-  },
-  pendingIconWrapper: {
-    position: 'absolute',
-    top: -20,
-    right: -20,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 2,
-    borderWidth: 1,
-    borderColor: '#f59e0b',
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 2,
   },
 });

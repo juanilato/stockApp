@@ -2,37 +2,68 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import {
-  Animated,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
+    Animated,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from 'react-native';
 import { borderRadius, colors, shadows, spacing, typography } from '../../styles/theme';
+import { ProductoSeleccionado } from '../hooks/useSeleccionados';
 
 interface Props {
   visible: boolean;
-  cantidad: string;
-  setCantidad: (value: string) => void;
-  onAgregar: () => void;
+  producto: ProductoSeleccionado | null;
   onClose: () => void;
-  slideAnim: Animated.Value;
+  onUpdateCantidad: (producto: ProductoSeleccionado, cantidad: number) => void;
+  onDelete: (producto: ProductoSeleccionado) => void;
 }
 
 export default function ModalCantidad({
   visible,
-  cantidad,
-  setCantidad,
-  onAgregar,
+  producto,
   onClose,
-  slideAnim,
+  onUpdateCantidad,
+  onDelete,
 }: Props) {
+  const [cantidad, setCantidad] = React.useState('1');
+  const slideAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    if (visible) {
+      setCantidad(producto?.cantidad.toString() || '1');
+      Animated.spring(slideAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, producto]);
+
+  const handleUpdate = () => {
+    if (producto) {
+      onUpdateCantidad(producto, parseInt(cantidad) || 1);
+    }
+  };
+  
+  const handleDelete = () => {
+    if (producto) {
+      onDelete(producto);
+    }
+  };
+
+  if (!producto) return null;
+
   return (
     <Modal
       visible={visible}
@@ -53,7 +84,7 @@ export default function ModalCantidad({
                   {
                     translateY: slideAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [-300, 0],
+                      outputRange: [300, 0],
                     }),
                   },
                 ],
@@ -76,25 +107,27 @@ export default function ModalCantidad({
                 placeholder="Cantidad"
                 autoFocus={true}
                 returnKeyType="done"
-                onSubmitEditing={onAgregar}
+                onSubmitEditing={handleUpdate}
               />
             </View>
 
             <View style={styles.modalFooter}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonSecondary]}
-                onPress={onClose}
+                onPress={handleDelete}
               >
-                <MaterialCommunityIcons name="close" size={20} color={colors.gray[700]} />
-                <Text style={[styles.modalButtonText, styles.modalButtonTextSecondary]}>Cancelar</Text>
+                <MaterialCommunityIcons name="delete-outline" size={20} color={colors.red[600]} />
+                <Text style={[styles.modalButtonText, styles.modalButtonTextSecondary, { color: colors.red[600] }]}>
+                  Eliminar
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonPrimary]}
-                onPress={onAgregar}
+                onPress={handleUpdate}
               >
                 <MaterialCommunityIcons name="check" size={20} color={colors.white} />
-                <Text style={styles.modalButtonText}>Agregar</Text>
+                <Text style={styles.modalButtonText}>Actualizar</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>

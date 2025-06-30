@@ -4,29 +4,29 @@ import { KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet,
 interface ModalApiKeyMercadoPagoProps {
   visible: boolean;
   onClose: () => void;
-  onSaved: (apikey: string) => void;
-  apikey?: string;
+  onSaved: (apiKey: string) => Promise<void>;
+  currentApiKey?: string;
 }
 
-const ModalApiKeyMercadoPago: React.FC<ModalApiKeyMercadoPagoProps> = ({ visible, onClose, onSaved, apikey: propsApikey }) => {
-  const [apikey, setApikey] = useState(propsApikey || '');
+const ModalApiKeyMercadoPago: React.FC<ModalApiKeyMercadoPagoProps> = ({ visible, onClose, onSaved, currentApiKey = '' }) => {
+  const [apiKey, setApiKey] = useState(currentApiKey);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (visible) {
-      setApikey(propsApikey || '');
+      setApiKey(currentApiKey);
     }
-  }, [visible, propsApikey]);
+  }, [visible, currentApiKey]);
 
   const handleSave = () => {
-    if (!apikey.trim()) {
+    if (!apiKey.trim()) {
       setError('La API Key es obligatoria');
       return;
     }
     setError('');
     setLoading(true);
-    onSaved(apikey.trim());
+    onSaved(apiKey.trim());
     setLoading(false);
   };
 
@@ -52,33 +52,33 @@ const ModalApiKeyMercadoPago: React.FC<ModalApiKeyMercadoPagoProps> = ({ visible
               <TextInput
                 style={styles.input}
                 placeholder="Access Token de MercadoPago"
-                value={apikey}
-                onChangeText={setApikey}
+                value={apiKey}
+                onChangeText={setApiKey}
                 autoCapitalize="none"
                 autoCorrect={false}
                 secureTextEntry
               />
               {error ? <Text style={styles.error}>{error}</Text> : null}
               {loading && <Text style={{ color: '#2563eb', marginBottom: 8 }}>Guardando...</Text>}
-              {!loading && error === '' && apikey && <Text style={{ color: '#22c55e', marginBottom: 8 }}>¡Access Token guardado correctamente!</Text>}
+              {!loading && error === '' && apiKey && <Text style={{ color: '#22c55e', marginBottom: 8 }}>¡Access Token guardado correctamente!</Text>}
               <View style={styles.buttonRow}>
                 <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose} disabled={loading}>
                   <Text style={[styles.buttonText, styles.cancelButtonText]}>Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.button, loading && styles.disabled]} onPress={async () => {
-                  if (!apikey.trim()) {
+                  if (!apiKey.trim()) {
                     setError('El Access Token es obligatorio');
                     return;
                   }
                   setError('');
                   setLoading(true);
                   try {
-                    await onSaved(apikey.trim());
+                    await onSaved(apiKey.trim());
                   } catch (e) {
                     setError('No se pudo guardar el Access Token. Intenta de nuevo.');
                   }
                   setLoading(false);
-                }} disabled={loading || !apikey.trim()}>
+                }} disabled={loading || !apiKey.trim()}>
                   <Text style={styles.buttonText}>{loading ? 'Guardando...' : 'Guardar'}</Text>
                 </TouchableOpacity>
               </View>

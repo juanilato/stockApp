@@ -232,6 +232,59 @@ export const obtenerProductos = async (callback: (productos: Producto[]) => void
   }
 };
 
+export const obtenerProductoPorCodigo = async (codigo: string): Promise<Producto | null> => {
+  console.log('🔍 Buscando producto por código de barras:', codigo);
+  try {
+    const dbInstance = getDb();
+    
+    // Buscar en productos base
+    let producto = await dbInstance.getFirstAsync<Producto>(
+      'SELECT * FROM productos WHERE codigoBarras = ?',
+      [codigo]
+    );
+
+    // Si se encontró un producto base, obtener sus variantes
+    if (producto) {
+      const variantes = await dbInstance.getAllAsync<VarianteProducto>(
+        'SELECT * FROM variantes_producto WHERE productoId = ?',
+        [producto.id!]
+      );
+      producto.variantes = variantes;
+      return producto;
+    }
+
+    // Si no se encontró en productos base, buscar en variantes
+    const variante = await dbInstance.getFirstAsync<VarianteProducto>(
+      'SELECT * FROM variantes_producto WHERE codigoBarras = ?',
+      [codigo]
+    );
+
+    if (variante) {
+      // Si se encuentra una variante, obtener el producto padre
+      producto = await dbInstance.getFirstAsync<Producto>(
+        'SELECT * FROM productos WHERE id = ?',
+        [variante.productoId]
+      );
+      
+      if (producto) {
+         // Obtener todas las variantes del producto padre
+        const todasLasVariantes = await dbInstance.getAllAsync<VarianteProducto>(
+          'SELECT * FROM variantes_producto WHERE productoId = ?',
+          [producto.id!]
+        );
+        producto.variantes = todasLasVariantes;
+        return producto;
+      }
+    }
+
+    console.log('🚫 Producto no encontrado para el código:', codigo);
+    return null;
+  } catch (error) {
+    console.error('❌ Error al obtener producto por código de barras:', error);
+    return null;
+  }
+};
+
 export const eliminarBaseDeDatos = async () => {
   const dbPath = `${FileSystem.documentDirectory}SQLite/productos.db`;
   const existe = await FileSystem.getInfoAsync(dbPath);
@@ -282,7 +335,7 @@ export const registrarVenta = async (venta: Venta, callback?: () => void) => {
     const dbInstance = getDb();
     // Iniciar transacción
     await dbInstance.execAsync('BEGIN TRANSACTION;');
-
+    
     // Insertar la venta
     const ventaResult = await dbInstance.runAsync(
       'INSERT INTO ventas (fecha, totalProductos, precioTotal, ganancia) VALUES (?, ?, ?, ?)',
@@ -368,6 +421,8 @@ export const obtenerVentas = async (callback: (ventas: Venta[]) => void) => {
 };
 
 export const obtenerEstadisticas = async (): Promise<{
+  gananciaHoy: number;
+  ventasHoy: number;
   ventasTotales: number;
   gananciaTotal: number;
   productosVendidos: number;
@@ -388,10 +443,11 @@ export const obtenerEstadisticas = async (): Promise<{
     const mesActual = hoy.slice(0, 7); // YYYY-MM
     const anioActual = hoy.slice(0, 4); // YYYY
 
-    const [ganDia, ganMes, ganAnio] = await Promise.all([
-      dbInstance.getFirstAsync<{ total: number }>(`SELECT SUM(ganancia) as total FROM ventas WHERE fecha = ?`, [hoy]),
+    const [ganDia, ganMes, ganAnio, ventasHoyResult] = await Promise.all([
+      dbInstance.getFirstAsync<{ total: number }>(`SELECT SUM(ganancia) FROM ventas WHERE substr(fecha, 1, 10) = ?`, [hoy]),
       dbInstance.getFirstAsync<{ total: number }>(`SELECT SUM(ganancia) as total FROM ventas WHERE substr(fecha, 1, 7) = ?`, [mesActual]),
       dbInstance.getFirstAsync<{ total: number }>(`SELECT SUM(ganancia) as total FROM ventas WHERE substr(fecha, 1, 4) = ?`, [anioActual]),
+      dbInstance.getFirstAsync<{ total: number }>(`SELECT SUM(precioTotal) as total FROM ventas WHERE substr(fecha, 1, 10) = ?`, [hoy]),
     ]);
     // Ventas y ganancias
     const res1 = await dbInstance.getFirstAsync<{
@@ -440,6 +496,8 @@ export const obtenerEstadisticas = async (): Promise<{
     `);
 
     return {
+      gananciaHoy: ganDia?.total || 0,
+      ventasHoy: ventasHoyResult?.total || 0,
       ventasTotales: res1?.ventasTotales || 0,
       gananciaTotal: res1?.gananciaTotal || 0,
       productosVendidos: res1?.productosVendidos || 0,

@@ -58,13 +58,13 @@ const MaterialesHeader: React.FC<MaterialesHeaderProps> = ({
         </View>
         <View style={styles.actionsContainer}>
           <TouchableOpacity style={styles.actionButton} onPress={onActualizarPrecios}>
-            <MaterialCommunityIcons name="currency-usd" size={22} color="#cbd5e1" />
+            <MaterialCommunityIcons name="currency-usd" size={22} color="#475569" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={toggleExpand}>
-            <MaterialCommunityIcons name={isExpanded ? "chevron-up" : "tune-variant"} size={22} color="#cbd5e1" />
+            <MaterialCommunityIcons name={isExpanded ? "chevron-up" : "tune-variant"} size={22} color="#475569" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={onAgregar}>
-            <MaterialCommunityIcons name="plus" size={22} color="#cbd5e1" />
+          <TouchableOpacity style={[styles.actionButton, styles.actionButtonDestacado]} onPress={onAgregar}>
+            <MaterialCommunityIcons name="plus" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -107,15 +107,13 @@ const MaterialesHeader: React.FC<MaterialesHeaderProps> = ({
 
 const styles = StyleSheet.create({
   headerWrapper: {
-    backgroundColor: '#1e293b',
+    backgroundColor: '#fff',
     paddingBottom: 12,
     paddingTop: 16,
     paddingHorizontal: 16,
-
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
+    height: 88,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
     zIndex: 10,
   },
   headerContainer: {
@@ -125,25 +123,39 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 26,
     fontWeight: '800',
-    color: '#f1f5f9',
+    color: '#1e293b',
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: '#64748b',
     marginTop: 2,
   },
   actionsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#334155',
-    borderRadius: 16,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 99,
     padding: 4,
   },
   actionButton: {
     padding: 8,
+    borderRadius: 99,
+  },
+  actionButtonDestacado: {
+    backgroundColor: '#3b82f6',
   },
   filtersContainer: {
     paddingTop: 14,
+    position: 'absolute',
+    top: 88,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+    zIndex: 5,
   },
   filtersHeader: {
     flexDirection: 'row',
@@ -152,23 +164,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   inputNombre: {
-    backgroundColor: '#334155',
+    backgroundColor: '#f1f5f9',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 16,
-    color: '#f1f5f9',
+    color: '#1e293b',
     flex: 1,
   },
   resetButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#334155',
+    backgroundColor: '#f1f5f9',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#475569',
+    borderColor: '#e2e8f0',
   },
   rowFiltros: {
     flexDirection: 'row',
@@ -186,12 +198,12 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   inputFiltro: {
-    backgroundColor: '#334155',
+    backgroundColor: '#f1f5f9',
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 8,
     fontSize: 14,
-    color: '#f1f5f9',
+    color: '#1e293b',
     marginBottom: 6,
   },
 });

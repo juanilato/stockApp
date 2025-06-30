@@ -12,10 +12,10 @@ interface Props {
   visible: boolean;
   productos: Producto[];
   onClose: () => void;
-  onAgregarProducto: (producto: Producto, cantidad: number, variante?: VarianteProducto) => void;
+  onBarCodeScanned: (data: { data: string }) => void;
 }
 
-export default function ScannerModal({ visible, productos, onClose, onAgregarProducto }: Props) {
+export default function ScannerModal({ visible, productos, onClose, onBarCodeScanned }: Props) {
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [varianteSeleccionada, setVarianteSeleccionada] = useState<VarianteProducto | undefined>(undefined);
   const [mostrarModalProducto, setMostrarModalProducto] = useState(false);
@@ -109,26 +109,17 @@ export default function ScannerModal({ visible, productos, onClose, onAgregarPro
   const handleAgregarProducto = () => {
     if (productoSeleccionado) {
       const cantidadNum = parseInt(cantidad) || 1;
-      onAgregarProducto(productoSeleccionado, cantidadNum, varianteSeleccionada);
       
-      // Agregar a la lista de productos escaneados
-      setProductosEscaneados(prev => [...prev, {
-        producto: productoSeleccionado,
-        cantidad: cantidadNum,
-        variante: varianteSeleccionada
-      }]);
-
+      // Simplemente cerramos y dejamos que el padre maneje el estado
+      setModalCantidadVisible(false);
       setToast({
         type: 'success',
         message: `${productoSeleccionado.nombre} agregado (${cantidadNum})`,
       });
-
-      // Resetear para el siguiente escaneo
-      setModalCantidadVisible(false);
-      setCantidad('1');
-      setProductoSeleccionado(null);
-      setVarianteSeleccionada(undefined);
-      setScanned(false);
+      setTimeout(() => {
+        onBarCodeScanned({ data: productoSeleccionado.codigoBarras! });
+        cerrarTodo();
+      }, 300);
     }
   };
 

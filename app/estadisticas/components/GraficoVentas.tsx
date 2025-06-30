@@ -30,27 +30,28 @@ export default function GraficoVentas({ data }: GraficoVentasProps) {
           yAxisLabel="$"
           yAxisSuffix=""
           chartConfig={{
-            backgroundColor: '#ffffff',
-            backgroundGradientFrom: '#ffffff',
-            backgroundGradientTo: '#ffffff',
+            backgroundColor: '#f8fafc',
+            backgroundGradientFrom: '#f8fafc',
+            backgroundGradientTo: '#f8fafc',
             decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(34, 197, 94, ${opacity})`,
-            labelColor: () => '#64748b',
+            color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
+            labelColor: (opacity = 1) => `rgba(100, 116, 139, ${opacity})`,
             style: {
               borderRadius: 16,
             },
             propsForLabels: {
               fontSize: 12,
-              fontWeight: '600',
+              fontWeight: '500',
             },
             propsForBackgroundLines: {
-              strokeDasharray: '',
-              stroke: '#f1f5f9',
+              strokeDasharray: '4 4',
+              stroke: '#e2e8f0',
               strokeWidth: 1,
             },
+            barPercentage: 0.7,
           }}
           style={styles.chart}
-          showBarTops
+          showBarTops={false}
           showValuesOnTopOfBars
         />
       </ScrollView>
