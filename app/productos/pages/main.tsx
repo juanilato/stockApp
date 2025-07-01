@@ -1,9 +1,13 @@
 // productos/views/ProductosView.tsx
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useEffect, useMemo, useState } from 'react';
+import * as DocumentPicker from 'expo-document-picker';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  Animated, FlatList,
+  Alert,
+  Animated,
+  FlatList,
   Pressable,
+  ScrollView,
   Text, TouchableOpacity, View
 } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
@@ -26,12 +30,24 @@ import ProductosHeader from '../components/ProductosHeader';
 
 // Importar funciones separadas
 import ModalGestionProductos from '@/app/components/ModalGestionProductos';
+import AIFloatingButton from '@/components/AIFloatingButton';
 import {
   generarCodigoBarrasPayload,
   manejarEliminarProducto,
   manejarGuardarProducto,
   ToastType
 } from '../functions';
+
+// Generador EAN13 simple
+function generarCodigoBarras() {
+  const base = Math.floor(100000000000 + Math.random() * 899999999999).toString();
+  let sum = 0;
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(base[i]) * (i % 2 === 0 ? 1 : 3);
+  }
+  const checkDigit = (10 - (sum % 10)) % 10;
+  return base + checkDigit;
+}
 
 export default function ProductosView() {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -59,6 +75,13 @@ export default function ProductosView() {
   const [stockDesde, setStockDesde] = useState('');
   const [stockHasta, setStockHasta] = useState('');
   const [filtrosExpanded, setFiltrosExpanded] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
+  const [uploadResult, setUploadResult] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [modalProductosVisible, setModalProductosVisible] = useState(false);
+  const [productosPrecargados, setProductosPrecargados] = useState<any[]>([]);
+  const [backendProductos, setBackendProductos] = useState<any[] | null>(null);
+  console.log('Render principal', { productosPrecargados, modalProductosVisible });
 
   const fadeAnim = new Animated.Value(0);
 
@@ -93,14 +116,26 @@ export default function ProductosView() {
     setMenuVisible(true);
   };
 
-  const generarCodigoBarras = (producto: Producto, variante?: VarianteProducto) => {
-    const payload = generarCodigoBarrasPayload(producto, variante);
-    setProductoSeleccionado(producto);
-    setVarianteSeleccionada(variante || null);
-    setBarcodeData(JSON.stringify(payload));
-    setModalBarcodeVisible(true);
+const generarCodigoBarras = (
+  producto?: Producto, 
+  variante?: VarianteProducto
+) => {
+  const safeProducto: Producto = producto ?? {
+    id: -1,
+    nombre: 'Producto Desconocido',
+    precioCosto: 0,
+    precioVenta: 0,
+    stock: 0,
+    componentes: [],
+    variantes: [],
   };
 
+  const payload = generarCodigoBarrasPayload(safeProducto, variante);
+  setProductoSeleccionado(safeProducto);
+  setVarianteSeleccionada(variante || null);
+  setBarcodeData(JSON.stringify(payload));
+  setModalBarcodeVisible(true);
+};
   const handleGuardarProducto = async (producto: Producto, esNuevo: boolean) => {
     await manejarGuardarProducto(producto, esNuevo, cargarProductos, setToast);
     setModalProductoVisible(false);
@@ -288,154 +323,310 @@ export default function ProductosView() {
       </TouchableOpacity>
     );
   }
+
+  const handlePickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: [
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+          'application/pdf', // .pdf
+          'application/vnd.google-apps.document', // Google Docs
+          'application/vnd.google-apps.spreadsheet', // Google Sheets
+        ],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setSelectedFile(result.assets[0]);
+        setUploadResult(null);
+        uploadFile(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Error picking document:', error);
+    }
+  };
+
+  const uploadFile = async (file: DocumentPicker.DocumentPickerAsset) => {
+    if (!file.uri) return;
+    setUploading(true);
+    setUploadResult(null);
+    try {
+      const formData = new FormData();
+      // @ts-ignore
+      formData.append('file', {
+        uri: file.uri,
+        name: file.name || 'document',
+        type: file.mimeType || 'application/octet-stream',
+      });
+      const response = await fetch('http://192.168.100.16:4000/interpretar', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        console.log('Respuesta del backend:', data);
+        if (Array.isArray(data)) {
+          // Es una lista de productos
+          setBackendProductos(data);
+        } else if (data && data.tipo === 'factura') {
+          setUploadResult('Factura interpretada. Pronto se abrirá el modal de venta.');
+          Alert.alert('Factura detectada', 'Se detectó una factura. Pronto se abrirá el modal de precarga de venta editable.');
+        } else {
+          setUploadResult((data && data.error) ? `Error: ${data.error}` : 'No se pudo interpretar el archivo');
+          console.error('Respuesta inesperada del backend:', data);
+        }
+      } else {
+        setUploadResult(data && data.error ? `Error: ${data.error}` : 'Error al interpretar el archivo');
+        console.error('Error HTTP interpretando archivo:', data);
+      }
+    } catch (error) {
+      setUploadResult('Error al interpretar el archivo');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (backendProductos) {
+const productosConBarra = backendProductos
+  .filter(Boolean)
+  .map((prod, idx) => ({
+    ...prod,
+    id: prod.id ?? `temp-${Date.now()}-${idx}`,
+    codigoBarras: generarCodigoBarras(),
+    stock: prod.stock == null ? 0 : prod.stock,
+  }));
+setProductosPrecargados(productosConBarra);
+      setModalProductosVisible(true);
+    }
+  }, [backendProductos]);
+
   // Vista principal
   return (
     <PaperProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={commonStyles.container}>
-          <ProductosHeader
-            nombre={nombreFiltro}
-            setNombre={setNombreFiltro}
-            precioCostoDesde={costoDesde}
-            setPrecioCostoDesde={setCostoDesde}
-            precioCostoHasta={costoHasta}
-            setPrecioCostoHasta={setCostoHasta}
-            precioVentaDesde={ventaDesde}
-            setPrecioVentaDesde={setVentaDesde}
-            precioVentaHasta={ventaHasta}
-            setPrecioVentaHasta={setVentaHasta}
-            stockDesde={stockDesde}
-            setStockDesde={setStockDesde}
-            stockHasta={stockHasta}
-            setStockHasta={setStockHasta}
-            onAgregar={handleAgregarProducto}
-            onScan={handleScan}
-            onPrice={handlePriceChange}
-            cantidad={productos.length}
-            isExpanded={filtrosExpanded}
-            setExpanded={setFiltrosExpanded}
-          />
-
-          <Pressable onPress={() => filtrosExpanded && setFiltrosExpanded(false)} style={{ flex: 1 }}>
-            <FlatList
-              data={productosFiltrados}
-              keyExtractor={(item) => item.id?.toString() || ''}
-              renderItem={({ item }) => (
-                <ProductoItem
-                  producto={item}
-                  onEdit={(prod) => {
-                    setProductoSeleccionado(prod);
-                    setModalProductoVisible(true);
-                  }}
-                  onDelete={(prod) => handleEliminarProducto(prod.id!)}
-                  onComponentes={(prod) => {
-                    setProductoSeleccionado(prod);
-                    setModalComponentesVisible(true);
-                  }}
-                  onVariantes={(prod) => {
-                    setProductoSeleccionado(prod);
-                    setModalVariantesVisible(true);
-                  }}
-                />
-              )}
-              ListEmptyComponent={
-                <View style={commonStyles.emptyState}>
-                  <MaterialCommunityIcons name="package-variant-closed" size={64} color="#94a3b8" />
-                  <Text style={commonStyles.emptyStateText}>No se encontraron productos</Text>
-   
-                </View>
-              }
-              contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }}
-              ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-              showsVerticalScrollIndicator={false}
+         
+            <ProductosHeader
+              nombre={nombreFiltro}
+              setNombre={setNombreFiltro}
+              precioCostoDesde={costoDesde}
+              setPrecioCostoDesde={setCostoDesde}
+              precioCostoHasta={costoHasta}
+              setPrecioCostoHasta={setCostoHasta}
+              precioVentaDesde={ventaDesde}
+              setPrecioVentaDesde={setVentaDesde}
+              precioVentaHasta={ventaHasta}
+              setPrecioVentaHasta={setVentaHasta}
+              stockDesde={stockDesde}
+              setStockDesde={setStockDesde}
+              stockHasta={stockHasta}
+              setStockHasta={setStockHasta}
+              onAgregar={handleAgregarProducto}
+              onScan={handleScan}
+              onPrice={handlePriceChange}
+              cantidad={productos.length}
+              isExpanded={filtrosExpanded}
+              setExpanded={setFiltrosExpanded}
             />
-          </Pressable>
+ <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 16 }}>
+            <Pressable onPress={() => filtrosExpanded && setFiltrosExpanded(false)} style={{ flex: 1}}>
+              <FlatList
+                data={productosFiltrados}
+                keyExtractor={(item) => item.id?.toString() || ''}
+                renderItem={({ item }) => (
+                  <ProductoItem
+                    producto={item}
+                    onEdit={(prod) => {
+                      setProductoSeleccionado(prod);
+                      setModalProductoVisible(true);
+                    }}
+                    onDelete={(prod) => handleEliminarProducto(prod.id!)}
+                    onComponentes={(prod) => {
+                      setProductoSeleccionado(prod);
+                      setModalComponentesVisible(true);
+                    }}
+                    onVariantes={(prod) => {
+                      setProductoSeleccionado(prod);
+                      setModalVariantesVisible(true);
+                    }}
+                  />
+                )}
+                ListEmptyComponent={
+                  <View style={commonStyles.emptyState}>
+                    <MaterialCommunityIcons name="package-variant-closed" size={64} color="#94a3b8" />
+                    <Text style={commonStyles.emptyStateText}>No se encontraron productos</Text>
+                 
+                  </View>
+                }
+                contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }}
+                ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                showsVerticalScrollIndicator={false}
+              />
+            </Pressable>
 
-          {/* MODALES */}
-          <ModalProducto
-            visible={modalProductoVisible}
-            onClose={() => setModalProductoVisible(false)}
-            onSubmit={handleGuardarProducto}
-            productoEditado={productoSeleccionado}
-          />
-          <ModalGestionProductos
-          visible={produdctoPriceVisible}
-          onClose={() => setProductoPriceVisible(false)}
-          />
-
-          {modalVariantesVisible && productoSeleccionado && (
-            <ModalVariantes
-              visible={modalVariantesVisible}
-              onClose={() => setModalVariantesVisible(false)}
-              producto={productoSeleccionado}
-              onActualizar={cargarProductos}
+            {/* MODALES */}
+            <ModalProducto
+              visible={modalProductoVisible}
+              onClose={() => setModalProductoVisible(false)}
+              onSubmit={handleGuardarProducto}
+              productoEditado={productoSeleccionado}
             />
-          )}
-
-          <ModalScanner
-            visible={scannerVisible}
-            productos={productos}
-            onClose={() => setScannerVisible(false)}
-            onSubmit={handleGuardarProducto}
-          />
-
-          <ModalBarCode
-            visible={modalBarcodeVisible}
-            onClose={() => setModalBarcodeVisible(false)}
-            barcodeData={barcodeData}
-            producto={productoSeleccionado!}
-            variante={varianteSeleccionada}
-          />
-
-          {modalComponentesVisible && productoSeleccionado && (
-            <ModalComponentes
-              visible={modalComponentesVisible}
-              onClose={() => {
-                setModalComponentesVisible(false);
-                setTimeout(() => setProductoSeleccionado(null), 100);
+            <ModalGestionProductos
+              visible={produdctoPriceVisible}
+              onClose={() => setProductoPriceVisible(false)}
+            />
+            <ModalGestionProductos
+              visible={modalProductosVisible}
+              onClose={() => setModalProductosVisible(false)}
+              productosPrecargados={productosPrecargados}
+              onConfirmarPrecarga={async (productosEditados) => {
+                console.log('Intentando guardar productos precargados:', productosEditados);
+                try {
+                  const productosSanitizados = productosEditados.map((producto) => {
+                    if (typeof producto.id === 'string' && (producto.id as string).startsWith('temp-')) {
+                      const { id, ...rest } = producto;
+                      producto = { ...rest };
+                    }
+                    // Sanitizar campos
+                    return {
+                      nombre: String(producto.nombre ?? ''),
+                      precioCosto: Number(producto.precioCosto ?? 0),
+                      precioVenta: Number(producto.precioVenta ?? 0),
+                      stock: Number(producto.stock ?? 0),
+                      codigoBarras: producto.codigoBarras ? String(producto.codigoBarras) : undefined,
+                    };
+                  });
+                  console.log('🚀 Productos sanitizados a guardar:', productosSanitizados);
+                  if (productosSanitizados.length === 0) {
+                    setToast({ message: 'No hay productos para importar', type: 'warning' });
+                    return;
+                  }
+                  for (let producto of productosSanitizados) {
+                    console.log('⏳ Guardando producto:', producto);
+                    await manejarGuardarProducto(producto, true, cargarProductos, setToast);
+                    console.log('✅ Producto guardado:', producto);
+                  }
+                  await cargarProductos();
+                  setToast({ message: 'Productos importados correctamente', type: 'success' });
+                  setModalProductosVisible(false);
+                } catch (error) {
+                  console.error('Error al importar productos:', error);
+                  setToast({ message: 'Error al importar productos', type: 'error' });
+                  // No cierres el modal si hay error
+                }
               }}
+              
+            />
+
+            {modalVariantesVisible && productoSeleccionado && (
+              <ModalVariantes
+                visible={modalVariantesVisible}
+                onClose={() => setModalVariantesVisible(false)}
+                producto={productoSeleccionado}
+                onActualizar={cargarProductos}
+              />
+            )}
+
+            <ModalScanner
+              visible={scannerVisible}
+              productos={productos}
+              onClose={() => setScannerVisible(false)}
+              onSubmit={handleGuardarProducto}
+            />
+
+            <ModalBarCode
+              visible={modalBarcodeVisible}
+              onClose={() => setModalBarcodeVisible(false)}
+              barcodeData={barcodeData}
+              producto={productoSeleccionado!}
+              variante={varianteSeleccionada}
+            />
+
+            {modalComponentesVisible && productoSeleccionado && (
+              <ModalComponentes
+                visible={modalComponentesVisible}
+                onClose={() => {
+                  setModalComponentesVisible(false);
+                  setTimeout(() => setProductoSeleccionado(null), 100);
+                }}
+                producto={productoSeleccionado}
+                materiales={materiales}
+                onActualizar={cargarProductos}
+              />
+            )}
+
+            <MenuOpciones
+              visible={menuVisible}
               producto={productoSeleccionado}
-              materiales={materiales}
-              onActualizar={cargarProductos}
+              onClose={() => setMenuVisible(false)}
+              onGenerarQR={generarCodigoBarras}
+              onEditarProducto={(p) => {
+                setProductoSeleccionado(p);
+                setModalProductoVisible(true);
+              }}
+              onManejarComponentes={(p) => {
+                setProductoSeleccionado(p);
+                setModalComponentesVisible(true);
+              }}
+              onManejarVariantes={(p) => {
+                setProductoSeleccionado(p);
+                setModalVariantesVisible(true);
+              }}
+            />
+
+            {/* Toast de resultado arriba */}
+            {uploadResult && (
+              <View style={{ position: 'absolute', top: 30, left: 20, right: 20, zIndex: 10, alignItems: 'center' }}>
+                <Text style={{
+                  backgroundColor: uploadResult.startsWith('Error') ? '#fee2e2' : uploadResult.includes('Factura') ? '#fef9c3' : '#d1fae5',
+                  color: uploadResult.startsWith('Error') ? '#b91c1c' : uploadResult.includes('Factura') ? '#b45309' : '#065f46',
+                  padding: 12,
+                  borderRadius: 8,
+                  fontWeight: '600',
+                  fontSize: 16,
+                  textAlign: 'center',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 4,
+                }}>
+                  {uploadResult}
+                </Text>
+              </View>
+            )}
+
+          </ScrollView>
+
+          {/* Toast */}
+          {toast && !modalProductoVisible && !modalVariantesVisible && !modalBarcodeVisible && !modalComponentesVisible && !menuVisible && (
+            <CustomToast
+              message={toast.message}
+              type={toast.type}
+              onClose={() => setToast(null)}
             />
           )}
 
-          <MenuOpciones
-            visible={menuVisible}
-            producto={productoSeleccionado}
-            onClose={() => setMenuVisible(false)}
-            onGenerarQR={generarCodigoBarras}
-            onEditarProducto={(p) => {
-              setProductoSeleccionado(p);
-              setModalProductoVisible(true);
-            }}
-            onManejarComponentes={(p) => {
-              setProductoSeleccionado(p);
-              setModalComponentesVisible(true);
-            }}
-            onManejarVariantes={(p) => {
-              setProductoSeleccionado(p);
-              setModalVariantesVisible(true);
-            }}
+          {/* Modal de confirmación */}
+          <ModalConfirmacion
+            visible={!!productoAEliminar}
+            mensaje={`¿Deseas eliminar el producto "${productoAEliminar?.nombre}"?`}
+            onCancelar={() => setProductoAEliminar(null)}
+            onConfirmar={confirmarEliminacion}
+          />
+
+          {/* Botón de IA */}
+          <AIFloatingButton
+            onPress={handlePickDocument}
+            disabled={uploading}
+            description="Subir documento para interpretar productos"
           />
         </View>
-
-        {/* Toast */}
-        {toast && !modalProductoVisible && !modalVariantesVisible && !modalBarcodeVisible && !modalComponentesVisible && !menuVisible && (
-          <CustomToast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        )}
-
-        {/* Modal de confirmación */}
-        <ModalConfirmacion
-          visible={!!productoAEliminar}
-          mensaje={`¿Deseas eliminar el producto "${productoAEliminar?.nombre}"?`}
-          onCancelar={() => setProductoAEliminar(null)}
-          onConfirmar={confirmarEliminacion}
-        />
       </GestureHandlerRootView>
     </PaperProvider>
   );
