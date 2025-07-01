@@ -1,13 +1,18 @@
 import { useUser } from '@clerk/clerk-expo';
 import { useCameraPermissions } from 'expo-camera';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Toast from 'react-native-toast-message';
+// @ts-ignore
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
+import AIFloatingButton from '../../components/AIFloatingButton';
 import { obtenerProductoPorCodigo, registrarVenta, setupProductosDB, Venta } from '../../services/db';
 import { colors, spacing } from '../../styles/theme';
 import { useNavigation } from '../context/NavigationContext';
 import ModalApiKeyMercadoPago from './components/ModalApiKeyMercadoPago';
 import ModalCantidad from './components/modalCantidad';
+import ModalInterpretacionVoz from './components/ModalInterpretacionVoz';
 import ModalVariante from './components/modalVariante';
 import ProductosDisponibles from './components/productosDisponibles';
 import ProductosSeleccionados from './components/productosSeleccionados';
@@ -17,6 +22,10 @@ import { useMensajeFlotante } from './hooks/useMensajeFlotante';
 import { useProductos } from './hooks/useProductos';
 import { useSeleccionados } from './hooks/useSeleccionados';
 import { useSonidos } from './hooks/useSonidos';
+
+// Coloca tu API Key de AssemblyAI aquí:
+const ASSEMBLYAI_API_KEY = 'f25169eacdf54ff0955289f5dd43568f'; // <-- REEMPLAZA AQUÍ
+const BACKEND_URL = 'http://192.168.100.16:4000/interpretar-voz';
 
 export default function NuevaVentaView() {
   const { productos, isLoading: isLoadingProductos } = useProductos();
@@ -51,9 +60,19 @@ export default function NuevaVentaView() {
   const [varianteModalVisible, setVarianteModalVisible] = useState(false);
   const [productoConVariantes, setProductoConVariantes] = useState<any>(null);
   const [modalApiKeyVisible, setModalApiKeyVisible] = useState(false);
+  const [modalInterpretacionVisible, setModalInterpretacionVisible] = useState(false);
+  const [productosInterpretados, setProductosInterpretados] = useState<any[]>([]);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
+
+  // Estados para el sistema de voz
+  const [isRecording, setIsRecording] = useState(false);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [audioUri, setAudioUri] = useState<string | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     setupProductosDB();
@@ -144,6 +163,147 @@ export default function NuevaVentaView() {
     }
   }, [shouldOpenScanner, permission?.granted, requestPermission, setShouldOpenScanner]);
 
+  const startRecording = async () => {
+    try {
+      console.log('[VOZ] Solicitando permisos e iniciando grabación...');
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      setRecording(recording);
+      setIsRecording(true);
+      console.log('[VOZ] Grabando...');
+    } catch (err) {
+      setIsRecording(false);
+      setRecording(null);
+      setAudioUri(null);
+      console.log('[VOZ][ERROR] No se pudo iniciar la grabación:', err);
+    }
+  };
+
+  const stopRecording = async (): Promise<string | null> => {
+    setIsRecording(false);
+    if (!recording) return null;
+    await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+    setAudioUri(uri);
+    setRecording(null);
+    console.log('[VOZ] Grabación detenida. Archivo guardado en:', uri);
+    return uri;
+  };
+
+  const uploadAudioToAssemblyAI = async (uri: string, apiKey: string) => {
+    console.log('[VOZ] Subiendo audio a AssemblyAI...');
+    const response = await FileSystem.uploadAsync(
+      'https://api.assemblyai.com/v2/upload',
+      uri,
+      {
+        httpMethod: 'POST',
+        headers: {
+          authorization: apiKey,
+        },
+        uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+      }
+    );
+    const data = JSON.parse(response.body);
+    console.log('[VOZ] Audio subido. upload_url:', data.upload_url);
+    return data.upload_url;
+  };
+
+  const requestTranscription = async (uploadUrl: string, apiKey: string) => {
+    console.log('[VOZ] Solicitando transcripción a AssemblyAI...');
+    const response = await fetch('https://api.assemblyai.com/v2/transcript', {
+      method: 'POST',
+      headers: {
+        authorization: apiKey,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ audio_url: uploadUrl, language_code: 'es' }),
+    });
+    const data = await response.json();
+    console.log('[VOZ] Transcripción solicitada. transcript_id:', data.id);
+    return data.id;
+  };
+
+  const pollTranscription = async (id: string, apiKey: string) => {
+    let completed = false;
+    let text = '';
+    let intentos = 0;
+    console.log('[VOZ] Esperando transcripción de AssemblyAI...');
+    while (!completed) {
+      await new Promise(res => setTimeout(res, 2000));
+      intentos++;
+      const response = await fetch(`https://api.assemblyai.com/v2/transcript/${id}`, {
+        headers: { authorization: apiKey },
+      });
+      const data = await response.json();
+      console.log(`[VOZ] Polling intento ${intentos}: status =`, data.status);
+      if (data.status === 'completed') {
+        completed = true;
+        text = data.text;
+        console.log('[VOZ] Transcripción completada:', text);
+      } else if (data.status === 'error') {
+        completed = true;
+        console.log('[VOZ][ERROR] Error en transcripción:', data.error);
+        throw new Error(data.error);
+      }
+    }
+    return text;
+  };
+
+  const handleVoiceAssistant = async () => {
+    if (!isRecording && !isProcessing) {
+      // Iniciar grabación
+      await startRecording();
+    } else if (isRecording && !isProcessing) {
+      // Detener grabación y procesar
+      setIsProcessing(true); // Deshabilitar el botón inmediatamente
+      const uri = await stopRecording();
+      setIsTranscribing(true);
+      try {
+        if (!uri) {
+          console.log('[VOZ][ERROR] No hay audioUri para subir a AssemblyAI');
+          setIsProcessing(false);
+          setIsTranscribing(false);
+          return;
+        }
+        const uploadUrl = await uploadAudioToAssemblyAI(uri, ASSEMBLYAI_API_KEY);
+        const transcriptId = await requestTranscription(uploadUrl, ASSEMBLYAI_API_KEY);
+        const text = await pollTranscription(transcriptId, ASSEMBLYAI_API_KEY);
+        setTranscript(text);
+        // --- FLUJO DE INTERPRETACIÓN ---
+        const nombresProductos = productos.map((p) => ({
+          id: p.id,
+          nombre: p.nombre,
+          precioVenta: p.precioVenta,
+          precioCosto: p.precioCosto,
+        }));
+        const response = await fetch(BACKEND_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ texto: text, productos: nombresProductos }),
+        });
+        const data = await response.json();
+        setProductosInterpretados(data.productos || []);
+        setModalInterpretacionVisible(true);
+        // --- FIN FLUJO DE INTERPRETACIÓN ---
+      } catch (e) {
+        console.log('[VOZ][ERROR] Error en el flujo de voz:', e);
+      }
+      setIsTranscribing(false);
+      setAudioUri(null);
+      setIsProcessing(false);
+    }
+  };
+
+  const handleAgregarProductosInterpretados = (productos: any[]) => {
+    productos.forEach(producto => {
+      agregarProducto(producto, producto.cantidad);
+    });
+    setModalInterpretacionVisible(false);
+    setProductosInterpretados([]);
+    setTranscript('');
+  };
+
   if (isLoadingProductos) {
     return (
       <View style={styles.loadingContainer}>
@@ -229,6 +389,20 @@ export default function NuevaVentaView() {
         </Animated.View>
       )}
       <Toast />
+      <AIFloatingButton
+        onPress={handleVoiceAssistant}
+        description={isRecording ? (isProcessing ? 'Procesando...' : 'Grabando...') : isProcessing ? 'Procesando...' : 'Asistente de voz para ventas'}
+        icon={isRecording ? (isProcessing ? 'cloud-upload' : 'record-circle') : isProcessing ? 'cloud-upload' : 'microphone'}
+        isRecording={isRecording || isProcessing}
+        disabled={isProcessing}
+      />
+      <ModalInterpretacionVoz
+        visible={modalInterpretacionVisible}
+        onClose={() => setModalInterpretacionVisible(false)}
+        productosInterpretados={productosInterpretados}
+        onAgregarAlCarrito={handleAgregarProductosInterpretados}
+        textoOriginal={transcript}
+      />
     </Animated.View>
   );
 }
