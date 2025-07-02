@@ -37,6 +37,7 @@ import {
   manejarGuardarProducto,
   ToastType
 } from '../functions';
+import { interpretarArchivo } from '../../../config/backend';
 
 // Generador EAN13 simple
 function generarCodigoBarras() {
@@ -347,44 +348,31 @@ const generarCodigoBarras = (
     }
   };
 
-  const uploadFile = async (file: DocumentPicker.DocumentPickerAsset) => {
+    const uploadFile = async (file: DocumentPicker.DocumentPickerAsset) => {
     if (!file.uri) return;
     setUploading(true);
     setUploadResult(null);
     try {
-      const formData = new FormData();
-      // @ts-ignore
-      formData.append('file', {
+      const data = await interpretarArchivo({
         uri: file.uri,
         name: file.name || 'document',
         type: file.mimeType || 'application/octet-stream',
       });
-      const response = await fetch('http://192.168.100.16:4000/interpretar', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        console.log('Respuesta del backend:', data);
-        if (Array.isArray(data)) {
-          // Es una lista de productos
-          setBackendProductos(data);
-        } else if (data && data.tipo === 'factura') {
-          setUploadResult('Factura interpretada. Pronto se abrirá el modal de venta.');
-          Alert.alert('Factura detectada', 'Se detectó una factura. Pronto se abrirá el modal de precarga de venta editable.');
-        } else {
-          setUploadResult((data && data.error) ? `Error: ${data.error}` : 'No se pudo interpretar el archivo');
-          console.error('Respuesta inesperada del backend:', data);
-        }
+      
+      console.log('Respuesta del backend:', data);
+      if (Array.isArray(data)) {
+        // Es una lista de productos
+        setBackendProductos(data);
+      } else if (data && data.tipo === 'factura') {
+        setUploadResult('Factura interpretada. Pronto se abrirá el modal de venta.');
+        Alert.alert('Factura detectada', 'Se detectó una factura. Pronto se abrirá el modal de precarga de venta editable.');
       } else {
-        setUploadResult(data && data.error ? `Error: ${data.error}` : 'Error al interpretar el archivo');
-        console.error('Error HTTP interpretando archivo:', data);
+        setUploadResult((data && data.error) ? `Error: ${data.error}` : 'No se pudo interpretar el archivo');
+        console.error('Respuesta inesperada del backend:', data);
       }
     } catch (error) {
       setUploadResult('Error al interpretar el archivo');
+      console.error('Error al interpretar archivo:', error);
     } finally {
       setUploading(false);
     }

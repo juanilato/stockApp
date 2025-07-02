@@ -25,7 +25,7 @@ import { useSonidos } from './hooks/useSonidos';
 
 // Coloca tu API Key de AssemblyAI aquí:
 const ASSEMBLYAI_API_KEY = 'f25169eacdf54ff0955289f5dd43568f'; // <-- REEMPLAZA AQUÍ
-const BACKEND_URL = 'http://192.168.100.16:4000/interpretar-voz';
+import { interpretarVoz } from '../../config/backend';
 
 export default function NuevaVentaView() {
   const { productos, isLoading: isLoadingProductos } = useProductos();
@@ -277,12 +277,7 @@ export default function NuevaVentaView() {
           precioVenta: p.precioVenta,
           precioCosto: p.precioCosto,
         }));
-        const response = await fetch(BACKEND_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ texto: text, productos: nombresProductos }),
-        });
-        const data = await response.json();
+        const data = await interpretarVoz(text, nombresProductos);
         setProductosInterpretados(data.productos || []);
         setModalInterpretacionVisible(true);
         // --- FIN FLUJO DE INTERPRETACIÓN ---
