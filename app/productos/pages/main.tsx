@@ -360,14 +360,22 @@ const generarCodigoBarras = (
       });
       
       console.log('Respuesta del backend:', data);
-      if (Array.isArray(data)) {
-        // Es una lista de productos
+      if (data && data.error) {
+        setUploadResult('No se pudo interpretar el archivo');
+        return;
+      }
+      // Validar que la respuesta sea un array de objetos con los campos requeridos
+      if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object' && (data[0].nombre || data[0].precioVenta || data[0].precioCosto)) {
         setBackendProductos(data);
+      } else if (Array.isArray(data) && typeof data[0] === 'string') {
+        // Si la IA devolvió solo nombres, transformar a objetos vacíos
+        const productosTransformados = data.map(nombre => ({ nombre, precioVenta: null, precioCosto: null, stock: null }));
+        setBackendProductos(productosTransformados);
       } else if (data && data.tipo === 'factura') {
         setUploadResult('Factura interpretada. Pronto se abrirá el modal de venta.');
         Alert.alert('Factura detectada', 'Se detectó una factura. Pronto se abrirá el modal de precarga de venta editable.');
       } else {
-        setUploadResult((data && data.error) ? `Error: ${data.error}` : 'No se pudo interpretar el archivo');
+        setUploadResult('No se pudo interpretar el archivo');
         console.error('Respuesta inesperada del backend:', data);
       }
     } catch (error) {
@@ -379,19 +387,27 @@ const generarCodigoBarras = (
   };
 
   useEffect(() => {
-    if (backendProductos) {
-const productosConBarra = backendProductos
-  .filter(Boolean)
-  .map((prod, idx) => ({
-    ...prod,
-    id: prod.id ?? `temp-${Date.now()}-${idx}`,
-    codigoBarras: generarCodigoBarras(),
-    stock: prod.stock == null ? 0 : prod.stock,
-  }));
-setProductosPrecargados(productosConBarra);
+    if (backendProductos && Array.isArray(backendProductos) && backendProductos.length > 0) {
+      const productosConBarra = backendProductos
+        .filter(Boolean)
+        .map((prod, idx) => ({
+          ...prod,
+          id: prod.id ?? `temp-${Date.now()}-${idx}`,
+          codigoBarras: prod.codigoBarras ?? undefined,
+          stock: prod.stock == null ? 0 : prod.stock,
+        }));
+      setProductosPrecargados(productosConBarra);
       setModalProductosVisible(true);
     }
   }, [backendProductos]);
+
+  // Limpiar productosPrecargados y backendProductos al cerrar el modal
+  useEffect(() => {
+    if (!modalProductosVisible) {
+      setProductosPrecargados([]);
+      setBackendProductos(null);
+    }
+  }, [modalProductosVisible]);
 
   // Vista principal
   return (
@@ -613,6 +629,10 @@ setProductosPrecargados(productosConBarra);
             onPress={handlePickDocument}
             disabled={uploading}
             description="Subir documento para interpretar productos"
+            variant="question"
+            isActive={uploading}
+            buttonColor={uploading ? '#fde047' : undefined}
+            robotColor={uploading ? '#b45309' : undefined}
           />
         </View>
       </GestureHandlerRootView>

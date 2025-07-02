@@ -2,7 +2,7 @@
   "expo": {
     "name": "ventas-app",
     "slug": "ventas-app",
-    "version": "1.0.0",
+    "version": "1.0.7",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "ventasapp",
@@ -32,7 +32,7 @@
     "android.permission.RECORD_AUDIO"
   ],
   "package": "com.anonymous.ventasapp",
-  "versionCode": 2
+  "versionCode": 7
 },
     "web": {
       "bundler": "metro",

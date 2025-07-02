@@ -20,21 +20,32 @@ import { colors } from '../../styles/theme';
 interface ModalGestionProductosProps {
   visible: boolean;
   onClose: () => void;
+  productosPrecargados?: any[];
 }
 
-export default function ModalGestionProductos({ visible, onClose }: ModalGestionProductosProps) {
-  const [productos, setProductos] = useState<Producto[]>([]);
+export default function ModalGestionProductos({ visible, onClose, productosPrecargados }: ModalGestionProductosProps) {
+  const [productos, setProductos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [productosEditados, setProductosEditados] = useState<{ [key: number]: Producto }>({});
+  const [productosEditados, setProductosEditados] = useState<{ [key: number]: any }>({});
   const [variantesEditadas, setVariantesEditadas] = useState<{ [key: number]: { stock: number } }>({});
   const [toast, setToast] = useState<{ message: string; type?: 'success' | 'error' | 'warning' } | null>(null);
 
   useEffect(() => {
     if (visible) {
-      cargarProductos();
+      if (productosPrecargados && productosPrecargados.length > 0) {
+        setProductos(productosPrecargados.map(limpiarProducto));
+        setIsLoading(false);
+        setToast({ message: 'Editá y confirmá los productos identificados antes de agregarlos', type: 'success' });
+      } else {
+        cargarProductos();
+      }
+    } else {
+      setProductos([]);
+      setProductosEditados({});
+      setVariantesEditadas({});
     }
-  }, [visible]);
+  }, [visible, productosPrecargados]);
 
   useEffect(() => {
     if (toast) {
@@ -553,4 +564,14 @@ const styles = StyleSheet.create({
   modalButtonTextSecondary: {
     color: '#64748b',
   },
-}); 
+});
+
+function limpiarProducto(prod: any) {
+  return {
+    ...prod,
+    nombre: prod.nombre ?? '',
+    precioVenta: prod.precioVenta ?? 0,
+    precioCosto: prod.precioCosto ?? 0,
+    stock: prod.stock ?? 0,
+  };
+} 

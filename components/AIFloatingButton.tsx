@@ -16,6 +16,10 @@ interface AIFloatingButtonProps {
   description?: string;
   icon?: string;
   isRecording?: boolean;
+  variant?: 'question' | 'mic';
+  isActive?: boolean;
+  buttonColor?: string;
+  robotColor?: string;
 }
 
 export default function AIFloatingButton({
@@ -25,6 +29,10 @@ export default function AIFloatingButton({
   description = "Asistente IA",
   icon = "robot",
   isRecording = false,
+  variant,
+  isActive = false,
+  buttonColor,
+  robotColor,
 }: AIFloatingButtonProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const slideAnim = useRef(new Animated.Value(-60)).current;
@@ -66,6 +74,33 @@ export default function AIFloatingButton({
     }).start(() => setShowTooltip(false));
   };
 
+  // Color del robot: prioridad a prop robotColor, luego lógica previa
+  const _robotColor = robotColor || (isRecording && variant === 'mic' ? '#ef4444' : '#ffffff');
+  // Color del fondo del botón: prioridad a prop buttonColor
+  const _buttonColor = buttonColor || (isRecording ? 'rgba(239, 68, 68, 0.9)' : 'rgba(99, 102, 241, 0.9)');
+
+  // Ícono adicional como badge, solo si isActive
+  let extraIcon = null;
+  if (isActive && variant === 'question') {
+    extraIcon = (
+      <MaterialCommunityIcons
+        name="help-circle"
+        size={20}
+        color={_robotColor}
+        style={{ position: 'absolute', top: 2, right: 2, zIndex: 2 }}
+      />
+    );
+  } else if (isActive && variant === 'mic') {
+    extraIcon = (
+      <MaterialCommunityIcons
+        name="microphone"
+        size={20}
+        color={_robotColor}
+        style={{ position: 'absolute', top: 2, right: 2, zIndex: 2 }}
+      />
+    );
+  }
+
   return (
     <Animated.View
       style={[
@@ -77,24 +112,27 @@ export default function AIFloatingButton({
         style,
       ]}
     >
-              <TouchableOpacity
-          style={[
-            styles.button,
-            disabled && styles.buttonDisabled,
-            isRecording && styles.buttonRecording,
-          ]}
-          onPress={onPress}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          disabled={disabled}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons 
-            name={icon as any} 
-            size={20} 
-            color="#ffffff" 
-          />
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          { backgroundColor: _buttonColor },
+          disabled && styles.buttonDisabled,
+          isRecording && styles.buttonRecording,
+        ]}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled}
+        activeOpacity={0.8}
+      >
+        <MaterialCommunityIcons
+          name={icon as any}
+          size={28}
+          color={_robotColor}
+        />
+        {/* Extra icono arriba a la derecha, sin fondo */}
+        {extraIcon}
+      </TouchableOpacity>
 
       {/* Tooltip */}
       {showTooltip && (

@@ -387,9 +387,12 @@ export default function NuevaVentaView() {
       <AIFloatingButton
         onPress={handleVoiceAssistant}
         description={isRecording ? (isProcessing ? 'Procesando...' : 'Grabando...') : isProcessing ? 'Procesando...' : 'Asistente de voz para ventas'}
-        icon={isRecording ? (isProcessing ? 'cloud-upload' : 'record-circle') : isProcessing ? 'cloud-upload' : 'microphone'}
-        isRecording={isRecording || isProcessing}
+        isRecording={isRecording}
         disabled={isProcessing}
+        variant="mic"
+        isActive={isRecording || isProcessing}
+        buttonColor={isRecording || isProcessing ? '#fca5a5' : undefined}
+        robotColor={isRecording || isProcessing ? '#b91c1c' : undefined}
       />
       <ModalInterpretacionVoz
         visible={modalInterpretacionVisible}

@@ -9,6 +9,17 @@ interface ModalInterpretacionVozProps {
   textoOriginal: string;
 }
 
+// Limpia los productos: null -> 0 (números), null -> '' (strings)
+function limpiarProducto(prod: any) {
+  return {
+    nombre: prod.nombre ?? '',
+    precioVenta: prod.precioVenta ?? 0,
+    precioCosto: prod.precioCosto ?? 0,
+    stock: prod.stock ?? 0,
+    cantidad: prod.cantidad ?? 1,
+  };
+}
+
 export default function ModalInterpretacionVoz({
   visible,
   onClose,
@@ -16,10 +27,10 @@ export default function ModalInterpretacionVoz({
   onAgregarAlCarrito,
   textoOriginal,
 }: ModalInterpretacionVozProps) {
-  const [productos, setProductos] = useState(productosInterpretados.map(p => ({ ...p })));
+  const [productos, setProductos] = useState(productosInterpretados.map(limpiarProducto));
 
   React.useEffect(() => {
-    setProductos(productosInterpretados.map(p => ({ ...p })));
+    setProductos(productosInterpretados.map(limpiarProducto));
   }, [productosInterpretados]);
 
   const actualizarCantidad = (index: number, cantidad: number) => {
